@@ -21,6 +21,7 @@ $name       = $_POST["product_name"] ?? "";
 $sku        = $_POST["sku"] ?? "";
 $contractor = $_POST["contractor"] ?? "";
 $price      = $_POST["price"] ?? "";
+$barcode    = $_POST["barcode"] ?? $item["barcode"];
 $photo_url  = $item["photo"];
 
 /* Удаление фотографии */
@@ -45,11 +46,12 @@ if (!empty($_FILES["photo"]["tmp_name"])) {
 /* Обновление */
 $stmt = $pdo->prepare("
     UPDATE barcodes
-    SET product_name = ?, sku = ?, contractor = ?, price = ?, photo = ?
+    SET barcode = ?, product_name = ?, sku = ?, contractor = ?, price = ?, photo = ?
     WHERE id = ?
+
 ");
 
-$stmt->execute([$name, $sku, $contractor, $price, $photo_url, $id]);
+$stmt->execute([$barcode, $name, $sku, $contractor, $price, $photo_url, $id]);
 
 /* Обновлённая запись */
 $stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
