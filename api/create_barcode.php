@@ -1,57 +1,47 @@
 <?php
-header("Content-Type: application/json");
+header('Content-Type: application/json');
+require_once "db.php";
 
-// Разрешаем CORS (если нужно)
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+$code       = $_POST['barcode'] ?? null;
+$name       = $_POST['product_name'] ?? null;
+$sku        = $_POST['sku'] ?? null;
+$contractor = $_POST['contractor'] ?? null;
 
-// Подключаем БД
-require_once __DIR__ . '/db.php';
+$photoPath = null;
 
-// Читаем JSON
-$data = json_decode(file_get_contents("php://input"), true);
+/* === ОБРАБОТКА ФОТО === */
+if (!empty($_FILES['photo']['tmp_name'])) {
 
-if (!$data) {
-    echo json_encode(["success" => false, "message" => "Нет данных"]);
+    $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+    $fileName = $code . "_" . time() . "." . $ext;
+
+    $uploadPath = __DIR__ . '/../photo_product/' . $fileName;
+
+    if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
+        $photoPath = '/photo_product/' . $fileName;
+    }
+}
+
+if (!$code) {
+    echo json_encode(["status" => "error", "message" => "Нет штрихкода"]);
     exit;
 }
 
-// Проверка полей
-$barcode       = $data['barcode']       ?? '';
-$product_name  = $data['product_name']  ?? '';
-$sku           = $data['sku']           ?? null;
-$contractor    = $data['contractor']    ?? null;
+$stmt = $pdo->prepare("
+    INSERT INTO barcodes (barcode, product_name, sku, contractor, photo, created_at)
+    VALUES (:barcode, :name, :sku, :contractor, :photo, NOW())
+");
 
-// Проверка: название или артикул должны быть
-if (empty($product_name) && empty($sku)) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Введите название товара или артикул"
-    ]);
-    exit;
-}
+$stmt->execute([
+    ":barcode"    => $code,
+    ":name"       => $name,
+    ":sku"        => $sku,
+    ":contractor" => $contractor,
+    ":photo"      => $photoPath
+]);
 
-// SQL вставка
-$sql = "INSERT INTO barcodes (barcode, product_name, sku, contractor)
-        VALUES (:barcode, :product_name, :sku, :contractor)";
-
-$stmt = $pdo->prepare($sql);
-
-try {
-    $stmt->execute([
-        ":barcode"      => $barcode,
-        ":product_name" => $product_name,
-        ":sku"          => $sku,
-        ":contractor"   => $contractor
-    ]);
-
-    echo json_encode(["success" => true]);
-
-} catch (PDOException $e) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Ошибка при сохранении",
-        "error"   => $e->getMessage()
-    ]);
-}
+echo json_encode([
+    "status" => "success",
+    "id"     => $pdo->lastInsertId(),
+    "photo"  => $photoPath
+]);
