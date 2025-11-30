@@ -6,6 +6,7 @@ $code       = $_POST['barcode'] ?? null;
 $name       = $_POST['product_name'] ?? null;
 $sku        = $_POST['sku'] ?? null;
 $contractor = $_POST['contractor'] ?? null;
+$price      = $_POST['price'] ?? null;   // ← Важно добавлено
 
 $photoPath = null;
 
@@ -27,9 +28,10 @@ if (!$code) {
     exit;
 }
 
+/* === ВСТАВКА В БД С ЦЕНОЙ === */
 $stmt = $pdo->prepare("
-    INSERT INTO barcodes (barcode, product_name, sku, contractor, photo, created_at)
-    VALUES (:barcode, :name, :sku, :contractor, :photo, NOW())
+    INSERT INTO barcodes (barcode, product_name, sku, contractor, price, photo, created_at)
+    VALUES (:barcode, :name, :sku, :contractor, :price, :photo, NOW())
 ");
 
 $stmt->execute([
@@ -37,6 +39,7 @@ $stmt->execute([
     ":name"       => $name,
     ":sku"        => $sku,
     ":contractor" => $contractor,
+    ":price"      => $price,      // ← Важно добавлено
     ":photo"      => $photoPath
 ]);
 
