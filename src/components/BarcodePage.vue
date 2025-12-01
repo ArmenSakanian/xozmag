@@ -903,13 +903,7 @@ svg {
 
 
 .manual-field input {
-  margin-top: 10px;
-  padding: 12px;
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 10px;
-  color: white;
-  width: 100%;
+margin-top: 10px;
 }
 
 
@@ -1017,7 +1011,7 @@ body {
 margin: 0 auto;
     padding: 20px;
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
     justify-content: space-between;
 }
 
@@ -1067,7 +1061,7 @@ width: 80%;
   gap: 10px;
 }
 
-.create-row input {
+.create-row input, .manual-field input {
   padding: 12px;
   background: #222;
   border: 1px solid #333;
@@ -1371,5 +1365,23 @@ background-color: #1c4821;
   font-size: 14px;
 }
 
+@media (max-width: 1440px) {
+  .top-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 30%;
+    margin-right: 40px;
+  }
+  .create-box, .search-container {
+    width: 100%;
+  }
+  .create-row {
+    display: flex;
+    flex-direction: column;
+  }
 
+}
 </style>
