@@ -42,7 +42,7 @@
       </button>
 
       <!-- СБРОС -->
-      <button class="floating-cancel" @click="clearSelected">
+      <button class="cancel-edit-btn" @click="clearSelected">
         <i class="fa-solid fa-xmark"></i>
         Снять выделение
       </button>
@@ -51,11 +51,6 @@
     <!-- === ВЕРХ === -->
     <div class="top-row">
 
-      <!-- ПОИСК -->
-      <div class="search-box">
-        <h2 class="block-title">Поиск</h2>
-        <input v-model="search" class="search-input" placeholder="Поиск" @input="searchChanged" />
-      </div>
 
       <!-- СОЗДАНИЕ / РЕДАКТ -->
       <div class="create-box">
@@ -117,12 +112,15 @@
         </div>
 
       </div>
+            <!-- ПОИСК -->
+      <div class="search-container">
+        <h2 class="block-title">Поиск</h2>
+        <input v-model="search" class="search-input" placeholder="Поиск" @input="searchChanged" />
+      </div>
     </div>
 
     <!-- === СПИСОК === -->
     <div class="list-section">
-      <h2 class="subtitle">Список штрихкодов</h2>
-
       <div class="grid">
         <div class="card" v-for="item in barcodes" :key="item.id">
 
@@ -135,16 +133,33 @@
             </div>
           </div>
 
-          <div class="card-checkbox">
-            <input type="checkbox" :value="item.id" v-model="selectedIds" />
-          </div>
+<div class="card-checkbox">
+  <label
+    class="button-main select-button"
+    :class="selectedIds.includes(item.id) ? 'active' : ''"
+    @click.stop="toggleSelect(item.id)"
+  >
+  
+    {{ selectedIds.includes(item.id) ? 'Выбрано' : 'Выбрать' }}<i
+  v-if="selectedIds.includes(item.id)"
+  class="fa-solid fa-check select-icon"
+></i>
+  </label>
+
+  <input
+    type="checkbox"
+    :value="item.id"
+    v-model="selectedIds"
+    class="hidden-checkbox"
+  />
+</div>
+
 
           <div class="card-left">
             <svg :id="'g-' + item.id"></svg>
 
-            <p class="code" :class="isMatch(item.barcode) ? 'highlight-row' : ''">
-              {{ item.barcode }}
-            </p>
+<p class="code" v-html="highlight(item.barcode, search)"></p>
+
 <div class="print-params">
 
               <div class="param-row-container">
@@ -178,28 +193,29 @@
           <div class="card-right">
 
             <div class="card-information">
-              <p :class="isMatch(item.product_name) ? 'highlight-row' : ''">
-              <div class="information-title"><b>Товар:</b> </div>
-              <div class="information-text">{{ item.product_name }}</div>
-              </p>
+              <div class="information-row">
+  <div class="information-title"><b>Товар:</b></div>
+  <div class="information-text" v-html="highlight(item.product_name, search)"></div>
+</div>
 
-              <p :class="isMatch(item.sku) ? 'highlight-row' : ''">
-              <div class="information-title"><b>Артикул:</b>
-              </div>
-              <div class="information-text">{{ item.sku }}</div>
-              </p>
 
-              <p :class="isMatch(item.contractor) ? 'highlight-row' : ''">
-              <div class="information-title"><b>Контрагент:</b>
-              </div>
-              <div class="information-text">{{ item.contractor }}</div>
-              </p>
+<div class="information-row">
+  <div class="information-title"><b>Артикул:</b></div>
+  <div class="information-text" v-html="highlight(item.sku, search)"></div>
+</div>
 
-              <p :class="isMatch(item.price) ? 'highlight-row' : ''">
-              <div class="information-title"><b>Цена:</b>
-              </div>
-              <div class="information-text">{{ item.price }}</div>
-              </p>
+
+<div class="information-row">
+  <div class="information-title"><b>Контрагент:</b></div>
+  <div class="information-text" v-html="highlight(item.contractor, search)"></div>
+</div>
+
+
+<div class="information-row">
+  <div class="information-title"><b>Цена:</b></div>
+  <div class="information-text" v-html="highlight(item.price, search)"></div>
+</div>
+
             </div>
 
             <!-- Настройки печати одной -->
@@ -255,6 +271,31 @@ const labelSizes = [
   { value: "58x40", text: "58 × 40 мм" },
   { value: "42x25", text: "42 × 25 мм" },
 ];
+
+function toggleSelect(id) {
+  const arr = selectedIds.value;
+  const idx = arr.indexOf(id);
+
+  if (idx === -1) {
+    arr.push(id);     // выбрать
+  } else {
+    arr.splice(idx, 1); // убрать выбор
+  }
+}
+
+
+function highlight(text, search) {
+  if (!text) return "";
+  if (!search) return text;
+
+  const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, "gi");
+
+  return text.replace(regex, (match) => {
+    return `<span class="highlight-row">${match}</span>`;
+  });
+}
+
 
 const bulkSize = ref(labelSizes[0].value);
 
@@ -447,18 +488,16 @@ async function checkExists(code) {
 }
 
 async function generateBarcode() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   while (true) {
-    const prefix =
-      letters[Math.floor(Math.random() * letters.length)] +
-      letters[Math.floor(Math.random() * letters.length)];
+    const num = genNumber9();          // генерируем 9 цифр
+    const code = "99" + num;           // итоговый код без пробелов и знаков
 
-    const num = genNumber9();
-    const code = prefix + "-" + num;
-
-    if (!(await checkExists(code))) return code;
+    if (!(await checkExists(code))) {  // проверка уникальности
+      return code;
+    }
   }
 }
+
 
 function startEdit(item) {
   editMode.value = true;
@@ -608,10 +647,10 @@ onMounted(loadBarcodes);
 ========================= */
 
 .highlight-row {
-  background: #ffde59 !important;
-  color: #000 !important;
-  padding: 2px 4px;
-  border-radius: 6px;
+background: #ff0808 !important;
+    color: #ffffff !important;
+    padding: 2px 4px;
+    border-radius: 6px;
 }
 
 .card-left {
@@ -662,7 +701,6 @@ onMounted(loadBarcodes);
   display: flex;
   flex-direction: column;
   gap: 25px;
-  margin-top: 30px;
 }
 
 /* =========================
@@ -671,7 +709,7 @@ onMounted(loadBarcodes);
 
 .card {
   position: relative;
-  width: 1000px;
+  width: 900px;
   margin: 0 auto;
 
   background: #1a1a1a;
@@ -695,10 +733,17 @@ onMounted(loadBarcodes);
 
 
 .card-checkbox {
-  position: absolute;
-  top: 21px;
-  left: 10px;
+position: absolute;
+    bottom: 20px;
+    right: 20px;
 }
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 
 .card-checkbox input[type="checkbox"], .param-row input[type="checkbox"] {
   width: 22px;
@@ -871,22 +916,16 @@ svg {
 
 
 .selected-controls {
-  position: fixed;
-  right: 40px;
-  bottom: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
-}
-
-
-.floating-cancel {
-  background: #333;
-  color: #fff;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
+position: fixed;
+    right: 40px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+    background: #161616;
+    padding: 20px;
+    border-radius: 20px;
 }
 
 .cancel-edit-btn {
@@ -896,13 +935,13 @@ svg {
   color: #fff;
   border: none;
   font-weight: bold;
+  cursor: pointer;
 }
 
 
 
 /* === ПЛАВАЮЩАЯ КНОПКА ПЕЧАТИ === */
 .floating-print {
-  position: fixed;
   right: 40px;
   bottom: 40px;
   background: #ffde59;
@@ -975,19 +1014,22 @@ body {
 }
 
 .page {
-  max-width: 1400px;
-  margin: auto;
-  padding: 20px;
+margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
 }
 
 .top-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 32px;
+display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.search-box,
+
 .create-box {
   background: #161616;
   border: 1px solid #2a2a2a;
@@ -995,6 +1037,10 @@ body {
   padding: 20px;
   min-height: 210px;
   box-shadow: 0 0 12px #0005;
+}
+
+.search-container {
+width: 80%;
 }
 
 .block-title {
@@ -1005,6 +1051,7 @@ body {
 
 /* ——— ПОИСК ——— */
 .search-input {
+  width: 100%;
   padding: 15px;
   border-radius: 12px;
   background: #1e1e1e;
@@ -1036,6 +1083,7 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: 0.2s;
+  color: black;
 }
 
 .button-main:hover {
@@ -1302,4 +1350,26 @@ body {
   background: #800;
   transform: scale(1.05);
 }
+
+.hidden-checkbox {
+  display: none;
+}
+
+.button-main.active {
+background-color: #1c4821;
+    color: #fff;
+}
+
+.select-button {
+  gap: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.select-icon {
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+
 </style>
