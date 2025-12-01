@@ -1,9 +1,13 @@
 <template>
   <div class="page">
-    <!-- === КНОПКИ ДЛЯ ВЫДЕЛЕННЫХ === -->
+
+    <!-- === ПАНЕЛЬ ДЛЯ ВЫБРАННЫХ === -->
     <div v-if="selectedIds.length >= 2" class="selected-controls">
-      <!-- общий выбор размера -->
-      <div class="bulk-size-select-wrap">
+
+      <!-- БЛОК 1 — РАЗМЕР -->
+      <div class="bulk-block">
+        <p class="bulk-title">Размер этикетки:</p>
+
         <select v-model="bulkSize" @change="applyBulkSize" class="bulk-size-select">
           <option v-for="s in labelSizes" :key="s.value" :value="s.value">
             {{ s.text }}
@@ -11,19 +15,33 @@
         </select>
       </div>
 
-      <!-- общий чекбокс с названием и ценой -->
-      <label class="bulk-info-check">
-        <input type="checkbox" v-model="bulkWithInfo" @change="applyBulkWithInfo" />
-        с названием и ценой
-      </label>
+      <!-- БЛОК 2 — НАЗВАНИЕ -->
+      <div class="bulk-block">
+        <p class="bulk-title">Название:</p>
 
-      <!-- кнопка печати -->
+        <label class="param-row">
+          <input type="checkbox" v-model="bulkWithName" @change="applyBulkName" />
+          Печатать название
+        </label>
+      </div>
+
+      <!-- БЛОК 3 — ЦЕНА -->
+      <div class="bulk-block">
+        <p class="bulk-title">Цена:</p>
+
+        <label class="param-row">
+          <input type="checkbox" v-model="bulkWithPrice" @change="applyBulkPrice" />
+          Печатать цену
+        </label>
+      </div>
+
+      <!-- КНОПКА ПЕЧАТЬ -->
       <button class="floating-print" @click="printSelected">
         <i class="fa-solid fa-print"></i>
         Печать выбранных ({{ selectedIds.length }})
       </button>
 
-      <!-- снятие выделения -->
+      <!-- СБРОС -->
       <button class="floating-cancel" @click="clearSelected">
         <i class="fa-solid fa-xmark"></i>
         Снять выделение
@@ -32,14 +50,16 @@
 
     <!-- === ВЕРХ === -->
     <div class="top-row">
+
       <!-- ПОИСК -->
       <div class="search-box">
         <h2 class="block-title">Поиск</h2>
         <input v-model="search" class="search-input" placeholder="Поиск" @input="searchChanged" />
       </div>
 
-      <!-- СОЗДАНИЕ / РЕДАКТИРОВАНИЕ -->
+      <!-- СОЗДАНИЕ / РЕДАКТ -->
       <div class="create-box">
+
         <div v-if="message" :class="['msg-absolute', messageType]">
           {{ message }}
         </div>
@@ -54,33 +74,28 @@
           <input v-model="contractor" placeholder="Контрагент" />
           <input v-model="price" placeholder="Цена (необязательно)" />
 
-          <!-- КНОПКА — СОХРАНИТЬ / СОЗДАТЬ -->
           <button class="button-main" @click="editMode ? saveEdit() : createBarcode()">
             {{ editMode ? "Сохранить" : "Создать" }}
           </button>
 
-          <!-- КНОПКА — СОЗДАТЬ ВРУЧНУЮ (только в режиме создания) -->
           <button v-if="!manualMode && !editMode" class="button-main" @click="manualMode = true">
-            Создать вручную штрихкод
+            Создать вручную
           </button>
 
-          <!-- КНОПКА — ОТМЕНИТЬ ручной режим (только manualMode + НЕ editMode) -->
           <button v-if="manualMode && !editMode" class="cancel-edit-btn" @click="cancelManualMode">
             Отменить
           </button>
 
-          <!-- КНОПКА — ОТМЕНИТЬ редактирование (только в editMode) -->
           <button v-if="editMode" class="cancel-edit-btn" @click="cancelEdit">
             Отменить
           </button>
         </div>
 
-        <!-- Поле ручного штрихкода (видно и при создании, и при редактировании) -->
         <div v-if="manualMode" class="manual-field">
           <input v-model="manualBarcode" placeholder="Введите штрихкод вручную" />
         </div>
 
-        <!-- === ФОТО === -->
+        <!-- Фото -->
         <div class="photo-section">
           <div v-if="!photoPreview" class="photo-btn" @click="openCameraModal">
             <i class="fa-solid fa-camera"></i> Сделать фото
@@ -100,6 +115,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -110,7 +126,6 @@
       <div class="grid">
         <div class="card" v-for="item in barcodes" :key="item.id">
 
-          <!-- Иконки редакт + удалить -->
           <div class="card-tools">
             <div class="card-tool-btn card-tool-edit" @click.stop="startEdit(item)">
               <i class="fa-solid fa-pen"></i>
@@ -119,67 +134,84 @@
               <i class="fa-solid fa-trash"></i>
             </div>
           </div>
-        
-          <!-- Чекбокс -->
+
           <div class="card-checkbox">
             <input type="checkbox" :value="item.id" v-model="selectedIds" />
           </div>
-        
-          <!-- ЛЕВАЯ ЧАСТЬ -->
+
           <div class="card-left">
-        
-            <!-- Баркод -->
             <svg :id="'g-' + item.id"></svg>
+
             <p class="code" :class="isMatch(item.barcode) ? 'highlight-row' : ''">
               {{ item.barcode }}
-            </p>        
-            <!-- Фото -->
+            </p>
+
             <div class="card-photo-box" v-if="item.photo">
-              <img :src="item.photo" class="card-photo" @click.stop="openPhoto(item.photo)">
+              <img :src="item.photo" class="card-photo" @click.stop="openPhoto(item.photo)" />
             </div>
             <p v-else class="no-photo-text">Без фото</p>
-        
           </div>
-        
-          <!-- ПРАВАЯ ЧАСТЬ -->
+
           <div class="card-right">
-        
-            <p :class="isMatch(item.product_name) ? 'highlight-row' : ''">
-              <b>Товар:</b> {{ item.product_name }}
-            </p>
-            <p :class="isMatch(item.sku) ? 'highlight-row' : ''">
-              <b>Артикул:</b> {{ item.sku }}
-            </p>            
-            <p :class="isMatch(item.contractor) ? 'highlight-row' : ''">
-              <b>Контрагент:</b> {{ item.contractor }}
-            </p>
-            <p :class="isMatch(item.price) ? 'highlight-row' : ''">
-              <b>Цена:</b> {{ item.price }}
-            </p>        
-            <!-- Чекбокс печати с инфо -->
-            <div class="print-options">
-              <label>
-                <input type="checkbox" v-model="item._withInfo">
-                с названием и ценой
-              </label>
+
+            <div class="card-information">
+              <p :class="isMatch(item.product_name) ? 'highlight-row' : ''">
+              <div class="information-title"><b>Товар:</b> </div>
+              <div class="information-text">{{ item.product_name }}</div>
+              </p>
+
+              <p :class="isMatch(item.sku) ? 'highlight-row' : ''">
+              <div class="information-title"><b>Артикул:</b>
+              </div>
+              <div class="information-text">{{ item.sku }}</div>
+              </p>
+
+              <p :class="isMatch(item.contractor) ? 'highlight-row' : ''">
+              <div class="information-title"><b>Контрагент:</b>
+              </div>
+              <div class="information-text">{{ item.contractor }}</div>
+              </p>
+
+              <p :class="isMatch(item.price) ? 'highlight-row' : ''">
+              <div class="information-title"><b>Цена:</b>
+              </div>
+              <div class="information-text">{{ item.price }}</div>
+              </p>
             </div>
-        
-            <!-- Размер и кнопка -->
+
+            <!-- Настройки печати одной -->
+            <div class="print-params">
+              <p class="params-title">Параметры:</p>
+
+              <div class="param-row-container">
+                <label class="param-row">
+                  <input type="checkbox" v-model="item._withName" />
+                  Название
+                </label>
+  
+                <label class="param-row">
+                  <input type="checkbox" v-model="item._withPrice" />
+                  Цена
+                </label>
+              </div>
+            </div>
+
             <div class="label-size-box">
               <div class="select-wrap">
                 <select v-model="item._size" class="label-size-select">
-                  <option v-for="s in labelSizes" :key="s.value" :value="s.value">{{ s.text }}</option>
+                  <option v-for="s in labelSizes" :key="s.value" :value="s.value">
+                    {{ s.text }}
+                  </option>
                 </select>
                 <i class="fa-solid fa-chevron-down select-arrow"></i>
               </div>
-        
+
               <button class="button-main" @click.stop="openPrint(item)">
                 <i class="fa-solid fa-print"></i> Печать
               </button>
             </div>
-        
           </div>
-        
+
         </div>
       </div>
     </div>
@@ -188,9 +220,11 @@
     <div v-if="cameraOpen" class="camera-overlay">
       <div class="camera-window">
         <video ref="video" autoplay playsinline class="cam-video"></video>
+
         <button class="btn-capture" @click="takePhoto">
           <i class="fa-solid fa-camera"></i>
         </button>
+
         <button class="btn-close" @click="closeCameraModal">Закрыть</button>
       </div>
     </div>
@@ -203,14 +237,17 @@
         </button>
       </div>
     </div>
+
   </div>
 </template>
+
 
 <script setup>
 import { ref, nextTick, onMounted } from "vue";
 import JsBarcode from "jsbarcode";
 
-const bulkWithInfo = ref(false);
+const bulkWithName = ref(false);
+const bulkWithPrice = ref(false);
 
 const manualMode = ref(false);
 const manualBarcode = ref("");
@@ -218,11 +255,11 @@ const manualBarcode = ref("");
 const labelSizes = [
   { value: "40x30", text: "40 × 30 мм" },
   { value: "58x40", text: "58 × 40 мм" },
+  { value: "42x25", text: "42 × 25 мм" },
 ];
 
 const bulkSize = ref(labelSizes[0].value);
 
-/* Уведомления */
 const message = ref("");
 const messageType = ref("");
 
@@ -232,7 +269,22 @@ const showMessage = (t, type = "info") => {
   setTimeout(() => (message.value = ""), 3000);
 };
 
-/* Режим редактирования */
+function applyBulkName() {
+  barcodes.value.forEach((i) => {
+    if (selectedIds.value.includes(i.id)) {
+      i._withName = bulkWithName.value;
+    }
+  });
+}
+
+function applyBulkPrice() {
+  barcodes.value.forEach((i) => {
+    if (selectedIds.value.includes(i.id)) {
+      i._withPrice = bulkWithPrice.value;
+    }
+  });
+}
+
 const editMode = ref(false);
 const editId = ref(null);
 
@@ -241,7 +293,6 @@ const article = ref("");
 const contractor = ref("");
 const price = ref("");
 
-/* Фото */
 const photoFile = ref(null);
 const photoPreview = ref(null);
 
@@ -250,14 +301,11 @@ function removePhoto() {
   photoPreview.value = null;
 }
 
-/* Список */
 const barcodes = ref([]);
 const selectedIds = ref([]);
 
-/* Поиск */
 const search = ref("");
 
-/* Модалы фото */
 const photoModalOpen = ref(false);
 const photoModalSrc = ref("");
 
@@ -269,7 +317,6 @@ function closePhoto() {
   photoModalOpen.value = false;
 }
 
-/* Камера */
 const cameraOpen = ref(false);
 const video = ref(null);
 let stream = null;
@@ -314,7 +361,6 @@ function takePhoto() {
   );
 }
 
-/* Загрузка списка */
 async function loadBarcodes() {
   const r = await fetch(
     "/api/get_barcodes.php?search=" + encodeURIComponent(search.value)
@@ -322,7 +368,8 @@ async function loadBarcodes() {
   barcodes.value = (await r.json()).map((b) => ({
     ...b,
     _size: "40x30",
-    _withInfo: false, // ← новая галочка
+    _withName: false,
+    _withPrice: false,
   }));
   renderGrid();
 }
@@ -333,20 +380,19 @@ function searchChanged() {
   timer = setTimeout(loadBarcodes, 300);
 }
 
-/* Создание */
 async function createBarcode() {
-
-  // --- 1. ВАЛИДАЦИЯ ПОЛЕЙ ---
   const nameLen = name.value.trim().length;
   const skuLen = article.value.trim().length;
   const contrLen = contractor.value.trim().length;
 
   if (nameLen < 2 && skuLen < 2 && contrLen < 2) {
-    showMessage("Введите название или артикул или контрагента (минимум 2 символа)", "error");
+    showMessage(
+      "Введите название или артикул или контрагента (минимум 2 символа)",
+      "error"
+    );
     return;
   }
 
-  // --- 2. ВЫБОР КОДА ---
   let code = "";
 
   if (manualMode.value) {
@@ -359,7 +405,6 @@ async function createBarcode() {
     code = await generateBarcode();
   }
 
-  // --- 3. ОТПРАВКА ---
   const form = new FormData();
   form.append("barcode", code);
   form.append("product_name", name.value);
@@ -376,25 +421,21 @@ async function createBarcode() {
 
   const data = await res.json();
 
-  // --- 4. ОШИБКА (дубликат) ---
   if (data.status === "error") {
     showMessage(data.message || "Ошибка при создании", "error");
     return;
   }
 
-  // --- 5. УСПЕХ ---
   showMessage("Создано!", "success");
   resetForm();
   await loadBarcodes();
 }
-
 
 function cancelManualMode() {
   manualMode.value = false;
   manualBarcode.value = "";
 }
 
-/* Генерация уникального баркода */
 function randDigit() {
   return Math.floor(Math.random() * 10);
 }
@@ -421,7 +462,6 @@ async function generateBarcode() {
   }
 }
 
-/* Редактирование */
 function startEdit(item) {
   editMode.value = true;
   editId.value = item.id;
@@ -434,7 +474,6 @@ function startEdit(item) {
   photoPreview.value = item.photo || null;
   photoFile.value = null;
 
-  // 🔥 включаем ручной режим для поля штрихкода
   manualMode.value = true;
   manualBarcode.value = item.barcode;
 
@@ -445,7 +484,6 @@ function cancelEdit() {
   resetForm();
 }
 
-/* Save edit */
 async function saveEdit() {
   const form = new FormData();
 
@@ -455,7 +493,6 @@ async function saveEdit() {
   form.append("contractor", contractor.value);
   form.append("price", price.value);
 
-  // 🔥 главное исправление — добавили barcode!
   form.append("barcode", manualBarcode.value.trim());
 
   if (photoFile.value) form.append("photo", photoFile.value);
@@ -475,7 +512,6 @@ async function saveEdit() {
   }
 }
 
-/* Reset form */
 function resetForm() {
   editMode.value = false;
   editId.value = null;
@@ -485,11 +521,10 @@ function resetForm() {
   price.value = "";
   removePhoto();
 
-  manualMode.value = false; // ← ВОТ СЮДА
-  manualBarcode.value = ""; // ← ВОТ СЮДА
+  manualMode.value = false;
+  manualBarcode.value = "";
 }
 
-/* Delete item */
 async function deleteItem(id) {
   if (!confirm("Удалить штрихкод?")) return;
 
@@ -503,16 +538,16 @@ async function deleteItem(id) {
   }
 }
 
-/* Печать одной */
 function openPrint(item) {
-  const withInfo = item._withInfo ? 1 : 0;
+  const withName = item._withName ? 1 : 0;
+  const withPrice = item._withPrice ? 1 : 0;
+
   window.open(
-    `/api/print.php?id=${item.id}&size=${item._size}&withInfo=${withInfo}`,
+    `/api/print.php?id=${item.id}&size=${item._size}&withName=${withName}&withPrice=${withPrice}`,
     "_blank"
   );
 }
 
-/* Печать выбранных */
 function printSelected() {
   const payload = {};
 
@@ -520,7 +555,8 @@ function printSelected() {
     if (selectedIds.value.includes(i.id)) {
       payload[i.id] = {
         size: bulkSize.value,
-        withInfo: i._withInfo,
+        withName: i._withName,
+        withPrice: i._withPrice,
       };
     }
   });
@@ -537,19 +573,10 @@ function applyBulkSize() {
   });
 }
 
-function applyBulkWithInfo() {
-  barcodes.value.forEach((i) => {
-    if (selectedIds.value.includes(i.id)) {
-      i._withInfo = bulkWithInfo.value;
-    }
-  });
-}
-
 function clearSelected() {
   selectedIds.value = [];
 }
 
-/* Рендер штрихов */
 function renderGrid() {
   nextTick(() => {
     barcodes.value.forEach((item) => {
@@ -576,6 +603,7 @@ function isMatch(text) {
 onMounted(loadBarcodes);
 </script>
 
+
 <style>
 /* =========================
    ГЛАВНЫЙ КОНТЕЙНЕР СПИСКА
@@ -589,8 +617,10 @@ onMounted(loadBarcodes);
 }
 
 .card-left {
-  width: 260px;            /* фиксированная ширина */
-  flex-shrink: 0;          /* не сжимается */
+  width: 260px;
+  /* фиксированная ширина */
+  flex-shrink: 0;
+  /* не сжимается */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -600,12 +630,36 @@ onMounted(loadBarcodes);
    ПРАВАЯ ЧАСТЬ
 ========================= */
 .card-right {
-  flex: 1;                 /* занимает всё оставшееся место */
+  flex: 1;
+  /* занимает всё оставшееся место */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
+.card-information {
+  width: 370px; /* фиксированная ширина */
+  display: flex;
+  gap: 35px;
+}
+
+.information-title {
+  min-width: 95px;    /* фикс - выравнивает левую часть */
+  flex-shrink: 0;     /* НЕ сжимается */
+}
+
+.information-text {
+  word-break: break-word; /* переносит длинные слова */
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+
+
+.param-row-container {
+  display: flex;
+  flex-direction: column;
+}
 .grid {
   display: flex;
   flex-direction: column;
@@ -626,7 +680,7 @@ onMounted(loadBarcodes);
   border: 1px solid #2a2a2a;
   border-radius: 14px;
 
-  padding: 20px;
+  padding: 20px 20px 20px 40px;
   display: flex;
   flex-direction: row;
   gap: 25px;
@@ -644,11 +698,11 @@ onMounted(loadBarcodes);
 
 .card-checkbox {
   position: absolute;
-  top: 5px;
-  left: 2px;
+  top: 21px;
+  left: 10px;
 }
 
-.card-checkbox input[type="checkbox"] {
+.card-checkbox input[type="checkbox"], .param-row input[type="checkbox"] {
   width: 22px;
   height: 22px;
   accent-color: #ffde59;
@@ -1250,5 +1304,4 @@ body {
 .photo-delete:hover {
   background: #800;
   transform: scale(1.05);
-}
-</style>
+}</style>
