@@ -145,11 +145,34 @@
             <p class="code" :class="isMatch(item.barcode) ? 'highlight-row' : ''">
               {{ item.barcode }}
             </p>
+<div class="print-params">
 
-            <div class="card-photo-box" v-if="item.photo">
-              <img :src="item.photo" class="card-photo" @click.stop="openPhoto(item.photo)" />
+              <div class="param-row-container">
+                <label class="param-row">
+                  <input type="checkbox" v-model="item._withName" />
+                  Название
+                </label>
+  
+                <label class="param-row">
+                  <input type="checkbox" v-model="item._withPrice" />
+                  Цена
+                </label>
+              </div>
+              <div class="label-size-box">
+              <div class="select-wrap">
+                <select v-model="item._size" class="label-size-select">
+                  <option v-for="s in labelSizes" :key="s.value" :value="s.value">
+                    {{ s.text }}
+                  </option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+
+              <button class="button-main" @click.stop="openPrint(item)">
+                <i class="fa-solid fa-print"></i> Печать
+              </button>
             </div>
-            <p v-else class="no-photo-text">Без фото</p>
+            </div>
           </div>
 
           <div class="card-right">
@@ -180,36 +203,11 @@
             </div>
 
             <!-- Настройки печати одной -->
-            <div class="print-params">
-              <p class="params-title">Параметры:</p>
-
-              <div class="param-row-container">
-                <label class="param-row">
-                  <input type="checkbox" v-model="item._withName" />
-                  Название
-                </label>
-  
-                <label class="param-row">
-                  <input type="checkbox" v-model="item._withPrice" />
-                  Цена
-                </label>
-              </div>
+            <div class="card-photo-box" v-if="item.photo">
+              <img :src="item.photo" class="card-photo" @click.stop="openPhoto(item.photo)" />
             </div>
+            <p v-else class="no-photo-text">Без фото</p>
 
-            <div class="label-size-box">
-              <div class="select-wrap">
-                <select v-model="item._size" class="label-size-select">
-                  <option v-for="s in labelSizes" :key="s.value" :value="s.value">
-                    {{ s.text }}
-                  </option>
-                </select>
-                <i class="fa-solid fa-chevron-down select-arrow"></i>
-              </div>
-
-              <button class="button-main" @click.stop="openPrint(item)">
-                <i class="fa-solid fa-print"></i> Печать
-              </button>
-            </div>
           </div>
 
         </div>
@@ -657,8 +655,8 @@ onMounted(loadBarcodes);
 
 
 .param-row-container {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: row;
 }
 .grid {
   display: flex;
@@ -766,12 +764,10 @@ svg {
 
 /* фото внутри карточки */
 .card-photo-box {
-  margin-top: 15px;
   width: 100%;
 }
 
 .card-photo {
-  width: 100%;
   height: 180px;
   object-fit: cover;
   border-radius: 12px;
@@ -1278,6 +1274,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 10px;
 }
 
 .photo-btn:hover {
@@ -1304,4 +1301,5 @@ body {
 .photo-delete:hover {
   background: #800;
   transform: scale(1.05);
-}</style>
+}
+</style>
