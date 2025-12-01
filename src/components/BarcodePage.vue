@@ -4,11 +4,7 @@
     <div v-if="selectedIds.length >= 2" class="selected-controls">
       <!-- общий выбор размера -->
       <div class="bulk-size-select-wrap">
-        <select
-          v-model="bulkSize"
-          @change="applyBulkSize"
-          class="bulk-size-select"
-        >
+        <select v-model="bulkSize" @change="applyBulkSize" class="bulk-size-select">
           <option v-for="s in labelSizes" :key="s.value" :value="s.value">
             {{ s.text }}
           </option>
@@ -17,11 +13,7 @@
 
       <!-- общий чекбокс с названием и ценой -->
       <label class="bulk-info-check">
-        <input
-          type="checkbox"
-          v-model="bulkWithInfo"
-          @change="applyBulkWithInfo"
-        />
+        <input type="checkbox" v-model="bulkWithInfo" @change="applyBulkWithInfo" />
         с названием и ценой
       </label>
 
@@ -43,12 +35,7 @@
       <!-- ПОИСК -->
       <div class="search-box">
         <h2 class="block-title">Поиск</h2>
-        <input
-          v-model="search"
-          class="search-input"
-          placeholder="Поиск"
-          @input="searchChanged"
-        />
+        <input v-model="search" class="search-input" placeholder="Поиск" @input="searchChanged" />
       </div>
 
       <!-- СОЗДАНИЕ / РЕДАКТИРОВАНИЕ -->
@@ -68,25 +55,17 @@
           <input v-model="price" placeholder="Цена (необязательно)" />
 
           <!-- КНОПКА — СОХРАНИТЬ / СОЗДАТЬ -->
-          <button @click="editMode ? saveEdit() : createBarcode()">
+          <button class="button-main" @click="editMode ? saveEdit() : createBarcode()">
             {{ editMode ? "Сохранить" : "Создать" }}
           </button>
 
           <!-- КНОПКА — СОЗДАТЬ ВРУЧНУЮ (только в режиме создания) -->
-          <button
-            v-if="!manualMode && !editMode"
-            class="manual-btn"
-            @click="manualMode = true"
-          >
+          <button v-if="!manualMode && !editMode" class="button-main" @click="manualMode = true">
             Создать вручную штрихкод
           </button>
 
           <!-- КНОПКА — ОТМЕНИТЬ ручной режим (только manualMode + НЕ editMode) -->
-          <button
-            v-if="manualMode && !editMode"
-            class="cancel-edit-btn"
-            @click="cancelManualMode"
-          >
+          <button v-if="manualMode && !editMode" class="cancel-edit-btn" @click="cancelManualMode">
             Отменить
           </button>
 
@@ -98,10 +77,7 @@
 
         <!-- Поле ручного штрихкода (видно и при создании, и при редактировании) -->
         <div v-if="manualMode" class="manual-field">
-          <input
-            v-model="manualBarcode"
-            placeholder="Введите штрихкод вручную"
-          />
+          <input v-model="manualBarcode" placeholder="Введите штрихкод вручную" />
         </div>
 
         <!-- === ФОТО === -->
@@ -133,70 +109,77 @@
 
       <div class="grid">
         <div class="card" v-for="item in barcodes" :key="item.id">
-          <!-- ЧЕКБОКС -->
-          <div class="card-checkbox">
-            <input type="checkbox" :value="item.id" v-model="selectedIds" />
-          </div>
 
-          <!-- ИНСТРУМЕНТЫ -->
+          <!-- Иконки редакт + удалить -->
           <div class="card-tools">
-            <div
-              class="card-tool-btn card-tool-edit"
-              @click.stop="startEdit(item)"
-            >
+            <div class="card-tool-btn card-tool-edit" @click.stop="startEdit(item)">
               <i class="fa-solid fa-pen"></i>
             </div>
-
-            <div
-              class="card-tool-btn card-tool-delete"
-              @click.stop="deleteItem(item.id)"
-            >
+            <div class="card-tool-btn card-tool-delete" @click.stop="deleteItem(item.id)">
               <i class="fa-solid fa-trash"></i>
             </div>
           </div>
-
-          <!-- БАРКОД -->
-          <svg :id="'g-' + item.id" class="card-svg"></svg>
-          <p class="code">{{ item.barcode }}</p>
-
-          <p v-if="item.product_name"><b>Товар:</b> {{ item.product_name }}</p>
-          <p v-if="item.sku"><b>Артикул:</b> {{ item.sku }}</p>
-          <p v-if="item.contractor"><b>Контрагент:</b> {{ item.contractor }}</p>
-          <p v-if="item.price"><b>Цена:</b> {{ item.price }}</p>
-
-          <!-- Фото -->
-          <div v-if="item.photo" class="card-photo-box">
-            <img
-              :src="item.photo"
-              class="card-photo"
-              @click.stop="openPhoto(item.photo)"
-            />
+        
+          <!-- Чекбокс -->
+          <div class="card-checkbox">
+            <input type="checkbox" :value="item.id" v-model="selectedIds" />
           </div>
-          <p v-else class="no-photo-text">Без фото</p>
-
-          <!-- галочка "с названием" -->
-          <div class="print-options">
-            <label>
-              <input type="checkbox" v-model="item._withInfo" />
-              с названием и ценой
-            </label>
-          </div>
-
-          <!-- Размер + печать -->
-          <div class="label-size-box">
-            <div class="select-wrap">
-              <select v-model="item._size" class="label-size-select">
-                <option v-for="s in labelSizes" :key="s.value" :value="s.value">
-                  {{ s.text }}
-                </option>
-              </select>
-              <i class="fa-solid fa-chevron-down select-arrow"></i>
+        
+          <!-- ЛЕВАЯ ЧАСТЬ -->
+          <div class="card-left">
+        
+            <!-- Баркод -->
+            <svg :id="'g-' + item.id"></svg>
+            <p class="code" :class="isMatch(item.barcode) ? 'highlight-row' : ''">
+              {{ item.barcode }}
+            </p>        
+            <!-- Фото -->
+            <div class="card-photo-box" v-if="item.photo">
+              <img :src="item.photo" class="card-photo" @click.stop="openPhoto(item.photo)">
             </div>
-
-            <button class="print-btn" @click.stop="openPrint(item)">
-              <i class="fa-solid fa-print"></i> Печать
-            </button>
+            <p v-else class="no-photo-text">Без фото</p>
+        
           </div>
+        
+          <!-- ПРАВАЯ ЧАСТЬ -->
+          <div class="card-right">
+        
+            <p :class="isMatch(item.product_name) ? 'highlight-row' : ''">
+              <b>Товар:</b> {{ item.product_name }}
+            </p>
+            <p :class="isMatch(item.sku) ? 'highlight-row' : ''">
+              <b>Артикул:</b> {{ item.sku }}
+            </p>            
+            <p :class="isMatch(item.contractor) ? 'highlight-row' : ''">
+              <b>Контрагент:</b> {{ item.contractor }}
+            </p>
+            <p :class="isMatch(item.price) ? 'highlight-row' : ''">
+              <b>Цена:</b> {{ item.price }}
+            </p>        
+            <!-- Чекбокс печати с инфо -->
+            <div class="print-options">
+              <label>
+                <input type="checkbox" v-model="item._withInfo">
+                с названием и ценой
+              </label>
+            </div>
+        
+            <!-- Размер и кнопка -->
+            <div class="label-size-box">
+              <div class="select-wrap">
+                <select v-model="item._size" class="label-size-select">
+                  <option v-for="s in labelSizes" :key="s.value" :value="s.value">{{ s.text }}</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+        
+              <button class="button-main" @click.stop="openPrint(item)">
+                <i class="fa-solid fa-print"></i> Печать
+              </button>
+            </div>
+        
+          </div>
+        
         </div>
       </div>
     </div>
@@ -583,23 +566,246 @@ function renderGrid() {
   });
 }
 
+function isMatch(text) {
+  if (!text) return false;
+  const s = search.value.trim().toLowerCase();
+  if (!s) return false;
+  return text.toString().toLowerCase().includes(s);
+}
+
 onMounted(loadBarcodes);
 </script>
 
 <style>
-.manual-btn {
-  padding: 12px 16px;
-  background: #555;
-  border: none;
-  border-radius: 10px;
-  color: #ffde59;
+/* =========================
+   ГЛАВНЫЙ КОНТЕЙНЕР СПИСКА
+========================= */
+
+.highlight-row {
+  background: #ffde59 !important;
+  color: #000 !important;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.card-left {
+  width: 260px;            /* фиксированная ширина */
+  flex-shrink: 0;          /* не сжимается */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* =========================
+   ПРАВАЯ ЧАСТЬ
+========================= */
+.card-right {
+  flex: 1;                 /* занимает всё оставшееся место */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 30px;
+}
+
+/* =========================
+   КАРТОЧКА
+========================= */
+
+.card {
+  position: relative;
+  width: 1000px;
+  margin: 0 auto;
+
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+
+  padding: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 25px;
+
+  min-height: 260px;
+  box-sizing: border-box;
+
+  transition: 0.25s;
+}
+
+.card:hover {
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+}
+
+
+.card-checkbox {
+  position: absolute;
+  top: 5px;
+  left: 2px;
+}
+
+.card-checkbox input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #ffde59;
   cursor: pointer;
-  font-weight: bold;
+}
+
+
+.card-tools {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+
+  display: flex;
+  gap: 10px;
+}
+
+.card-tool-btn {
+  width: 36px;
+  height: 36px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
   transition: 0.2s;
 }
-.manual-btn:hover {
-  background: #666;
+
+.card-tool-edit {
+  color: #ffde59;
 }
+
+.card-tool-delete {
+  color: #ff6b6b;
+}
+
+.card-tool-btn:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+/* =========================
+   ЛЕВАЯ ЧАСТЬ (баркод + код + фото)
+========================= */
+
+
+
+svg {
+  width: 100%;
+  max-width: 240px;
+}
+
+.code {
+  margin-top: 8px;
+  color: #ffde59;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* фото внутри карточки */
+.card-photo-box {
+  margin-top: 15px;
+  width: 100%;
+}
+
+.card-photo {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.no-photo-text {
+  margin-top: 20px;
+  color: #777;
+  font-size: 14px;
+}
+
+
+
+/* =========================
+   ЧЕКБОКС "с названием"
+========================= */
+
+.print-options {
+  margin: 10px 0 15px 0;
+  font-size: 14px;
+  color: #ffde59;
+}
+
+.print-options label {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.print-options input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ffde59;
+  cursor: pointer;
+}
+
+/* =========================
+   НИЖНИЙ БЛОК — ВЫБОР РАЗМЕРА
+========================= */
+
+.label-size-box {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #333;
+
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* селект */
+.select-wrap {
+  position: relative;
+  width: 180px;
+}
+
+.label-size-select {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  background: #1e1e1e;
+  color: #ffde59;
+  border: 1px solid #444;
+  border-radius: 10px;
+  cursor: pointer;
+  appearance: none;
+  font-size: 14px;
+}
+
+.label-size-select:hover {
+  border-color: #666;
+}
+
+/* стрелка */
+.select-wrap .select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #ffde59;
+  pointer-events: none;
+}
+
+
+
+
 
 .manual-field input {
   margin-top: 10px;
@@ -611,89 +817,8 @@ onMounted(loadBarcodes);
   width: 100%;
 }
 
-.print-options {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #ffde59;
-}
 
-.print-options label {
-  cursor: pointer;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
 
-.print-options input[type="checkbox"] {
-  transform: scale(1.3);
-  cursor: pointer;
-}
-
-/* === КРАСИВЫЕ ИКОНКИ В КАРТОЧКЕ === */
-
-/* общий контейнер для иконок */
-.card-tools {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  gap: 8px;
-  z-index: 20;
-}
-
-/* кнопка-иконка */
-.card-tool-btn {
-  width: 34px;
-  height: 34px;
-  background: #222;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 16px;
-  border: 1px solid #333;
-}
-.card-tool-btn:hover {
-  background: #333;
-  transform: translateY(-2px);
-}
-
-/* редактирование */
-.card-tool-edit {
-  color: #ffde59;
-}
-.card-tool-edit:hover {
-  color: #fff7a6;
-  border-color: #ffde59;
-}
-
-/* удаление */
-.card-tool-delete {
-  color: #ff6b6b;
-}
-.card-tool-delete:hover {
-  color: #ff8d8d;
-  border-color: #ff6b6b;
-}
-
-/* ЧЕКБОКС СЛЕВА */
-.card-checkbox {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 20;
-}
-
-/* увеличенный красивый чекбокс */
-.card-checkbox input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  accent-color: #ffde59;
-  cursor: pointer;
-}
 
 .selected-controls {
   position: fixed;
@@ -705,13 +830,6 @@ onMounted(loadBarcodes);
   z-index: 9999;
 }
 
-.floating-print {
-  background: #ffde59;
-  padding: 14px 22px;
-  border-radius: 12px;
-  font-weight: bold;
-  border: none;
-}
 
 .floating-cancel {
   background: #333;
@@ -730,9 +848,7 @@ onMounted(loadBarcodes);
   font-weight: bold;
 }
 
-.card {
-  position: relative;
-}
+
 
 /* === ПЛАВАЮЩАЯ КНОПКА ПЕЧАТИ === */
 .floating-print {
@@ -751,6 +867,7 @@ onMounted(loadBarcodes);
   box-shadow: 0 0 15px #000;
   transition: 0.2s;
 }
+
 .floating-print:hover {
   background: #ffe88b;
   transform: translateY(-3px);
@@ -767,11 +884,13 @@ onMounted(loadBarcodes);
   z-index: 9999;
   animation: fadeInOut 3s ease-out;
 }
+
 .msg-absolute.success {
   background: #1c4821;
   color: #baffc4;
   border: 1px solid #25a134;
 }
+
 .msg-absolute.error {
   background: #5b1a1a;
   color: #ffd5d5;
@@ -783,13 +902,16 @@ onMounted(loadBarcodes);
     opacity: 0;
     transform: translateY(-8px);
   }
+
   15% {
     opacity: 1;
     transform: translateY(0);
   }
+
   80% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
     transform: translateY(-8px);
@@ -801,6 +923,7 @@ body {
   background: #0d0d0d;
   color: white;
 }
+
 .page {
   max-width: 1400px;
   margin: auto;
@@ -855,7 +978,7 @@ body {
   color: white;
 }
 
-.create-row button {
+.button-main {
   padding: 12px 20px;
   background: #ffb400;
   border-radius: 10px;
@@ -864,7 +987,8 @@ body {
   cursor: pointer;
   transition: 0.2s;
 }
-.create-row button:hover {
+
+.button-main:hover {
   background: #ffcd4d;
 }
 
@@ -875,94 +999,19 @@ body {
   padding: 16px 0 26px;
   text-align: center;
 }
+
 .latest-svg {
   width: 160px !important;
   margin: auto;
 }
+
 .latest-code {
   color: #ffde59;
   font-size: 17px;
   margin-top: 6px;
 }
 
-/* ——— СЕТКА ——— */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
-}
 
-/* ——— КАРТОЧКА ——— */
-.card {
-  background: #1a1a1a;
-  padding: 16px;
-  border-radius: 14px;
-  border: 1px solid #2a2a2a;
-  transition: 0.25s cubic-bezier(0.17, 0.67, 0.43, 1.01);
-
-  /* 🔥 ВАЖНО – делаем карточку flex-контейнером */
-  display: flex;
-  flex-direction: column;
-
-  /* 🔥 фиксируем высоту (можешь изменить цифру) */
-  min-height: 370px;
-
-  /* чтобы hover не конфликтовал */
-  transform: translateY(0);
-}
-
-.card:hover {
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.533);
-}
-
-.card-svg {
-  width: 100%;
-  margin-top: 30px;
-}
-
-.code {
-  margin-top: 6px;
-  color: #ffde59;
-  font-weight: bold;
-}
-
-/* ——— МИНИ-ФОТО ——— */
-.card-photo-box {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-}
-
-.card-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 12px;
-  transition: 0.25s cubic-bezier(0.17, 0.67, 0.43, 1.01);
-  box-shadow: 0 0 0 #ffffff00;
-  cursor: pointer;
-}
-
-/* Эффект при наведении */
-.card-photo:hover {
-  transform: scale(1.03) translateY(-3px);
-}
-
-/* ——— ВЫБОР РАЗМЕРА ——— */
-.label-size-box {
-  margin-top: auto; /* 🔥 отправляет блок вниз */
-  padding-top: 12px;
-  border-top: 1px solid #333;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Dropdown wrap */
-.select-wrap {
-  position: relative;
-  width: 100%;
-}
 
 .bulk-size-select {
   padding: 10px 40px 10px 12px;
@@ -1001,60 +1050,8 @@ body {
   pointer-events: none;
 }
 
-.label-size-select {
-  width: 100%;
-  padding: 10px 40px 10px 12px;
-  background: #1e1e1e;
-  color: #ffde59;
-  border: 1px solid #444;
-  border-radius: 10px;
-  cursor: pointer;
-  appearance: none;
-  transition: 0.2s;
-  font-size: 14px;
-}
-.label-size-select:hover {
-  border-color: #555;
-}
-.label-size-select:focus {
-  border-color: #ffde59;
-}
 
-/* стрелка */
-.select-arrow {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #ffde59;
-  font-size: 14px;
-  pointer-events: none;
-  transition: 0.2s;
-}
 
-.select-wrap:focus-within .select-arrow {
-  transform: translateY(-50%) rotate(180deg);
-}
-
-/* ——— КНОПКА ПЕЧАТЬ ——— */
-.print-btn {
-  background: #ffb400;
-  color: black;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.print-btn:hover {
-  background: #ffca4d;
-  transform: translateY(-2px);
-}
-
-.no-photo-text {
-  color: grey;
-}
 
 /* ——— МОДАЛ ФОТО ——— */
 .photo-modal-overlay {
@@ -1076,6 +1073,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1094,6 +1092,7 @@ body {
     transform: scale(0.85);
     opacity: 0;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -1127,6 +1126,7 @@ body {
   box-shadow: 0 0 10px #0008;
   transition: 0.2s;
 }
+
 .photo-modal-close:hover {
   background: #ffe88b;
 }
@@ -1172,6 +1172,7 @@ body {
   margin: 15px auto 0;
   transition: 0.2s;
 }
+
 .btn-capture:hover {
   transform: scale(1.1);
 }
@@ -1186,6 +1187,7 @@ body {
   border-radius: 10px;
   cursor: pointer;
 }
+
 .btn-close:hover {
   background: #444;
 }
@@ -1201,6 +1203,7 @@ body {
 .photo-controls {
   padding-top: 15px;
 }
+
 /* кнопки под фото */
 .photo-buttons-row {
   margin-top: 10px;
@@ -1222,6 +1225,7 @@ body {
   align-items: center;
   gap: 10px;
 }
+
 .photo-btn:hover {
   background: #333;
   transform: translateY(-2px);
@@ -1242,6 +1246,7 @@ body {
   cursor: pointer;
   transition: 0.2s;
 }
+
 .photo-delete:hover {
   background: #800;
   transform: scale(1.05);
