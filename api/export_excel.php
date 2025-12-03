@@ -4,7 +4,6 @@ require_once __DIR__ . "/db.php";
 header("Content-Type: text/csv; charset=utf-8");
 header("Content-Disposition: attachment; filename=export_barcodes.csv");
 
-// Чтобы русские символы нормально открывались в Excel
 echo "\xEF\xBB\xBF"; // UTF-8 BOM
 
 $idsRaw = $_GET["ids"] ?? "[]";
