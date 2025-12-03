@@ -11666,7 +11666,7 @@
 	  FreeSerifBoldItalic.sfd,
 	  FreeSerif.sfd,
 	  FreeSerifBold.sfd: Added to FreeSerif* uni2E17
-	  double hyphen In pursuit of bug #22267: Request Double-Hyphen
+	  double hyphen In pursuit of bug var(--background-input)67: Request Double-Hyphen
 	  Sign https://savannah.gnu.org/bugs/?22267
 
 2008-02-18 22:37 +0000 [r501]  Stevan_White:
@@ -11687,7 +11687,7 @@
 	* FreeSerifItalic.sfd,
 	  FreeSerif.sfd: Slightly increased the height
 	  of Cyrillic Ðž (U+0438) to be even with other similar glyphs
-	  (e.g. U+043D) Remedies bug #22289: The Cyrillic Ðž letter in
+	  (e.g. U+043D) Remedies bug var(--background-input)89: The Cyrillic Ðž letter in
 	  FreeSerif isn't high enough
 	  https://savannah.gnu.org/bugs/index.php?22289
 
@@ -11807,7 +11807,7 @@
 
 	* FreeSerif.sfd: This is from an anonymous patch
 	  patch #5924: correct postscript name for cyrillic yat' Wednesday
-	  05/09/2007 at 18:25 (now bug #22265: correct postscript name for
+	  05/09/2007 at 18:25 (now bug var(--background-input)65: correct postscript name for
 	  cyrillic yat') The postscript name of the two cyrillic letters
 	  yat' and YAT' (0x0462) is not correct, so this fixes it: I found
 	  confirmation of the PostScript names here

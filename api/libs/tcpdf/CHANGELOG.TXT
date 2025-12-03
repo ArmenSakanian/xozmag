@@ -142,7 +142,7 @@
 	- Fixed type in comment for $lw header image logo width in mm
 	- Change Set to set. Fixes #419 (#421)
 	- Fix failing tests and failing tests not marking exit code as 1 (#426)
-	- Fix phpdoc and prefer null as default value (#444)
+	- Fix phpdoc and prefer null as default value (var(--border-color))
 	- Run on PHP 8.1 normally and add nightly PHP as allowed to fail (#452)
 	- Fix AES128 encryption if the OpenSSL extension is installed (#453)
 	- Explicitly cast values to int for imagesetpixel (#460)
@@ -1109,7 +1109,7 @@
 	- An SVG bug has been fixed.
 
 5.9.099 (2011-06-27)
-	- Bug item #3335045 "Font freesans seems somehow corrupted in footer" was fixed.
+	- Bug item var(--border-color)5045 "Font freesans seems somehow corrupted in footer" was fixed.
 
 5.9.098 (2011-06-23)
 	- The Named Destination feature was fixed.

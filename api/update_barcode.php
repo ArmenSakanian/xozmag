@@ -8,6 +8,7 @@ if ($id <= 0) {
     exit;
 }
 
+/* === ПОЛУЧАЕМ ТЕКУЩУЮ ЗАПИСЬ === */
 $stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
 $stmt->execute([$id]);
 $item = $stmt->fetch();
@@ -17,43 +18,63 @@ if (!$item) {
     exit;
 }
 
+/* === ДАННЫЕ ИЗ ФОРМЫ === */
 $name       = $_POST["product_name"] ?? "";
 $sku        = $_POST["sku"] ?? "";
 $contractor = $_POST["contractor"] ?? "";
 $price      = $_POST["price"] ?? "";
+$stock      = $_POST["stock"] ?? $item["stock"];
 $barcode    = $_POST["barcode"] ?? $item["barcode"];
-$photo_url  = $item["photo"];
 
-/* Удаление фотографии */
+$photo_url  = $item["photo"]; // текущее фото
+
+/* === 1. УДАЛЕНИЕ ФОТО ЕСЛИ НАЖАТА КНОПКА "УДАЛИТЬ" === */
 if (isset($_POST["remove_photo"])) {
+
+    if (!empty($photo_url)) {
+        $oldPath = $_SERVER["DOCUMENT_ROOT"] . $photo_url;
+        if (file_exists($oldPath)) unlink($oldPath);
+    }
+
     $photo_url = null;
 }
 
-/* Новое фото */
+/* === 2. НОВОЕ ФОТО === */
 if (!empty($_FILES["photo"]["tmp_name"])) {
 
-    $dir = __DIR__ . "/../uploads/";
+    // удалить старое фото
+    if (!empty($photo_url)) {
+        $oldPath = $_SERVER["DOCUMENT_ROOT"] . $photo_url;
+        if (file_exists($oldPath)) unlink($oldPath);
+    }
+
+    // директория
+    $dir = $_SERVER["DOCUMENT_ROOT"] . "/photo_product/";
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 
-    $fname = "photo_" . time() . "_" . rand(1000, 9999) . ".jpg";
-    $path  = $dir . $fname;
+    // новое имя файла — КАК ПРИ СОЗДАНИИ
+    $ext = pathinfo($_FILES["photo"]["name"], PATHINFO_EXTENSION);
+    $fname = $barcode . "_" . time() . "." . $ext;
 
+    // путь
+    $path = $dir . $fname;
+
+    // сохраняем файл
     if (move_uploaded_file($_FILES["photo"]["tmp_name"], $path)) {
-        $photo_url = "/uploads/" . $fname;
+        $photo_url = "/photo_product/" . $fname;
     }
 }
 
-/* Обновление */
+/* === 3. ОБНОВЛЯЕМ В БАЗЕ === */
 $stmt = $pdo->prepare("
     UPDATE barcodes
-    SET barcode = ?, product_name = ?, sku = ?, contractor = ?, price = ?, photo = ?
+    SET barcode = ?, product_name = ?, sku = ?, contractor = ?, price = ?, stock = ?, photo = ?
     WHERE id = ?
-
 ");
 
-$stmt->execute([$barcode, $name, $sku, $contractor, $price, $photo_url, $id]);
+$stmt->execute([$barcode, $name, $sku, $contractor, $price, $stock, $photo_url, $id]);
 
-/* Обновлённая запись */
+/* === 4. ВОЗВРАЩАЕМ ОБНОВЛЁННУЮ ЗАПИСЬ === */
 $stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
 $stmt->execute([$id]);
 

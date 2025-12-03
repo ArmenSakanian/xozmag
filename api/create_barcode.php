@@ -8,6 +8,7 @@ $name       = trim($_POST['product_name'] ?? "");
 $sku        = trim($_POST['sku'] ?? "");
 $contractor = trim($_POST['contractor'] ?? "");
 $price      = trim($_POST['price'] ?? "");
+$stock      = trim($_POST['stock'] ?? ""); // ← НОВОЕ ПОЛЕ
 
 /* === ВАЛИДАЦИЯ ПОЛЕЙ === */
 if (!$code) {
@@ -38,12 +39,12 @@ if (!empty($_FILES['photo']['tmp_name'])) {
     }
 }
 
-/* === ВСТАВКА В БАЗУ С ЛОВЛЕЙ ОШИБОК === */
+/* === ВСТАВКА В БАЗУ === */
 try {
 
     $stmt = $pdo->prepare("
-        INSERT INTO barcodes (barcode, product_name, sku, contractor, price, photo, created_at)
-        VALUES (:barcode, :name, :sku, :contractor, :price, :photo, NOW())
+        INSERT INTO barcodes (barcode, product_name, sku, contractor, price, stock, photo, created_at)
+        VALUES (:barcode, :name, :sku, :contractor, :price, :stock, :photo, NOW())
     ");
 
     $stmt->execute([
@@ -52,12 +53,12 @@ try {
         ":sku"        => $sku,
         ":contractor" => $contractor,
         ":price"      => $price,
+        ":stock"      => $stock,
         ":photo"      => $photoPath
     ]);
 
 } catch (PDOException $e) {
 
-    // Ошибка дубликата
     if ($e->errorInfo[1] == 1062) {
         echo json_encode([
             "status" => "error",
@@ -66,7 +67,6 @@ try {
         exit;
     }
 
-    // Другая ошибка
     echo json_encode([
         "status" => "error",
         "message" => "Ошибка базы данных"

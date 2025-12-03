@@ -9,6 +9,23 @@ if ($id <= 0) {
     exit;
 }
 
+// Найдём запись, чтобы удалить фото
+$stmt = $pdo->prepare("SELECT photo FROM barcodes WHERE id = ?");
+$stmt->execute([$id]);
+$item = $stmt->fetch();
+
+if (!$item) {
+    echo json_encode(["status" => "error", "msg" => "not found"]);
+    exit;
+}
+
+// Удаляем фото с диска
+if (!empty($item["photo"])) {
+    $path = $_SERVER["DOCUMENT_ROOT"] . $item["photo"];
+    if (file_exists($path)) unlink($path);
+}
+
+// Удаляем строку
 $stmt = $pdo->prepare("DELETE FROM barcodes WHERE id = ?");
 $stmt->execute([$id]);
 
