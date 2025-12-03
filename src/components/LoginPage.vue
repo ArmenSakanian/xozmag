@@ -15,8 +15,9 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
-const emit = defineEmits(["success"]);
+const router = useRouter();
 
 const login = ref("");
 const password = ref("");
@@ -38,12 +39,13 @@ async function submit() {
 
   if (data.status === "success") {
     localStorage.setItem("token", data.token);
-    emit("success");
+    router.push("/barcode");     // ← после входа открываем barcode
   } else {
     error.value = data.message;
   }
 }
 </script>
+
 
 <style>
 .login-wrap {
