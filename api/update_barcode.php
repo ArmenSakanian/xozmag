@@ -49,7 +49,7 @@ if (!empty($_FILES["photo"]["tmp_name"])) {
     }
 
     // директория
-    $dir = $_SERVER["DOCUMENT_ROOT"] . "/photo_product/";
+    $dir = $_SERVER["DOCUMENT_ROOT"] . "/photo_product_barcode/";
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 
     // новое имя файла — КАК ПРИ СОЗДАНИИ
@@ -61,7 +61,7 @@ if (!empty($_FILES["photo"]["tmp_name"])) {
 
     // сохраняем файл
     if (move_uploaded_file($_FILES["photo"]["tmp_name"], $path)) {
-        $photo_url = "/photo_product/" . $fname;
+        $photo_url = "/photo_product_barcode/" . $fname;
     }
 }
 

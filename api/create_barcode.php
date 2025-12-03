@@ -32,10 +32,10 @@ if (!empty($_FILES['photo']['tmp_name'])) {
     $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
     $fileName = $code . "_" . time() . "." . $ext;
 
-    $uploadPath = __DIR__ . '/../photo_product/' . $fileName;
+    $uploadPath = __DIR__ . '/../photo_product_barcode/' . $fileName;
 
     if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
-        $photoPath = '/photo_product/' . $fileName;
+        $photoPath = '/photo_product_barcode/' . $fileName;
     }
 }
 
