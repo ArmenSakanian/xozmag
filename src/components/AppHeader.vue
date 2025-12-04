@@ -12,9 +12,9 @@
       <!-- ДЕСКТОП МЕНЮ -->
       <nav class="nav">
         <a href="/product" class="nav-item">Каталог</a>
-        <a href="#" class="nav-item">Товары</a>
-        <a href="#about" class="nav-item">О нас</a>
-        <a href="#" class="nav-item">Контакты</a>
+<a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
+<a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+
       </nav>
 
       <!-- БУРГЕР -->
@@ -29,9 +29,9 @@
     <!-- МОБИЛЬНОЕ МЕНЮ -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
       <a href="/product" class="mobile-item" @click="closeMenu">Каталог</a>
-      <a href="#" class="mobile-item" @click="closeMenu">Товары</a>
-      <a href="#about" class="mobile-item" @click="closeMenu">О нас</a>
-      <a href="#" class="mobile-item" @click="closeMenu">Контакты</a>
+<a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
+<a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+
     </div>
 
   </header>
@@ -42,9 +42,25 @@ import { ref } from "vue";
 
 const mobileOpen = ref(false);
 
-function closeMenu() {
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.log("Нет элемента:", id);
+    return;
+  }
+
+  const headerHeight = document.querySelector(".header").offsetHeight;
+
+  const offset = el.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+
+  window.scrollTo({
+    top: offset,
+    behavior: "smooth"
+  });
+
   mobileOpen.value = false;
 }
+
 </script>
 
 <style scoped>
@@ -107,6 +123,7 @@ function closeMenu() {
   position: relative;
   text-decoration: none;
   padding-bottom: 4px;
+  cursor: pointer;
 }
 
 /* Линия снизу — по умолчанию скрыта */
@@ -192,6 +209,7 @@ function closeMenu() {
   text-decoration: none;
   position: relative;
   padding-bottom: 4px;
+  cursor: pointer;
 }
 
 .mobile-item::after {
