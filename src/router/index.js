@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import HomePage from "../components/HomePage.vue";
-import LoginPage from "../components/LoginPage.vue";
-import BarcodePage from "../components/BarcodePage.vue";
+import HomePage from "../page/HomePage.vue";
+import LoginPage from "../page/LoginPage.vue";
+import BarcodePage from "../page/BarcodePage.vue";
+import ProductPage from "../page/ProductPage.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
-
+  { path: "/product", name: "product", component: ProductPage },
   { path: "/login", name: "login", component: LoginPage },
 
   {

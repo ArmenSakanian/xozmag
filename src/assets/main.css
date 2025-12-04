@@ -1,0 +1,21 @@
+:root {
+  --background: #0d0d0d;
+  --background-container: #161616;
+  --background-input: #222;
+  --border-color: #333;
+  --accent-color: #ff9900;
+  --cancel-color: #666;
+  --delete-color: #ff4444;
+  --unactive: #777;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: white;
+}

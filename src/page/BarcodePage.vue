@@ -730,19 +730,7 @@ onMounted(loadBarcodes);
 </script>
 
 <style>
-:root {
-  --background: #0d0d0d;
-  --background-container: #161616;
-  --background-input: #222;
-  --border-color: #333;
-  --accent-color: #ff9900;
-  --cancel-color: #666;
-  --delete-color: #ff4444;
-  --unactive: #777;
-}
-/* =========================
-   ГЛАВНЫЙ КОНТЕЙНЕР СПИСКА
-========================= */
+
 
 .highlight-row {
   background: var(--delete-color) !important;
@@ -1138,11 +1126,7 @@ background: var(--delete-color);
   }
 }
 
-/* ——— ОСНОВА ——— */
-body {
-  background: var(--background);
-  color: white;
-}
+
 
 .page {
   margin: 0 auto;
