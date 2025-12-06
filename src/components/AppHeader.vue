@@ -5,7 +5,7 @@
       <!-- ЛОГО -->
       <div class="logo">
         <a href="/">
-        <img src="@/assets/logo.png" alt="Logo" />
+        <img src="@/assets/logo.webp" alt="Logo" />
         <h1>Все Для Дома</h1></a>
       </div>
 
@@ -14,6 +14,7 @@
         <a href="/product" class="nav-item">Каталог</a>
 <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
 <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+<a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
 
       </nav>
 
@@ -31,6 +32,7 @@
       <a href="/product" class="mobile-item" @click="closeMenu">Каталог</a>
 <a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
 <a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+<a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
 
     </div>
 
@@ -38,30 +40,62 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 const mobileOpen = ref(false);
+const route = useRoute();
 
+// ============================
+//   ПЕРЕХОД И СКРОЛЛ
+// ============================
 function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (!el) {
-    console.log("Нет элемента:", id);
+  const currentPath = route.path;
+
+  // если НЕ на главной → делаем ПОЛНОЕ обновление страницы
+  if (currentPath !== "/") {
+
+    mobileOpen.value = false; // закрыть бургер
+
+    // передаём параметр scroll в URL
+    window.location.href = `/?scroll=${id}`;
     return;
   }
 
+  // если уже на главной — просто скроллим
+  doScroll(id);
+}
+
+// ============================
+//   ФУНКЦИЯ СКРОЛЛА
+// ============================
+function doScroll(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
   const headerHeight = document.querySelector(".header").offsetHeight;
 
-  const offset = el.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-
   window.scrollTo({
-    top: offset,
+    top: el.offsetTop - headerHeight,
     behavior: "smooth"
   });
 
-  mobileOpen.value = false;
+  mobileOpen.value = false; // закрыть бургер
 }
 
+// ============================
+//   СКРОЛЛ ПОСЛЕ ПЕРЕХОДА
+// ============================
+onMounted(() => {
+  const params = new URLSearchParams(window.location.search);
+  const section = params.get("scroll");
+
+  if (section) {
+    setTimeout(() => doScroll(section), 400);
+  }
+});
 </script>
+
 
 <style scoped>
 
@@ -83,7 +117,7 @@ function scrollToSection(id) {
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
   position: sticky;
   top: 0;
-  z-index: 2000;
+  z-index: 9999;
 }
 
 .header-container {
@@ -238,6 +272,7 @@ function scrollToSection(id) {
 
   .burger {
     display: block;
+    z-index: 9999;
   }
 }
 </style>
