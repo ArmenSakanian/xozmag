@@ -606,7 +606,7 @@ color: #fff;
   width: 260px;
   height: calc(100vh - 60px); /* <<< чтобы не вылазило за экран */
   padding: 20px;
-  background: #1c1e22;
+  background: var(--background-container);
   overflow-y: auto;
   z-index: 10; /* можно оставить маленький */
 }

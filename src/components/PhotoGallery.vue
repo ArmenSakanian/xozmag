@@ -1,265 +1,178 @@
 <template>
-  <div id="photo" class="photo-gallery">
-    <h2 class="pg-title">
-      {{ mode === "outside" ? "Фотографии магазина" : "Фотографии товаров" }}
-    </h2>
-
-    <div class="pg-switch">
-      <button
-        :class="{ active: mode === 'outside' }"
-        @click="setMode('outside')"
-      >
-        Снаружи
-      </button>
-
-      <button
-        :class="{ active: mode === 'product' }"
-        @click="setMode('product')"
-      >
-        Товары
-      </button>
-    </div>
-
-    <div class="pg-wrapper">
-      <!-- стрелка влево -->
-      <button v-if="currentIndex > 0" class="pg-arrow left" @click="prev">
-        ‹
-      </button>
-
-      <div 
-  class="pg-view"
-  @mousedown="onDragStart"
-  @mousemove="onDragMove"
-  @mouseup="onDragEnd"
-  @mouseleave="onDragEnd"
-
-  @touchstart="onDragStart"
-  @touchmove="onDragMove"
-  @touchend="onDragEnd"
->
-
-        <div class="pg-track" :style="trackStyle">
-          <div class="pg-item" v-for="(img, i) in activeImages" :key="i">
-            <img :src="img" />
-          </div>
-        </div>
+  <section>
+    <div id="photo" class="photo-gallery">
+      <h2 class="pg-title">Фотографии магазина</h2>
+  
+      <!-- Переключатели -->
+      <div class="pg-switch">
+        <button
+          :class="{ active: mode === 'outside' }"
+          @click="setMode('outside')"
+        >
+          Снаружи
+        </button>
+  
+        <button
+          :class="{ active: mode === 'product' }"
+          @click="setMode('product')"
+        >
+          Товары
+        </button>
       </div>
-
-      <!-- стрелка вправо -->
-      <button
-        v-if="currentIndex < maxIndex"
-        class="pg-arrow right"
-        @click="next"
+  
+      <!-- ГАЛЕРЕЯ -->
+      <swiper
+        :modules="[Navigation]"
+        navigation
+        :slides-per-view="slidesPerView"
+        :space-between="16"
+        :loop="photos.length > slidesPerView"
+        class="pg-swiper"
       >
-        ›
-      </button>
+        <swiper-slide v-for="(img, i) in photos" :key="i">
+          <img :src="img" class="pg-img" />
+        </swiper-slide>
+      </swiper>
     </div>
-  </div>
+  </section>
 </template>
+
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
+
+/* ВАЖНО — правильные импорты Swiper */
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Navigation } from "swiper/modules";
+
+/* Стили Swiper */
+import "swiper/css";
+import "swiper/css/navigation";
+
+/* Фото */
+const outsidePhotos = Array.from(
+  { length: 4 },
+  (_, i) =>
+    new URL(`../assets/photo-shop/outside${i + 1}.webp`, import.meta.url).href
+);
+
+const productPhotos = Array.from(
+  { length: 20 },
+  (_, i) =>
+    new URL(`../assets/photo-shop/product${i + 1}.webp`, import.meta.url).href
+);
 
 const mode = ref("outside");
 
-// импорт фото
-const outsideImgs = import.meta.glob("@/assets/photo-shop/outside*.webp", {
-  eager: true,
-  import: "default",
-});
-const productImgs = import.meta.glob("@/assets/photo-shop/product*.webp", {
-  eager: true,
-  import: "default",
-});
-
-const outsideList = Object.values(outsideImgs);
-const productList = Object.values(productImgs);
-
-// текущий индекс
-const currentIndex = ref(0);
-
-// сколько видно фото (2 на телефоне, 4 на ПК)
-const visibleCount = ref(window.innerWidth <= 768 ? 2 : 4);
-
-// обновлять при ресайзе
-window.addEventListener("resize", () => {
-  visibleCount.value = window.innerWidth <= 768 ? 2 : 4;
-});
-
-// выбрать активный список
-const activeImages = computed(() =>
-  mode.value === "outside" ? outsideList : productList
+const photos = computed(() =>
+  mode.value === "outside" ? outsidePhotos : productPhotos
 );
 
-// максимальный индекс
-const maxIndex = computed(() =>
-  Math.max(0, activeImages.value.length - visibleCount.value)
-);
+/* Адаптивное количество фото */
+const slidesPerView = computed(() => {
+  const w = window.innerWidth;
+  if (w < 600) return 2; // мобильный → 2 фото
+  if (w < 1024) return 3; // планшет → 3
+  return 4; // ПК → 4
+});
 
-// стиль движения
-const trackStyle = computed(() => ({
-  transform: `translateX(${-currentIndex.value * (100 / visibleCount.value)}%)`,
-  transition: "transform .35s ease",
-}));
-
-function next() {
-  if (currentIndex.value < maxIndex.value) currentIndex.value++;
-}
-
-function prev() {
-  if (currentIndex.value > 0) currentIndex.value--;
-}
-
-function setMode(m) {
-  mode.value = m;
-  currentIndex.value = 0;
-}
-
-// ============================
-//     DRAG / SWIPE SUPPORT
-// ============================
-const startX = ref(0);
-const deltaX = ref(0);
-const isDragging = ref(false);
-
-function onDragStart(e) {
-  isDragging.value = true;
-  startX.value = e.touches ? e.touches[0].clientX : e.clientX;
-}
-
-function onDragMove(e) {
-  if (!isDragging.value) return;
-
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  deltaX.value = clientX - startX.value;
-}
-
-function onDragEnd() {
-  if (!isDragging.value) return;
-  isDragging.value = false;
-
-  // свайп вправо
-  if (deltaX.value > 50) {
-    prev();
-  }
-
-  // свайп влево
-  if (deltaX.value < -50) {
-    next();
-  }
-
-  deltaX.value = 0;
+function setMode(val) {
+  mode.value = val;
 }
 </script>
 
 <style scoped>
+/* Контейнер */
 .photo-gallery {
-  max-width: 1100px;
-  margin: 0 auto;
-  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+/* Заголовок */
 .pg-title {
-  margin-bottom: 20px;
-  font-size: 24px;
+  text-align: center;
+  font-size: 26px;
   font-weight: 600;
+  margin-bottom: 18px;
 }
 
+/* Переключатели */
 .pg-switch {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .pg-switch button {
-  padding: 10px 22px;
+  padding: 10px 18px;
+  border: none;
   background: var(--background-input);
   color: white;
-  border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: 0.25s;
+  font-size: 15px;
+  transition: 0.2s;
 }
 
 .pg-switch button.active {
   background: var(--accent-color);
 }
 
-/* ОБОЛОЧКА СЛАЙДЕРА */
-.pg-wrapper {
+/* Swiper */
+.pg-swiper {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
   position: relative;
-  width: 100%;
 }
 
-.pg-view {
-  overflow: hidden;
+/* Фото внутри слайдов */
+.pg-img {
   width: 100%;
-}
-
-.pg-track {
-  display: flex;
-  width: 100%;
-}
-
-/* ЭЛЕМЕНТ ФОТО */
-.pg-item {
-  flex: 0 0 calc(100% / 4);
-  padding: 5px;
-  box-sizing: border-box;
-}
-
-.pg-item img {
-  width: 100%;
-  height: 300px;
+  height: 230px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
-/* стрелки */
-.pg-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  width: 40px;
-  height: 40px;
-  font-size: 26px;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 10;
+@media (max-width: 1024px) {
+  .pg-img {
+    height: 200px;
+  }
 }
 
-.pg-arrow.left {
-  left: -10px;
+@media (max-width: 600px) {
+  .pg-img {
+    height: 200px;
+  }
 }
 
-.pg-arrow.right {
-  right: -10px;
+/* --- СТРЕЛКИ SWIPER --- */
+
+/* Убираем дефолтный синий цвет */
+:root {
+  --swiper-navigation-color: white !important; /* Иконка — белая */
+  --swiper-theme-color: white !important;
 }
 
-/* === МОБИЛА === */
-@media (max-width: 768px) {
-  .pg-item {
-    flex: 0 0 calc(100% / 2);
-  }
+/* Фон стрелки */
+.swiper-button-next,
+.swiper-button-prev {
+  background: var(--accent-color) !important; /* ФОН стрелок */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  .pg-item img {
-    height: 250px;
-  }
+/* Иконка стрелки (белая) */
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  font-size: 18px !important;
+  color: white !important;
+}
 
-  .pg-arrow {
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-  }
-
-  .pg-arrow.left {
-    left: 10px;
-  }
-  .pg-arrow.right {
-    right: 10px;
-  }
+.swiper-button-disabled {
+  opacity: 0.4 !important;
 }
 </style>

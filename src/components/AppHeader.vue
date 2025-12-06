@@ -1,21 +1,24 @@
 <template>
   <header class="header">
     <div class="header-container">
-
       <!-- ЛОГО -->
       <div class="logo">
         <a href="/">
-        <img src="@/assets/logo.webp" alt="Logo" />
-        <h1>Все Для Дома</h1></a>
+          <img src="@/assets/logo.webp" alt="Logo" />
+          <h1>Все Для Дома</h1></a
+        >
       </div>
 
       <!-- ДЕСКТОП МЕНЮ -->
       <nav class="nav">
         <a href="/product" class="nav-item">Каталог</a>
-<a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
-<a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
-<a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
-
+        <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
+        <a class="nav-item" @click.prevent="scrollToSection('contact')"
+          >Контакты</a
+        >
+        <a class="nav-item" @click.prevent="scrollToSection('photo')"
+          >Фотографии</a
+        >
       </nav>
 
       <!-- БУРГЕР -->
@@ -24,18 +27,19 @@
         <span :class="{ open: mobileOpen }"></span>
         <span :class="{ open: mobileOpen }"></span>
       </button>
-
     </div>
 
     <!-- МОБИЛЬНОЕ МЕНЮ -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
       <a href="/product" class="mobile-item" @click="closeMenu">Каталог</a>
-<a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
-<a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
-<a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
-
+      <a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
+      <a class="mobile-item" @click.prevent="scrollToSection('contact')"
+        >Контакты</a
+      >
+      <a class="mobile-item" @click.prevent="scrollToSection('photo')"
+        >Фотографии</a
+      >
     </div>
-
   </header>
 </template>
 
@@ -54,7 +58,6 @@ function scrollToSection(id) {
 
   // если НЕ на главной → делаем ПОЛНОЕ обновление страницы
   if (currentPath !== "/") {
-
     mobileOpen.value = false; // закрыть бургер
 
     // передаём параметр scroll в URL
@@ -77,7 +80,7 @@ function doScroll(id) {
 
   window.scrollTo({
     top: el.offsetTop - headerHeight,
-    behavior: "smooth"
+    behavior: "smooth",
   });
 
   mobileOpen.value = false; // закрыть бургер
@@ -96,9 +99,7 @@ onMounted(() => {
 });
 </script>
 
-
 <style scoped>
-
 /* =============================== */
 /*        CSS-ПЕРЕМЕННЫЕ           */
 /* =============================== */
@@ -133,13 +134,12 @@ onMounted(() => {
 /* ЛОГО */
 
 .logo a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: white;
 }
-
 
 .logo img {
   height: 45px;
@@ -265,7 +265,6 @@ onMounted(() => {
 /*        АДАПТАЦИЯ < 768px        */
 /* =============================== */
 @media (max-width: 768px) {
-
   .nav {
     display: none; /* прячем меню */
   }

@@ -1,0 +1,36 @@
+:root {
+  --swiper-navigation-color: white !important;
+  --swiper-theme-color: white !important;
+  --swiper-navigation-size: 42px !important;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  width: 42px !important;
+  height: 42px !important;
+  background: var(--background-container);
+  color: var(--accent-color) !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.swiper-button-prev {
+    left: 15px !important;
+}
+
+.swiper-button-next {
+    right: 15px !important;
+}
+
+.swiper.swiper-initialized.swiper-horizontal.pg-swiper svg{
+  width: 70% !important;
+  height: 70% !important;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  color: white !important;
+  font-size: 18px !important;
+}
