@@ -573,13 +573,12 @@ watch(showFilters, v => {
 }
 
 .reset-button-filters {
-    color: #ffff;
-    background: var(--delete-color);
-    padding: 5px;
-    font-weight: 700;
+color: #fff;
+    background: transparent;
+    text-decoration: underline;
     border: none;
-    border-radius: 5px;
     margin-bottom: 10px;
+    cursor: pointer;
 }
 
 .apply-btn.disabled {
@@ -898,16 +897,6 @@ top: 0;
     margin-bottom: 16px;
   }
 
-  /* Кнопка сброса */
-  .reset-button-filters {
-    background: var(--delete-color);
-    padding: 7px 12px;
-    border-radius: 6px;
-    border: none;
-    font-weight: 600;
-    color: #fff;
-    margin-top: 10px;
-  }
 
   /* Применить */
   .apply-btn {
