@@ -446,7 +446,7 @@ watch(showFilters, v => {
 
 .loading {
   width: 100%;
-  height: 60vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -454,7 +454,6 @@ watch(showFilters, v => {
   color: white;
   font-size: 18px;
   gap: 16px;
-  position: fixed;
   margin: 0 auto;
 }
 

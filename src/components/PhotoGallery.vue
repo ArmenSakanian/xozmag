@@ -1,7 +1,7 @@
 <template>
   <section>
     <div id="photo" class="photo-gallery">
-      <h2 class="pg-title">Фотографии магазина</h2>
+      <h2 class="page-title">Фотографии магазина</h2>
   
       <!-- Переключатели -->
       <div class="pg-switch">
@@ -89,13 +89,6 @@ function setMode(val) {
   align-items: center;
 }
 
-/* Заголовок */
-.pg-title {
-  text-align: center;
-  font-size: 26px;
-  font-weight: 600;
-  margin-bottom: 18px;
-}
 
 /* Переключатели */
 .pg-switch {

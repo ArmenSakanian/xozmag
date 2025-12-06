@@ -729,7 +729,7 @@ function isMatch(text) {
 onMounted(loadBarcodes);
 </script>
 
-<style>
+<style scoped>
 
 
 .highlight-row {

@@ -11,16 +11,15 @@
           <!-- Телефон -->
           <div class="info-block">
             <p class="label">Телефон</p>
-            <a href="tel:+79258693416" class="value-link">+7 (925) 869-34-16</a>
+            <a href="tel:+79258693416" class="value-text">+7 (925) 869-34-16</a>
           </div>
   
           <!-- Адрес -->
           <div class="info-block">
             <p class="label">Адрес</p>
-            <p class="value-text">
-              Москва, <br />
-              Улица Героев Панфиловцев, дом 3
-            </p>
+            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text">Москва, <br />
+              Улица Героев Панфиловцев, дом 3</a>
+
           </div>
   
           <!-- Время работы -->
@@ -58,16 +57,6 @@
   color: #dcdcdc;
 }
 
-/* Заголовок страницы */
-.page-title {
-  text-align: center;
-  color: #ffffff;
-  font-size: 38px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 40px;
-  text-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-}
 
 /* Основная сетка */
 .contact-container {
@@ -89,13 +78,17 @@
 
 .block-title {
   margin-bottom: 25px;
-  color: #fff;
+  color: white;
   font-size: 26px;
   font-weight: 700;
 }
 
 .info-block {
   margin-bottom: 28px;
+}
+
+.info-block a {
+  text-decoration: none;
 }
 
 .label {
@@ -106,21 +99,14 @@
   margin-bottom: 6px;
 }
 
-.value-link {
-  color: #4da3ff;
-  font-size: 22px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: 0.25s ease;
-}
 
-.value-link:hover {
-  color: #7dc4ff;
+.value-text:hover {
+
   text-shadow: 0 0 10px rgba(77, 163, 255, 0.5);
 }
 
 .value-text {
-  color: #e0e0e0;
+  color: var(--accent-color);
   font-size: 18px;
   line-height: 1.55;
 }
@@ -166,9 +152,6 @@
     padding: 25px;
   }
 
-  .value-link {
-    font-size: 20px;
-  }
 
   .value-text {
     font-size: 16px;

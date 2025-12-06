@@ -1,7 +1,7 @@
 <template>
   <section>
     <div id="about" class="about-page">
-      <h1 class="about-title">О нас</h1>
+      <h1 class="page-title">О нас</h1>
   
       <div class="about-container">
         <p>
@@ -52,14 +52,6 @@
   max-width: 900px;
   margin: 0 auto;
   color: #e7e7e7;
-}
-
-.about-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #ffffff;
-  text-align: center;
-  margin-bottom: 25px;
 }
 
 .about-container {

@@ -1,8 +1,8 @@
 <template>
   <section>
     <div class="info-wrapper">
+              <h2 class="page-title">Удобства магазина</h2>
       <div class="info-box">
-        <h2 class="title">Удобства магазина</h2>
   
         <div class="info-grid">
           <div class="item">
@@ -90,12 +90,7 @@
   color: #e7e7e7;
 }
 
-.title {
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 22px;
-  color: #fff;
-}
+
 
 /* Сетка элементов */
 .info-grid {
@@ -141,10 +136,6 @@
 
   .value {
     font-size: 16px;
-  }
-
-  .title {
-    font-size: 22px;
   }
 }
 </style>

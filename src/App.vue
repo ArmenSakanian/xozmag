@@ -36,4 +36,23 @@ import AppFooter from "@/components/AppFooter.vue";
 #app section > div {
   padding: 0 10px;
 }
+
+/* Заголовок страницы */
+.page-title {
+  text-align: center;
+  color: var(--accent-color);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 600px) {
+.page-title  {
+  font-size: 30px;
+}
+
+ }
+
 </style>
