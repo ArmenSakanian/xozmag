@@ -68,11 +68,7 @@
             </div>
           </div>
         </div>
-
         <hr />
-
-        <hr />
-
         <div class="filter-section">
           <h3
             class="filter-title"
@@ -130,36 +126,44 @@
             :class="{ open: filterOpen.brands }"
           >
             <div class="filter-content">
-              <div class="filter-search-wrapper">
-                <input
-                  type="text"
-                  v-model="brandSearch"
-                  placeholder="Поиск бренда..."
-                  class="filter-search"
-                />
-              </div>
+<div class="filter-search-wrapper">
+  <i class="fa-solid fa-magnifying-glass search-icon"></i>
 
-<div
-  v-for="b in filteredBrands"
-  :key="b.norm"
-  class="category-filter"
-  :class="{ disabled: b.disabled }"
->
   <input
-    type="checkbox"
-    :id="'brand-' + b.norm"
-    :value="b.norm"
-    v-model="draftBrand"
-    :disabled="b.disabled"
+    type="text"
+    v-model="brandSearch"
+    placeholder="Поиск бренда..."
+    class="filter-search"
   />
-  <label :for="'brand-' + b.norm">{{ b.name }}</label>
 </div>
 
 
-              <button class="reset-button-filters" @click="draftBrand = []">
-                Сбросить бренд
-              </button>
-            </div>
+  <!-- ПОКАЗЫВАЕМ ТОЛЬКО visibleBrands -->
+  <div
+    v-for="b in visibleBrands"
+    :key="b.norm"
+    class="category-filter"
+    :class="{ disabled: b.disabled }"
+  >
+    <input
+      type="checkbox"
+      :id="'brand-' + b.uuid"
+      :value="b.norm"
+      v-model="draftBrand"
+    />
+    <label :for="'brand-' + b.uuid">{{ b.name }}</label>
+  </div>
+
+  <!-- 👇 КНОПКА ВСЕГДА СТАВИТСЯ ЗДЕСЬ (под v-for, НО внутри filter-content) -->
+  <div class="show-more-btn" @click="showAllBrands = !showAllBrands">
+    {{ showAllBrands ? "Скрыть" : "Показать все" }}
+  </div>
+
+  <button class="reset-button-filters" @click="draftBrand = []">
+    Сбросить бренд
+  </button>
+</div>
+
           </div>
         </div>
 
@@ -181,36 +185,41 @@
             :class="{ open: filterOpen.types }"
           >
             <div class="filter-content">
-              <div class="filter-search-wrapper">
-                <input
-                  type="text"
-                  v-model="typeSearch"
-                  placeholder="Поиск типа..."
-                  class="filter-search"
-                />
-              </div>
+  <div class="filter-search-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+    <input
+      type="text"
+      v-model="typeSearch"
+      placeholder="Поиск типа..."
+      class="filter-search"
+    />
+  </div>
 
-<div
-  v-for="t in filteredTypes"
-  :key="t.id"
-  class="category-filter"
-  :class="{ disabled: t.disabled }"
->
-  <input
-    type="checkbox"
-    :id="'type-' + t.id"
-    :value="t.id"
-    v-model="draftType"
-    :disabled="t.disabled"
-  />
-  <label :for="'type-' + t.id">{{ t.name }}</label>
+  <div
+    v-for="t in visibleTypes"
+    :key="t.id"
+    class="category-filter"
+    :class="{ disabled: t.disabled }"
+  >
+    <input
+      type="checkbox"
+      :id="'type-' + t.id"
+      :value="t.id"
+      v-model="draftType"
+    />
+    <label :for="'type-' + t.id">{{ t.name }}</label>
+  </div>
+
+  <!-- 👇 ПРАВИЛЬНОЕ МЕСТО -->
+  <div class="show-more-btn" @click="showAllTypes = !showAllTypes">
+    {{ showAllTypes ? "Скрыть" : "Показать все" }}
+  </div>
+
+  <button class="reset-button-filters" @click="draftType = []">
+    Сбросить тип
+  </button>
 </div>
 
-
-              <button class="reset-button-filters" @click="draftType = []">
-                Сбросить тип
-              </button>
-            </div>
           </div>
         </div>
 
@@ -327,6 +336,9 @@ const draftPrice = ref([0, 0]);
 const brandSearch = ref("");
 const typeSearch = ref("");
 
+const showAllBrands = ref(false);
+const showAllTypes = ref(false);
+
 // фильтр: с фото / без фото
 const photoFilter = ref("all");
 // all | with | without
@@ -367,9 +379,7 @@ async function loadData() {
     brands.value = data.brands || [];
     types.value = data.types || [];
 
-    products.value = data.products || [];
-
-    // products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
+    products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
 
     if (products.value.length) {
       const prices = products.value.map((p) => Number(p.price) || 0);
@@ -408,19 +418,18 @@ const typeMap = computed(() => {
   return map;
 });
 
-
 // объединяем бренды по имени
 const mergedBrands = computed(() => {
   const map = new Map();
 
-  brands.value.forEach(b => {
+  brands.value.forEach((b) => {
     const norm = normalizeBrandName(b.name);
 
     if (!map.has(norm)) {
       map.set(norm, {
-        name: b.name,     // красивый вариант
+        name: b.name, // красивый вариант
         norm,
-        uuids: new Set()
+        uuids: new Set(),
       });
     }
 
@@ -430,15 +439,15 @@ const mergedBrands = computed(() => {
   return Array.from(map.values());
 });
 
-
 const availableBrands = computed(() => {
   const use = new Set();
 
-  products.value.forEach(p => {
+  products.value.forEach((p) => {
     if (
       draftCategories.value.length &&
       !draftCategories.value.includes(p.categoryUuid)
-    ) return;
+    )
+      return;
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -446,17 +455,12 @@ const availableBrands = computed(() => {
     }
 
     // добавляем нормализованное имя бренда
-    const brandObj = mergedBrands.value.find(b => b.uuids.has(p.brandUuid));
+    const brandObj = mergedBrands.value.find((b) => b.uuids.has(p.brandUuid));
     if (brandObj) use.add(brandObj.norm);
   });
 
-return mergedBrands.value.map(b => ({
-  ...b,
-  disabled: !use.has(b.norm)   // если бренд несовместим → disabled
-}));
+  return mergedBrands.value.filter((b) => use.has(b.norm));
 });
-
-
 
 const availableTypes = computed(() => {
   const byName = new Map();
@@ -468,13 +472,15 @@ const availableTypes = computed(() => {
       if (
         draftCategories.value.length &&
         !draftCategories.value.includes(p.categoryUuid)
-      ) return;
+      )
+        return;
     }
-if (draftBrand.value.length) {
-  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
-  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
-}
-
+    if (draftBrand.value.length) {
+      const brandObj = mergedBrands.value.find((b) =>
+        draftBrand.value.includes(b.norm)
+      );
+      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+    }
 
     const info = typeMap.value.get(p.typeUuid);
     if (!info) return;
@@ -489,46 +495,108 @@ if (draftBrand.value.length) {
     }
   });
 
-return types.value.map(t => {
-  const norm = normalizeTypeName(t.name);
-  return {
-    id: norm,
-    name: t.name,
-    disabled: !byName.has(norm)  // если тип не подходит → отключаем
-  };
+  return Array.from(byName.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "ru")
+  );
 });
-
-});
-
-
 
 const filteredBrands = computed(() => {
-  const query = brandSearch.value.trim().toLowerCase();
-  if (!query) return availableBrands.value;
+  let list = mergedBrands.value.map((b) => {
+    const active = products.value.some((p) => {
+      if (draftType.value.length) {
+        const info = typeMap.value.get(p.typeUuid);
+        if (!info || !draftType.value.includes(info.norm)) return false;
+      }
+      return b.uuids.has(p.brandUuid);
+    });
 
-  return availableBrands.value.filter((b) =>
-    b.name.toLowerCase().includes(query)
-  );
+    return {
+      ...b,
+      disabled: !active,
+    };
+  });
+
+  // 👉 СНАЧАЛА ПОИСК
+  const query = brandSearch.value.trim().toLowerCase();
+  if (query) {
+    list = list.filter((b) => b.name.toLowerCase().includes(query));
+  }
+
+  // 👉 ПОТОМ СОРТИРОВКА
+  return list.sort((a, b) => {
+    if (a.disabled !== b.disabled) return a.disabled - b.disabled;
+    return a.name.localeCompare(b.name, "ru");
+  });
 });
 
-const filteredTypes = computed(() => {
-  const query = typeSearch.value.trim().toLowerCase();
-  if (!query) return availableTypes.value;
+const visibleBrands = computed(() => {
+  if (showAllBrands.value) return filteredBrands.value;
+  return filteredBrands.value.slice(0, 5);
+});
 
-  return availableTypes.value.filter((t) =>
-    t.name.toLowerCase().includes(query)
-  );
+// УНИКАЛЬНЫЕ ТИПЫ + DISABLED как у категорий
+const filteredTypes = computed(() => {
+  const byNorm = new Map();
+
+  types.value.forEach((t) => {
+    const info = typeMap.value.get(t.uuid);
+    if (!info) return;
+
+    if (!byNorm.has(info.norm)) {
+      byNorm.set(info.norm, {
+        id: info.norm,
+        name: info.name,
+        disabled: true,
+      });
+    }
+  });
+
+  products.value.forEach((p) => {
+    const info = typeMap.value.get(p.typeUuid);
+    if (!info) return;
+
+    if (draftBrand.value.length) {
+      const brandObj = mergedBrands.value.find((b) =>
+        draftBrand.value.includes(b.norm)
+      );
+      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+    }
+
+    if (byNorm.has(info.norm)) {
+      byNorm.get(info.norm).disabled = false;
+    }
+  });
+
+  let list = Array.from(byNorm.values());
+
+  // 👉 СНАЧАЛА ПОИСК
+  const query = typeSearch.value.trim().toLowerCase();
+  if (query) {
+    list = list.filter((t) => t.name.toLowerCase().includes(query));
+  }
+
+  // 👉 ПОТОМ СОРТИРОВКА
+  return list.sort((a, b) => {
+    if (a.disabled !== b.disabled) return a.disabled - b.disabled;
+    return a.name.localeCompare(b.name, "ru");
+  });
+});
+
+const visibleTypes = computed(() => {
+  if (showAllTypes.value) return filteredTypes.value;
+  return filteredTypes.value.slice(0, 5);
 });
 
 const availableCategories = computed(() => {
   const set = new Set();
 
   products.value.forEach((p) => {
-if (draftBrand.value.length) {
-  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
-  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
-}
-
+    if (draftBrand.value.length) {
+      const brandObj = mergedBrands.value.find((b) =>
+        draftBrand.value.includes(b.norm)
+      );
+      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+    }
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -551,16 +619,18 @@ const filteredProducts = computed(() => {
     )
       return false;
 
-if (selectedBrand.value.length) {
-  // если у товара НЕТ бренда → он НЕ подходит под выбор брендов
-  if (!p.brandUuid) return false;
+    if (selectedBrand.value.length) {
+      // если у товара НЕТ бренда → он НЕ подходит под выбор брендов
+      if (!p.brandUuid) return false;
 
-  // найдём объект бренда по имени
-  const brandObj = mergedBrands.value.find(b => selectedBrand.value.includes(b.norm));
+      // найдём объект бренда по имени
+      const brandObj = mergedBrands.value.find((b) =>
+        selectedBrand.value.includes(b.norm)
+      );
 
-  // если не нашли или UUID товара не относится к выбранному бренду
-  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return false;
-}
+      // если не нашли или UUID товара не относится к выбранному бренду
+      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return false;
+    }
 
     if (selectedType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -619,14 +689,15 @@ const categoryState = computed(() => {
 
   products.value.forEach((p) => {
     // Если выбран бренд → категории должны зависеть ТОЛЬКО от бренда
-if (draftBrand.value.length) {
-  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
-  if (brandObj && brandObj.uuids.has(p.brandUuid)) {
-    active.add(p.categoryUuid);
-  }
-  return;
-}
-
+    if (draftBrand.value.length) {
+      const brandObj = mergedBrands.value.find((b) =>
+        draftBrand.value.includes(b.norm)
+      );
+      if (brandObj && brandObj.uuids.has(p.brandUuid)) {
+        active.add(p.categoryUuid);
+      }
+      return;
+    }
 
     // Если бренд НЕ выбран → обычная логика с типами
     if (draftType.value.length) {
@@ -642,9 +713,6 @@ if (draftBrand.value.length) {
     disabled: !active.has(c.uuid),
   }));
 });
-
-
-
 
 function onCategoryClick(cat) {
   if (!cat.disabled) {
@@ -674,10 +742,9 @@ watch(
       valid.includes(id)
     );
 
-// if (draftBrand.value.length) {
-//   draftCategories.value = [...valid];
-// }
-
+    // if (draftBrand.value.length) {
+    //   draftCategories.value = [...valid];
+    // }
   },
   { immediate: true }
 );
@@ -723,7 +790,7 @@ watch(showFilters, (v) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: white;
+  color: var(--accent-color);
   cursor: pointer;
   padding: 8px 0;
   font-size: 18px;
@@ -780,6 +847,13 @@ watch(showFilters, (v) => {
   background: #3a3f44;
 }
 
+.category-filter.disabled,
+.brand-filter.disabled,
+.type-filter.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .category-filter.disabled label {
   opacity: 0.4;
   cursor: pointer;
@@ -797,11 +871,6 @@ watch(showFilters, (v) => {
 .category-filter input[disabled] {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.category-filter.disabled {
-  opacity: 0.4;
-  pointer-events: none;
 }
 
 .photo-filter {
@@ -825,7 +894,7 @@ watch(showFilters, (v) => {
 .radio-check {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--accent-color);
+  border: 2px solid white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -835,14 +904,6 @@ watch(showFilters, (v) => {
 
 .radio-row input[type="radio"]:checked + .radio-check {
   background: var(--accent-color);
-}
-
-.radio-row input[type="radio"]:checked + .radio-check::after {
-  content: "";
-  width: 10px;
-  height: 10px;
-  background: black;
-  border-radius: 50%;
 }
 
 .radio-text {
@@ -882,8 +943,37 @@ watch(showFilters, (v) => {
   color: #000;
 }
 
+.show-more-btn {
+  width: 100%;
+  text-align: center;
+  padding: 10px 0;
+  margin: 6px 0 12px 0;
+
+  color: var(--accent-color);
+  font-size: 15px;
+  font-weight: 600;
+
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.show-more-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.02);
+}
+
+.show-more-btn:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+
 .reset-button-filters {
-  color: #fff;
+  color: var(--delete-color);
   background: transparent;
   text-decoration: underline;
   border: none;
@@ -923,42 +1013,53 @@ watch(showFilters, (v) => {
 .filters-close-btn {
   display: none;
 }
-
-.filter-search {
+/* ОБЩИЙ КОНТЕЙНЕР */
+.filter-search-wrapper {
+  position: relative;
   width: 100%;
-  padding: 10px 12px 10px 36px; /* место для иконки */
-  margin-bottom: 12px;
-  border-radius: 10px;
-  border: 1px solid #d0d0d0;
-  background: #fafafa;
+}
+
+.search-icon {
+  position: absolute;
+    left: 15px;
+    top: 21px;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #8a8d92;
+  pointer-events: none;
+}
+
+
+/* САМО ПОЛЕ ПОИСКА */
+.filter-search {
+  margin-bottom: 20px;
+  width: 100%;
+  padding: 12px 14px 12px 44px; /* место под иконку слева */
+  border-radius: 12px;
+  border: 1px solid #2a2d32;
+  background: #1c1e22;
+  color: #f2f2f2;
   font-size: 15px;
   transition: all 0.25s ease;
-  position: relative;
   outline: none;
 }
 
+.filter-search::placeholder {
+  color: #8a8d92;
+}
+
+/* ХОВЕР */
+.filter-search:hover {
+  border-color: #3a3f45;
+}
+
+/* ФОКУС — красивое неоновое свечение */
 .filter-search:focus {
-  background: #fff;
-  border-color: #7aa3ff;
-  box-shadow: 0 0 0 3px rgba(122, 163, 255, 0.35);
+  border-color: #4c7dff;
+  box-shadow: 0 0 0 3px rgba(76, 125, 255, 0.35);
+  background: #202328;
 }
 
-/* контейнер, чтобы иконка рисовалась */
-.filter-search-wrapper {
-  position: relative;
-}
-
-/* Иконка 🔍 */
-.filter-search-wrapper::before {
-  content: "🔍";
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 15px;
-  opacity: 0.6;
-  pointer-events: none;
-}
 
 /* Кнопка закрытия внутри фильтров — по умолчанию скрыта */
 .close-filters {
@@ -990,30 +1091,35 @@ watch(showFilters, (v) => {
 }
 
 .category-filter input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  appearance: none;
-  background: var(--background-input);
-  border: 2px solid var(--accent-color);
-  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: #1f2227;
+  border: 2px solid #4e5258;
+  border-radius: 5px;
   cursor: pointer;
   position: relative;
+  transition: all 0.25s ease;
 }
 
+/* Активное */
 .category-filter input[type="checkbox"]:checked {
   background: var(--accent-color);
   border-color: var(--accent-color);
 }
 
+/* SVG галочка */
 .category-filter input[type="checkbox"]:checked::after {
-  content: "✔";
-  color: #000;
-  font-size: 12px;
-  font-weight: bold;
+  content: "";
   position: absolute;
-  top: 0;
-  left: 5px;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath fill='black' d='M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z'/%3E%3C/svg%3E");
+  background-position: 50% 56%; /* <<< идеальный центр */
+  background-repeat: no-repeat;
 }
+
+
 
 .category-filter label {
   color: white;
@@ -1148,8 +1254,8 @@ watch(showFilters, (v) => {
   }
 
   .filters-close-btn {
-      grid-column: 2 / 3;
-  grid-row: 1 / 2;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
     width: 34px;
     height: 34px;
     border-radius: 8px;
@@ -1170,10 +1276,10 @@ watch(showFilters, (v) => {
     transform: scale(1.05);
   }
 
-.filters-actions {
+  .filters-actions {
     grid-column: 1 / 3; /* растянуть кнопки на всю ширину */
-  grid-row: 2 / 3;
-}
+    grid-row: 2 / 3;
+  }
 
   /* Кнопка "Фильтры" */
   .mobile-filters-btn {
@@ -1238,9 +1344,9 @@ watch(showFilters, (v) => {
     padding: 16px 20px;
     border-bottom: 1px solid #333;
 
-  display: grid;
-  grid-template-columns: 1fr auto; /* слева текст, справа крест */
-  grid-template-rows: auto auto;   /* первая строка — заголовок, вторая — кнопки */
+    display: grid;
+    grid-template-columns: 1fr auto; /* слева текст, справа крест */
+    grid-template-rows: auto auto; /* первая строка — заголовок, вторая — кнопки */
   }
 
   .filters-header h2 {
@@ -1248,8 +1354,8 @@ watch(showFilters, (v) => {
     font-size: 20px;
     font-weight: 700;
     margin: 0;
-      grid-column: 1 / 2;
-  grid-row: 1 / 2;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
   }
 
   .close-filters {
