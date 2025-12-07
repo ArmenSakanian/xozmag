@@ -2,26 +2,27 @@
   <section>
     <div id="contact" class="contact-page">
       <h1 class="page-title">Контакты магазина</h1>
-  
+
       <div class="contact-container">
         <!-- Левая часть: контакты -->
         <div class="contact-info">
           <h2 class="block-title">Связаться с нами</h2>
-  
+
           <!-- Телефон -->
           <div class="info-block">
             <p class="label">Телефон</p>
             <a href="tel:+79258693416" class="value-text">+7 (925) 869-34-16</a>
           </div>
-  
+
           <!-- Адрес -->
           <div class="info-block">
             <p class="label">Адрес</p>
-            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text">Москва, <br />
-              Улица Героев Панфиловцев, дом 3</a>
-
+            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text"
+              >Москва, <br />
+              Улица Героев Панфиловцев, дом 3</a
+            >
           </div>
-  
+
           <!-- Время работы -->
           <div class="info-block">
             <p class="label">Режим работы</p>
@@ -31,15 +32,10 @@
             </p>
           </div>
         </div>
-  
+
         <!-- Правая часть: карта -->
         <div class="contact-map">
-          <iframe
-            src="https://yandex.ru/map-widget/v1/?um=constructor%3A620efd7c99bc91020f789a56c6f0e55bd29c1a6a5f3cb8a86aa31e52f6d1242e&amp;source=constructor"
-            frameborder="0"
-            allowfullscreen
-            loading="lazy"
-          ></iframe>
+<iframe src="https://yandex.ru/map-widget/v1/?z=12&ol=biz&oid=1728338739" width="560" height="400" frameborder="0"></iframe>
         </div>
       </div>
     </div>
@@ -56,7 +52,6 @@
   margin: 0 auto;
   color: #dcdcdc;
 }
-
 
 /* Основная сетка */
 .contact-container {
@@ -92,21 +87,19 @@
 }
 
 .label {
-  color: #9fa5b5;
+  color: var(--accent-color);
   text-transform: uppercase;
   font-size: 13px;
   letter-spacing: 1px;
   margin-bottom: 6px;
 }
 
-
 .value-text:hover {
-
   text-shadow: 0 0 10px rgba(77, 163, 255, 0.5);
 }
 
 .value-text {
-  color: var(--accent-color);
+  color: white;
   font-size: 18px;
   line-height: 1.55;
 }
@@ -151,7 +144,6 @@
   .contact-info {
     padding: 25px;
   }
-
 
   .value-text {
     font-size: 16px;

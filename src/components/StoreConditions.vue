@@ -1,6 +1,6 @@
 <template>
   <section>
-    <div class="info-wrapper">
+    <div id="StoreConditions" class="info-wrapper">
               <h2 class="page-title">Удобства магазина</h2>
       <div class="info-box">
   
@@ -81,7 +81,6 @@
   margin: 0 auto;
 }
 
-/* Основная коробка */
 .info-box {
   background: var(--background-container);
   padding: 30px;
@@ -90,9 +89,7 @@
   color: #e7e7e7;
 }
 
-
-
-/* Сетка элементов */
+/* === ПК версия (как было) === */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -119,7 +116,6 @@
   font-weight: 600;
 }
 
-/* Цвета по акцентам */
 .value.yes {
   color: var(--accent-color);
 }
@@ -128,14 +124,31 @@
   color: #ff4e4e;
 }
 
-/* адаптив */
+/* === 🔥 Мобильная версия — 2 карточки в ряд === */
 @media (max-width: 600px) {
   .info-box {
-    padding: 22px;
+    padding: 20px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* две карточки в строке */
+    gap: 12px 12px;
+  }
+
+  .item {
+    padding: 12px 12px;      /* компактнее */
+    border-radius: 10px;
+  }
+
+  .label {
+    font-size: 13px;
+    margin-bottom: 2px;
   }
 
   .value {
-    font-size: 16px;
+    font-size: 15px;
   }
 }
+
 </style>

@@ -16,6 +16,9 @@
         <a class="nav-item" @click.prevent="scrollToSection('contact')"
           >Контакты</a
         >
+                <a class="nav-item" @click.prevent="scrollToSection('StoreConditions')"
+          >Удобства магазина</a
+        >
         <a class="nav-item" @click.prevent="scrollToSection('photo')"
           >Фотографии</a
         >
@@ -36,6 +39,9 @@
       <a class="mobile-item" @click.prevent="scrollToSection('contact')"
         >Контакты</a
       >
+                      <a class="mobile-item" @click.prevent="scrollToSection('StoreConditions')"
+          >Удобства магазина</a
+        >
       <a class="mobile-item" @click.prevent="scrollToSection('photo')"
         >Фотографии</a
       >
@@ -152,7 +158,7 @@ onMounted(() => {
 }
 
 .nav-item {
-  color: var(--accent-color);
+  color: white;
   font-size: 17px;
   position: relative;
   text-decoration: none;
@@ -238,7 +244,6 @@ onMounted(() => {
 }
 
 .mobile-item {
-  color: #fff;
   font-size: 20px;
   text-decoration: none;
   position: relative;
