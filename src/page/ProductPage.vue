@@ -1,15 +1,14 @@
 <template>
   <div class="catalog-page">
-    
     <!-- Загрузка / ошибка -->
-<div v-if="loading" class="loading">
-  <div class="loader"></div>
-  <p>Загрузка товаров...</p>
-</div>
+    <div v-if="loading" class="loading">
+      <div class="loader"></div>
+      <p>Загрузка товаров...</p>
+    </div>
     <div v-if="error" class="error">{{ error }}</div>
 
     <!-- Затемнение при открытых фильтрах -->
-    <div 
+    <div
       v-if="showFilters"
       class="filters-backdrop"
       @click="showFilters = false"
@@ -17,24 +16,32 @@
 
     <!-- === ФИЛЬТРЫ === -->
     <div class="filters" :class="{ open: showFilters }">
-
       <!-- 🔥 ФИКСИРОВАННЫЙ ХЕДЕР ФИЛЬТРОВ -->
       <div class="filters-header">
         <h2>Фильтры</h2>
-        <button class="filters-close-btn" @click="showFilters = false">✕</button>
+        <button class="filters-close-btn" @click="showFilters = false">
+          ✕
+        </button>
       </div>
 
       <!-- 🔥 ВНУТРЕННИЙ ПРОКРУЧИВАЕМЫЙ КОНТЕЙНЕР -->
       <div class="filters-scroll">
-
         <!-- === КАТЕГОРИИ === -->
         <div class="filter-section">
-          <h3 class="filter-title" @click="filterOpen.categories = !filterOpen.categories">
+          <h3
+            class="filter-title"
+            @click="filterOpen.categories = !filterOpen.categories"
+          >
             Категории
-            <span><i class="arrow" :class="{ open: filterOpen.categories }"></i></span>
+            <span
+              ><i class="arrow" :class="{ open: filterOpen.categories }"></i
+            ></span>
           </h3>
 
-          <div class="filter-content-wrapper" :class="{ open: filterOpen.categories }">
+          <div
+            class="filter-content-wrapper"
+            :class="{ open: filterOpen.categories }"
+          >
             <div class="filter-content">
               <div
                 v-for="cat in categoryState"
@@ -47,7 +54,7 @@
                   :id="'cat-' + cat.uuid"
                   :checked="draftCategories.includes(cat.uuid)"
                   @change="onCategoryClick(cat)"
-                >
+                />
                 <label :for="'cat-' + cat.uuid">{{ cat.name }}</label>
               </div>
             </div>
@@ -58,32 +65,51 @@
 
         <!-- === БРЕНДЫ === -->
         <div class="filter-section">
-          <h3 class="filter-title" @click="filterOpen.brands = !filterOpen.brands">
+          <h3
+            class="filter-title"
+            @click="filterOpen.brands = !filterOpen.brands"
+          >
             Бренд
-            <span><i class="arrow" :class="{ open: filterOpen.brands }"></i></span>
+            <span
+              ><i class="arrow" :class="{ open: filterOpen.brands }"></i
+            ></span>
           </h3>
 
-          <div class="filter-content-wrapper" :class="{ open: filterOpen.brands }">
-            <div class="filter-content">
+          <div
+            class="filter-content-wrapper"
+            :class="{ open: filterOpen.brands }"
+          >
+<div class="filter-content">
 
-              <div
-                v-for="b in availableBrands"
-                :key="b.uuid"
-                class="category-filter"
-              >
+  <!-- 🔍 Поиск брендов -->
+<div class="filter-search-wrapper">
+  <input 
+    type="text"
+    v-model="brandSearch"
+    placeholder="Поиск бренда..."
+    class="filter-search"
+  >
+</div>
+
+
+  <div
+    v-for="b in filteredBrands"
+    :key="b.uuid"
+    class="category-filter"
+  >
+
                 <input
                   type="checkbox"
                   :id="'brand-' + b.uuid"
                   :value="b.uuid"
                   v-model="draftBrand"
-                >
+                />
                 <label :for="'brand-' + b.uuid">{{ b.name }}</label>
               </div>
 
               <button class="reset-button-filters" @click="draftBrand = []">
                 Сбросить бренд
               </button>
-
             </div>
           </div>
         </div>
@@ -92,32 +118,51 @@
 
         <!-- === ТИПЫ === -->
         <div class="filter-section">
-          <h3 class="filter-title" @click="filterOpen.types = !filterOpen.types">
+          <h3
+            class="filter-title"
+            @click="filterOpen.types = !filterOpen.types"
+          >
             Тип товара
-            <span><i class="arrow" :class="{ open: filterOpen.types }"></i></span>
+            <span
+              ><i class="arrow" :class="{ open: filterOpen.types }"></i
+            ></span>
           </h3>
 
-          <div class="filter-content-wrapper" :class="{ open: filterOpen.types }">
-            <div class="filter-content">
+          <div
+            class="filter-content-wrapper"
+            :class="{ open: filterOpen.types }"
+          >
+<div class="filter-content">
 
-              <div
-                v-for="t in availableTypes"
-                :key="t.id"
-                class="category-filter"
-              >
+  <!-- 🔍 Поиск типа товара -->
+<div class="filter-search-wrapper">
+  <input 
+    type="text"
+    v-model="typeSearch"
+    placeholder="Поиск типа..."
+    class="filter-search"
+  >
+</div>
+
+
+  <div
+    v-for="t in filteredTypes"
+    :key="t.id"
+    class="category-filter"
+  >
+
                 <input
                   type="checkbox"
                   :id="'type-' + t.id"
                   :value="t.id"
                   v-model="draftType"
-                >
+                />
                 <label :for="'type-' + t.id">{{ t.name }}</label>
               </div>
 
               <button class="reset-button-filters" @click="draftType = []">
                 Сбросить тип
               </button>
-
             </div>
           </div>
         </div>
@@ -126,30 +171,36 @@
 
         <!-- === ЦЕНА === -->
         <div class="filter-section">
-          <h3 class="filter-title" @click="filterOpen.price = !filterOpen.price">
+          <h3
+            class="filter-title"
+            @click="filterOpen.price = !filterOpen.price"
+          >
             Цена
-            <span><i class="arrow" :class="{ open: filterOpen.price }"></i></span>
+            <span
+              ><i class="arrow" :class="{ open: filterOpen.price }"></i
+            ></span>
           </h3>
 
-          <div class="filter-content-wrapper" :class="{ open: filterOpen.price }">
+          <div
+            class="filter-content-wrapper"
+            :class="{ open: filterOpen.price }"
+          >
             <div class="filter-content">
-
               <div class="price-range-inputs">
                 <input
                   type="number"
                   v-model.number="draftPrice[0]"
                   min="0"
                   :max="maxPrice"
-                >
+                />
                 <span class="sep">–</span>
                 <input
                   type="number"
                   v-model.number="draftPrice[1]"
                   min="0"
                   :max="maxPrice"
-                >
+                />
               </div>
-
             </div>
           </div>
         </div>
@@ -165,9 +216,10 @@
         >
           Применить
         </button>
-
-      </div> <!-- /filters-scroll -->
-    </div> <!-- /filters -->
+      </div>
+      <!-- /filters-scroll -->
+    </div>
+    <!-- /filters -->
 
     <!-- === КНОПКА ФИЛЬТРОВ ДЛЯ МОБИЛКИ === -->
     <button class="mobile-filters-btn" @click="showFilters = true">
@@ -192,12 +244,8 @@
         <div class="product-qty">Остаток: {{ item.quantity }}</div>
       </div>
     </div>
-
   </div>
 </template>
-
-
-
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
@@ -224,12 +272,14 @@ const draftBrand = ref([]);
 const draftType = ref([]);
 
 const draftPrice = ref([0, 0]);
+const brandSearch = ref("");
+const typeSearch = ref("");
 
 const filterOpen = ref({
   categories: true,
   brands: true,
   types: true,
-  price: true
+  price: true,
 });
 
 async function loadData() {
@@ -241,10 +291,10 @@ async function loadData() {
     brands.value = data.brands || [];
     types.value = data.types || [];
 
-    products.value = (data.products || []).filter(p => (p.quantity ?? 0) > 0);
+    products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
 
     if (products.value.length) {
-      const prices = products.value.map(p => Number(p.price) || 0);
+      const prices = products.value.map((p) => Number(p.price) || 0);
       maxPrice.value = Math.max(...prices);
 
       priceRange.value = [0, maxPrice.value];
@@ -267,11 +317,11 @@ function normalizeTypeName(name = "") {
 
 const typeMap = computed(() => {
   const map = new Map();
-  types.value.forEach(t => {
+  types.value.forEach((t) => {
     const name = t.name || "";
     map.set(t.uuid, {
       name,
-      norm: normalizeTypeName(name)
+      norm: normalizeTypeName(name),
     });
   });
   return map;
@@ -280,9 +330,12 @@ const typeMap = computed(() => {
 const availableBrands = computed(() => {
   const set = new Set();
 
-  products.value.forEach(p => {
-    if (draftCategories.value.length &&
-        !draftCategories.value.includes(p.categoryUuid)) return;
+  products.value.forEach((p) => {
+    if (
+      draftCategories.value.length &&
+      !draftCategories.value.includes(p.categoryUuid)
+    )
+      return;
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -292,18 +345,21 @@ const availableBrands = computed(() => {
     if (p.brandUuid) set.add(p.brandUuid);
   });
 
-  return brands.value.filter(b => set.has(b.uuid));
+  return brands.value.filter((b) => set.has(b.uuid));
 });
 
 const availableTypes = computed(() => {
   const byName = new Map();
 
-  products.value.forEach(p => {
-    if (draftCategories.value.length &&
-        !draftCategories.value.includes(p.categoryUuid)) return;
+  products.value.forEach((p) => {
+    if (
+      draftCategories.value.length &&
+      !draftCategories.value.includes(p.categoryUuid)
+    )
+      return;
 
-    if (draftBrand.value.length &&
-        !draftBrand.value.includes(p.brandUuid)) return;
+    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
+      return;
 
     const info = typeMap.value.get(p.typeUuid);
     if (!info) return;
@@ -313,7 +369,7 @@ const availableTypes = computed(() => {
     if (!byName.has(norm)) {
       byName.set(norm, {
         id: norm,
-        name
+        name,
       });
     }
   });
@@ -323,12 +379,30 @@ const availableTypes = computed(() => {
   );
 });
 
+const filteredBrands = computed(() => {
+  const query = brandSearch.value.trim().toLowerCase();
+  if (!query) return availableBrands.value;
+
+  return availableBrands.value.filter((b) =>
+    b.name.toLowerCase().includes(query)
+  );
+});
+
+const filteredTypes = computed(() => {
+  const query = typeSearch.value.trim().toLowerCase();
+  if (!query) return availableTypes.value;
+
+  return availableTypes.value.filter((t) =>
+    t.name.toLowerCase().includes(query)
+  );
+});
+
 const availableCategories = computed(() => {
   const set = new Set();
 
-  products.value.forEach(p => {
-    if (draftBrand.value.length &&
-        !draftBrand.value.includes(p.brandUuid)) return;
+  products.value.forEach((p) => {
+    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
+      return;
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -338,25 +412,32 @@ const availableCategories = computed(() => {
     set.add(p.categoryUuid);
   });
 
-  return categories.value.filter(c => set.has(c.uuid));
+  return categories.value.filter((c) => set.has(c.uuid));
 });
 
 const filteredProducts = computed(() => {
-  return products.value.filter(p => {
+  return products.value.filter((p) => {
     const price = Number(p.price) || 0;
 
-    if (selectedCategories.value.length &&
-        !selectedCategories.value.includes(p.categoryUuid)) return false;
+    if (
+      selectedCategories.value.length &&
+      !selectedCategories.value.includes(p.categoryUuid)
+    )
+      return false;
 
-    if (selectedBrand.value.length &&
-        !selectedBrand.value.includes(p.brandUuid)) return false;
+    if (
+      selectedBrand.value.length &&
+      !selectedBrand.value.includes(p.brandUuid)
+    )
+      return false;
 
     if (selectedType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
       if (!info || !selectedType.value.includes(info.norm)) return false;
     }
 
-    if (price < priceRange.value[0] || price > priceRange.value[1]) return false;
+    if (price < priceRange.value[0] || price > priceRange.value[1])
+      return false;
 
     return true;
   });
@@ -371,7 +452,8 @@ function applyFilters() {
 
 const filtersChanged = computed(() => {
   return (
-    JSON.stringify(selectedCategories.value) !== JSON.stringify(draftCategories.value) ||
+    JSON.stringify(selectedCategories.value) !==
+      JSON.stringify(draftCategories.value) ||
     JSON.stringify(selectedBrand.value) !== JSON.stringify(draftBrand.value) ||
     JSON.stringify(selectedType.value) !== JSON.stringify(draftType.value) ||
     JSON.stringify(priceRange.value) !== JSON.stringify(draftPrice.value)
@@ -381,9 +463,9 @@ const filtersChanged = computed(() => {
 const categoryState = computed(() => {
   const active = new Set();
 
-  products.value.forEach(p => {
-    if (draftBrand.value.length &&
-        !draftBrand.value.includes(p.brandUuid)) return;
+  products.value.forEach((p) => {
+    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
+      return;
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -393,16 +475,18 @@ const categoryState = computed(() => {
     active.add(p.categoryUuid);
   });
 
-  return categories.value.map(c => ({
+  return categories.value.map((c) => ({
     ...c,
-    disabled: !active.has(c.uuid)
+    disabled: !active.has(c.uuid),
   }));
 });
 
 function onCategoryClick(cat) {
   if (!cat.disabled) {
     if (draftCategories.value.includes(cat.uuid)) {
-      draftCategories.value = draftCategories.value.filter(id => id !== cat.uuid);
+      draftCategories.value = draftCategories.value.filter(
+        (id) => id !== cat.uuid
+      );
     } else {
       draftCategories.value.push(cat.uuid);
     }
@@ -418,10 +502,10 @@ watch(
   () => [draftBrand.value, draftType.value, categories.value],
   () => {
     const valid = categoryState.value
-      .filter(c => !c.disabled)
-      .map(c => c.uuid);
+      .filter((c) => !c.disabled)
+      .map((c) => c.uuid);
 
-    draftCategories.value = draftCategories.value.filter(id =>
+    draftCategories.value = draftCategories.value.filter((id) =>
       valid.includes(id)
     );
 
@@ -434,16 +518,12 @@ watch(
 
 onMounted(loadData);
 
-watch(showFilters, v => {
+watch(showFilters, (v) => {
   document.body.style.overflow = v ? "hidden" : "auto";
 });
 </script>
 
-
-
 <style scoped>
-
-
 .loading {
   width: 100%;
   height: 100vh;
@@ -473,7 +553,6 @@ watch(showFilters, v => {
   }
 }
 
-
 .filter-title {
   display: flex;
   justify-content: space-between;
@@ -502,7 +581,6 @@ watch(showFilters, v => {
   opacity: 1;
 }
 
-
 .filter-title span {
   display: flex;
   align-items: center;
@@ -522,8 +600,6 @@ watch(showFilters, v => {
   transform: rotate(-135deg);
 }
 
-
-
 .clear-btn {
   margin-top: 10px;
   background: #2a2d31;
@@ -537,7 +613,6 @@ watch(showFilters, v => {
 .clear-btn:hover {
   background: #3a3f44;
 }
-
 
 .category-filter.disabled label {
   opacity: 0.4;
@@ -572,12 +647,12 @@ watch(showFilters, v => {
 }
 
 .reset-button-filters {
-color: #fff;
-    background: transparent;
-    text-decoration: underline;
-    border: none;
-    margin-bottom: 10px;
-    cursor: pointer;
+  color: #fff;
+  background: transparent;
+  text-decoration: underline;
+  border: none;
+  margin-bottom: 10px;
+  cursor: pointer;
 }
 
 .apply-btn.disabled {
@@ -596,11 +671,10 @@ color: #fff;
   padding: 20px;
 }
 
-
 /* === ФИЛЬТРЫ === */
 .filters {
   position: fixed;
-  top: 69px;   /* <<< фильтры начинаются под хедером */
+  top: 69px; /* <<< фильтры начинаются под хедером */
   left: 0;
   width: 260px;
   height: calc(100vh - 60px); /* <<< чтобы не вылазило за экран */
@@ -612,6 +686,42 @@ color: #fff;
 
 .filters-close-btn {
   display: none;
+}
+
+.filter-search {
+  width: 100%;
+  padding: 10px 12px 10px 36px; /* место для иконки */
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid #d0d0d0;
+  background: #fafafa;
+  font-size: 15px;
+  transition: all 0.25s ease;
+  position: relative;
+  outline: none;
+}
+
+.filter-search:focus {
+  background: #fff;
+  border-color: #7aa3ff;
+  box-shadow: 0 0 0 3px rgba(122, 163, 255, 0.35);
+}
+
+/* контейнер, чтобы иконка рисовалась */
+.filter-search-wrapper {
+  position: relative;
+}
+
+/* Иконка 🔍 */
+.filter-search-wrapper::before {
+  content: "🔍";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 
@@ -627,10 +737,9 @@ color: #fff;
 }
 
 /* Мобильная кнопка “Фильтры” — по умолчанию скрыта */
-  .mobile-filters-btn {
-    display: none;
-
-  }
+.mobile-filters-btn {
+  display: none;
+}
 
 /* Затемнение фона при открытых фильтрах (мобилка) */
 .filters-backdrop {
@@ -667,8 +776,8 @@ color: #fff;
   font-size: 12px;
   font-weight: bold;
   position: absolute;
-top: 0;
-    left: 5px;
+  top: 0;
+  left: 5px;
 }
 
 .category-filter label {
@@ -715,8 +824,6 @@ top: 0;
   gap: 16px;
 }
 
-
-
 .product-card {
   background: var(--background-container);
   padding: 18px;
@@ -748,34 +855,31 @@ top: 0;
 /*   МОБИЛЬНАЯ АДАПТАЦИЯ   */
 /* ————————————————————— */
 @media (max-width: 768px) {
-
-
   .catalog-page {
     padding: 12px;
   }
 
   .filters-close-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 2px solid var(--accent-color);
-  background: transparent;
-  color: var(--accent-color);
-  font-size: 20px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.25s;
-}
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 2px solid var(--accent-color);
+    background: transparent;
+    color: var(--accent-color);
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.25s;
+  }
 
-.filters-close-btn:hover {
-  background: var(--accent-color);
-  color: #000;
-  transform: scale(1.05);
-}
-
+  .filters-close-btn:hover {
+    background: var(--accent-color);
+    color: #000;
+    transform: scale(1.05);
+  }
 
   /* Кнопка "Фильтры" */
   .mobile-filters-btn {
@@ -797,12 +901,12 @@ top: 0;
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(1px);
     z-index: 2500;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .25s ease;
+    transition: opacity 0.25s ease;
   }
 
   .filters.open ~ .filters-backdrop {
@@ -823,7 +927,7 @@ top: 0;
     transform: translateY(100%);
     z-index: 3000;
     overflow-y: auto;
-    transition: transform .35s ease;
+    transition: transform 0.35s ease;
   }
 
   /* показать фильтры */
@@ -860,8 +964,8 @@ top: 0;
     color: #fff;
     cursor: pointer;
     padding: 0 10px;
-    opacity: .8;
-    transition: .2s;
+    opacity: 0.8;
+    transition: 0.2s;
   }
 
   .close-filters:hover {
@@ -896,7 +1000,6 @@ top: 0;
     margin-bottom: 16px;
   }
 
-
   /* Применить */
   .apply-btn {
     position: sticky;
@@ -918,8 +1021,5 @@ top: 0;
     grid-template-columns: 1fr;
     gap: 14px;
   }
-
 }
-
-
 </style>
