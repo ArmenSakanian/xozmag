@@ -15,6 +15,20 @@
     <div class="filters" :class="{ open: showFilters }">
       <div class="filters-header">
         <h2>Фильтры</h2>
+
+        <div class="filters-actions">
+          <button class="reset-btn-all" @click="resetAllFilters">Сброс</button>
+
+          <button
+            class="apply-btn"
+            :class="{ disabled: !filtersChanged }"
+            :disabled="!filtersChanged"
+            @click="applyFilters"
+          >
+            Применить
+          </button>
+        </div>
+
         <button class="filters-close-btn" @click="showFilters = false">
           ✕
         </button>
@@ -57,57 +71,48 @@
 
         <hr />
 
-<hr />
+        <hr />
 
-<div class="filter-section">
-  <h3
-    class="filter-title"
-    @click="filterOpen.photo = !filterOpen.photo"
-  >
-    Фото
-    <span><i class="arrow" :class="{ open: filterOpen.photo }"></i></span>
-  </h3>
+        <div class="filter-section">
+          <h3
+            class="filter-title"
+            @click="filterOpen.photo = !filterOpen.photo"
+          >
+            Фото
+            <span
+              ><i class="arrow" :class="{ open: filterOpen.photo }"></i
+            ></span>
+          </h3>
 
-  <div
-    class="filter-content-wrapper"
-    :class="{ open: filterOpen.photo }"
-  >
-    <div class="filter-content photo-filter">
-  <label class="radio-row">
-    <input
-      type="radio"
-      value="all"
-      v-model="draftPhotoFilter"
-    />
-    <span class="radio-check"></span>
-    <span class="radio-text">Все товары</span>
-  </label>
+          <div
+            class="filter-content-wrapper"
+            :class="{ open: filterOpen.photo }"
+          >
+            <div class="filter-content photo-filter">
+              <label class="radio-row">
+                <input type="radio" value="all" v-model="draftPhotoFilter" />
+                <span class="radio-check"></span>
+                <span class="radio-text">Все товары</span>
+              </label>
 
-  <label class="radio-row">
-    <input
-      type="radio"
-      value="with"
-      v-model="draftPhotoFilter"
-    />
-    <span class="radio-check"></span>
-    <span class="radio-text">Только с фото</span>
-  </label>
+              <label class="radio-row">
+                <input type="radio" value="with" v-model="draftPhotoFilter" />
+                <span class="radio-check"></span>
+                <span class="radio-text">Только с фото</span>
+              </label>
 
-  <label class="radio-row">
-    <input
-      type="radio"
-      value="without"
-      v-model="draftPhotoFilter"
-    />
-    <span class="radio-check"></span>
-    <span class="radio-text">Только без фото</span>
-  </label>
-</div>
-
-  </div>
-</div>
-
-
+              <label class="radio-row">
+                <input
+                  type="radio"
+                  value="without"
+                  v-model="draftPhotoFilter"
+                />
+                <span class="radio-check"></span>
+                <span class="radio-text">Только без фото</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
         <div class="filter-section">
           <h3
@@ -134,19 +139,22 @@
                 />
               </div>
 
-              <div
-                v-for="b in filteredBrands"
-                :key="b.uuid"
-                class="category-filter"
-              >
-                <input
-                  type="checkbox"
-                  :id="'brand-' + b.uuid"
-                  :value="b.uuid"
-                  v-model="draftBrand"
-                />
-                <label :for="'brand-' + b.uuid">{{ b.name }}</label>
-              </div>
+<div
+  v-for="b in filteredBrands"
+  :key="b.norm"
+  class="category-filter"
+  :class="{ disabled: b.disabled }"
+>
+  <input
+    type="checkbox"
+    :id="'brand-' + b.norm"
+    :value="b.norm"
+    v-model="draftBrand"
+    :disabled="b.disabled"
+  />
+  <label :for="'brand-' + b.norm">{{ b.name }}</label>
+</div>
+
 
               <button class="reset-button-filters" @click="draftBrand = []">
                 Сбросить бренд
@@ -182,19 +190,22 @@
                 />
               </div>
 
-              <div
-                v-for="t in filteredTypes"
-                :key="t.id"
-                class="category-filter"
-              >
-                <input
-                  type="checkbox"
-                  :id="'type-' + t.id"
-                  :value="t.id"
-                  v-model="draftType"
-                />
-                <label :for="'type-' + t.id">{{ t.name }}</label>
-              </div>
+<div
+  v-for="t in filteredTypes"
+  :key="t.id"
+  class="category-filter"
+  :class="{ disabled: t.disabled }"
+>
+  <input
+    type="checkbox"
+    :id="'type-' + t.id"
+    :value="t.id"
+    v-model="draftType"
+    :disabled="t.disabled"
+  />
+  <label :for="'type-' + t.id">{{ t.name }}</label>
+</div>
+
 
               <button class="reset-button-filters" @click="draftType = []">
                 Сбросить тип
@@ -240,17 +251,7 @@
         </div>
 
         <hr />
-
-
       </div>
-        <button
-          class="apply-btn"
-          :class="{ disabled: !filtersChanged }"
-          :disabled="!filtersChanged"
-          @click="applyFilters"
-        >
-          Применить
-        </button>
     </div>
 
     <button class="mobile-filters-btn" @click="showFilters = true">
@@ -267,26 +268,26 @@
         :key="item.uuid"
         class="product-card"
       >
-<div class="main-image-wrapper">
-<img
-  :src="activeImage[item.uuid] || item.images[0] || '/img/no-photo.png'"
-  class="product-img-big"
-  @click="nextImage(item)"
-  alt=""
-/>
+        <div class="main-image-wrapper">
+          <img
+            :src="
+              activeImage[item.uuid] || item.images[0] || '/img/no-photo.png'
+            "
+            class="product-img-big"
+            @click="nextImage(item)"
+            alt=""
+          />
+        </div>
 
-</div>
-
-<div v-if="item.images.length > 1" class="thumbs">
-  <img
-    v-for="(img, i) in item.images"
-    :key="i"
-    :src="img"
-    :class="['thumb', { active: activeImage[item.uuid] === img }]"
-    @click="setActiveImage(item.uuid, img)"
-  />
-</div>
-
+        <div v-if="item.images.length > 1" class="thumbs">
+          <img
+            v-for="(img, i) in item.images"
+            :key="i"
+            :src="img"
+            :class="['thumb', { active: activeImage[item.uuid] === img }]"
+            @click="setActiveImage(item.uuid, img)"
+          />
+        </div>
 
         <h3 class="product-name">{{ item.name }}</h3>
         <div class="product-price">{{ item.price }} ₽</div>
@@ -327,10 +328,9 @@ const brandSearch = ref("");
 const typeSearch = ref("");
 
 // фильтр: с фото / без фото
-const photoFilter = ref("all"); 
+const photoFilter = ref("all");
 // all | with | without
 const draftPhotoFilter = ref("all");
-
 
 // --- Галерея изображений --- //
 const activeImage = ref({});
@@ -350,8 +350,6 @@ function nextImage(item) {
   activeImage.value[item.uuid] = next;
 }
 
-
-
 const filterOpen = ref({
   categories: true,
   brands: true,
@@ -359,7 +357,6 @@ const filterOpen = ref({
   photo: true,
   price: true,
 });
-
 
 async function loadData() {
   try {
@@ -370,7 +367,9 @@ async function loadData() {
     brands.value = data.brands || [];
     types.value = data.types || [];
 
-    products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
+    products.value = data.products || [];
+
+    // products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
 
     if (products.value.length) {
       const prices = products.value.map((p) => Number(p.price) || 0);
@@ -393,6 +392,9 @@ function normalizeTypeName(name = "") {
     .trim()
     .toLowerCase();
 }
+function normalizeBrandName(name = "") {
+  return String(name).trim().toLowerCase();
+}
 
 const typeMap = computed(() => {
   const map = new Map();
@@ -406,39 +408,73 @@ const typeMap = computed(() => {
   return map;
 });
 
-const availableBrands = computed(() => {
-  const set = new Set();
 
-  products.value.forEach((p) => {
+// объединяем бренды по имени
+const mergedBrands = computed(() => {
+  const map = new Map();
+
+  brands.value.forEach(b => {
+    const norm = normalizeBrandName(b.name);
+
+    if (!map.has(norm)) {
+      map.set(norm, {
+        name: b.name,     // красивый вариант
+        norm,
+        uuids: new Set()
+      });
+    }
+
+    map.get(norm).uuids.add(b.uuid);
+  });
+
+  return Array.from(map.values());
+});
+
+
+const availableBrands = computed(() => {
+  const use = new Set();
+
+  products.value.forEach(p => {
     if (
       draftCategories.value.length &&
       !draftCategories.value.includes(p.categoryUuid)
-    )
-      return;
+    ) return;
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
       if (!info || !draftType.value.includes(info.norm)) return;
     }
 
-    if (p.brandUuid) set.add(p.brandUuid);
+    // добавляем нормализованное имя бренда
+    const brandObj = mergedBrands.value.find(b => b.uuids.has(p.brandUuid));
+    if (brandObj) use.add(brandObj.norm);
   });
 
-  return brands.value.filter((b) => set.has(b.uuid));
+return mergedBrands.value.map(b => ({
+  ...b,
+  disabled: !use.has(b.norm)   // если бренд несовместим → disabled
+}));
 });
+
+
 
 const availableTypes = computed(() => {
   const byName = new Map();
 
   products.value.forEach((p) => {
-    if (
-      draftCategories.value.length &&
-      !draftCategories.value.includes(p.categoryUuid)
-    )
-      return;
+    // 1️⃣ если выбран бренд → НЕ фильтровать по категории
+    if (!draftBrand.value.length) {
+      // обычная проверка категории
+      if (
+        draftCategories.value.length &&
+        !draftCategories.value.includes(p.categoryUuid)
+      ) return;
+    }
+if (draftBrand.value.length) {
+  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
+  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+}
 
-    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
-      return;
 
     const info = typeMap.value.get(p.typeUuid);
     if (!info) return;
@@ -453,10 +489,18 @@ const availableTypes = computed(() => {
     }
   });
 
-  return Array.from(byName.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "ru")
-  );
+return types.value.map(t => {
+  const norm = normalizeTypeName(t.name);
+  return {
+    id: norm,
+    name: t.name,
+    disabled: !byName.has(norm)  // если тип не подходит → отключаем
+  };
 });
+
+});
+
+
 
 const filteredBrands = computed(() => {
   const query = brandSearch.value.trim().toLowerCase();
@@ -480,8 +524,11 @@ const availableCategories = computed(() => {
   const set = new Set();
 
   products.value.forEach((p) => {
-    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
-      return;
+if (draftBrand.value.length) {
+  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
+  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+}
+
 
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -504,11 +551,16 @@ const filteredProducts = computed(() => {
     )
       return false;
 
-    if (
-      selectedBrand.value.length &&
-      !selectedBrand.value.includes(p.brandUuid)
-    )
-      return false;
+if (selectedBrand.value.length) {
+  // если у товара НЕТ бренда → он НЕ подходит под выбор брендов
+  if (!p.brandUuid) return false;
+
+  // найдём объект бренда по имени
+  const brandObj = mergedBrands.value.find(b => selectedBrand.value.includes(b.norm));
+
+  // если не нашли или UUID товара не относится к выбранному бренду
+  if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return false;
+}
 
     if (selectedType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
@@ -531,7 +583,6 @@ const filteredProducts = computed(() => {
   });
 });
 
-
 function applyFilters() {
   selectedCategories.value = [...draftCategories.value];
   selectedBrand.value = [...draftBrand.value];
@@ -541,6 +592,16 @@ function applyFilters() {
   photoFilter.value = draftPhotoFilter.value;
 }
 
+function resetAllFilters() {
+  draftCategories.value = [];
+  draftBrand.value = [];
+  draftType.value = [];
+  draftPrice.value = [0, maxPrice.value];
+  draftPhotoFilter.value = "all";
+
+  // Применить сразу
+  applyFilters();
+}
 
 const filtersChanged = computed(() => {
   return (
@@ -553,14 +614,21 @@ const filtersChanged = computed(() => {
   );
 });
 
-
 const categoryState = computed(() => {
   const active = new Set();
 
   products.value.forEach((p) => {
-    if (draftBrand.value.length && !draftBrand.value.includes(p.brandUuid))
-      return;
+    // Если выбран бренд → категории должны зависеть ТОЛЬКО от бренда
+if (draftBrand.value.length) {
+  const brandObj = mergedBrands.value.find(b => draftBrand.value.includes(b.norm));
+  if (brandObj && brandObj.uuids.has(p.brandUuid)) {
+    active.add(p.categoryUuid);
+  }
+  return;
+}
 
+
+    // Если бренд НЕ выбран → обычная логика с типами
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
       if (!info || !draftType.value.includes(info.norm)) return;
@@ -574,6 +642,9 @@ const categoryState = computed(() => {
     disabled: !active.has(c.uuid),
   }));
 });
+
+
+
 
 function onCategoryClick(cat) {
   if (!cat.disabled) {
@@ -603,9 +674,10 @@ watch(
       valid.includes(id)
     );
 
-    if (draftBrand.value.length) {
-      draftCategories.value = [...valid];
-    }
+// if (draftBrand.value.length) {
+//   draftCategories.value = [...valid];
+// }
+
   },
   { immediate: true }
 );
@@ -727,6 +799,10 @@ watch(showFilters, (v) => {
   cursor: not-allowed;
 }
 
+.category-filter.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
 
 .photo-filter {
   display: flex;
@@ -775,11 +851,9 @@ watch(showFilters, (v) => {
   user-select: none;
 }
 
-.apply-btn {
-  position: fixed;
-  width: 10%;
-  padding: 12px;
-  background: var(--accent-color);
+.apply-btn,
+.reset-btn-all {
+  padding: 15px;
   color: white;
   border: none;
   border-radius: 10px;
@@ -787,6 +861,25 @@ watch(showFilters, (v) => {
   cursor: pointer;
   margin-top: 15px;
   transition: 0.2s;
+}
+
+.apply-btn {
+  background: var(--accent-color);
+}
+
+.reset-btn-all {
+  background: var(--delete-color);
+}
+
+.filters-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.reset-btn-all:hover {
+  background: var(--accent-color);
+  color: #000;
 }
 
 .reset-button-filters {
@@ -801,7 +894,7 @@ watch(showFilters, (v) => {
 .apply-btn.disabled {
   background: #2f3237;
   color: #999;
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .no-products {
@@ -823,7 +916,7 @@ watch(showFilters, (v) => {
   height: calc(100vh - 60px); /* <<< чтобы не вылазило за экран */
   padding: 20px;
   background: var(--background-container);
-  /* overflow-y: auto; */
+  overflow-y: auto;
   z-index: 10; /* можно оставить маленький */
 }
 
@@ -1026,7 +1119,6 @@ watch(showFilters, (v) => {
   opacity: 1;
 }
 
-
 .product-name {
   color: white;
   font-size: 17px;
@@ -1056,6 +1148,8 @@ watch(showFilters, (v) => {
   }
 
   .filters-close-btn {
+      grid-column: 2 / 3;
+  grid-row: 1 / 2;
     width: 34px;
     height: 34px;
     border-radius: 8px;
@@ -1070,12 +1164,16 @@ watch(showFilters, (v) => {
     cursor: pointer;
     transition: 0.25s;
   }
-
   .filters-close-btn:hover {
     background: var(--accent-color);
     color: #000;
     transform: scale(1.05);
   }
+
+.filters-actions {
+    grid-column: 1 / 3; /* растянуть кнопки на всю ширину */
+  grid-row: 2 / 3;
+}
 
   /* Кнопка "Фильтры" */
   .mobile-filters-btn {
@@ -1140,9 +1238,9 @@ watch(showFilters, (v) => {
     padding: 16px 20px;
     border-bottom: 1px solid #333;
 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto; /* слева текст, справа крест */
+  grid-template-rows: auto auto;   /* первая строка — заголовок, вторая — кнопки */
   }
 
   .filters-header h2 {
@@ -1150,6 +1248,8 @@ watch(showFilters, (v) => {
     font-size: 20px;
     font-weight: 700;
     margin: 0;
+      grid-column: 1 / 2;
+  grid-row: 1 / 2;
   }
 
   .close-filters {
@@ -1198,16 +1298,10 @@ watch(showFilters, (v) => {
 
   /* Применить */
   .apply-btn {
-position: sticky;
-width: 50%;
-margin: 0 auto;
-        bottom: 50px;
-        padding: 16px 20px;
-        border-bottom: 1px solid #333;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 9999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
   }
 
   /* Сетка товаров */
