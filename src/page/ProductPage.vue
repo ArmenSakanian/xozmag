@@ -139,6 +139,8 @@
 
 
   <!-- ПОКАЗЫВАЕМ ТОЛЬКО visibleBrands -->
+<div class="brands-scroll">
+
   <div
     v-for="b in visibleBrands"
     :key="b.norm"
@@ -147,12 +149,15 @@
   >
     <input
       type="checkbox"
-      :id="'brand-' + b.uuid"
+      :id="'brand-' + b.norm"
       :value="b.norm"
       v-model="draftBrand"
     />
-    <label :for="'brand-' + b.uuid">{{ b.name }}</label>
+    <label :for="'brand-' + b.norm">{{ b.name }}</label>
   </div>
+
+</div>
+
 
   <!-- 👇 КНОПКА ВСЕГДА СТАВИТСЯ ЗДЕСЬ (под v-for, НО внутри filter-content) -->
   <div class="show-more-btn" @click="showAllBrands = !showAllBrands">
@@ -195,6 +200,8 @@
     />
   </div>
 
+<div class="types-scroll">
+
   <div
     v-for="t in visibleTypes"
     :key="t.id"
@@ -209,6 +216,9 @@
     />
     <label :for="'type-' + t.id">{{ t.name }}</label>
   </div>
+
+</div>
+
 
   <!-- 👇 ПРАВИЛЬНОЕ МЕСТО -->
   <div class="show-more-btn" @click="showAllTypes = !showAllTypes">
@@ -417,30 +427,16 @@ const typeMap = computed(() => {
   });
   return map;
 });
-
-// объединяем бренды по имени
+// Бренды теперь приходят как обычный массив строк
 const mergedBrands = computed(() => {
-  const map = new Map();
-
-  brands.value.forEach((b) => {
-    const norm = normalizeBrandName(b.name);
-
-    if (!map.has(norm)) {
-      map.set(norm, {
-        name: b.name, // красивый вариант
-        norm,
-        uuids: new Set(),
-      });
-    }
-
-    map.get(norm).uuids.add(b.uuid);
-  });
-
-  return Array.from(map.values());
+  return brands.value.map((name) => ({
+    name,
+    norm: normalizeBrandName(name)
+  }));
 });
 
 const availableBrands = computed(() => {
-  const use = new Set();
+  const set = new Set();
 
   products.value.forEach((p) => {
     if (
@@ -454,60 +450,70 @@ const availableBrands = computed(() => {
       if (!info || !draftType.value.includes(info.norm)) return;
     }
 
-    // добавляем нормализованное имя бренда
-    const brandObj = mergedBrands.value.find((b) => b.uuids.has(p.brandUuid));
-    if (brandObj) use.add(brandObj.norm);
+    // Берём бренд товара
+    if (p.brandName) {
+      set.add(normalizeBrandName(p.brandName));
+    }
   });
 
-  return mergedBrands.value.filter((b) => use.has(b.norm));
+  return mergedBrands.value.filter((b) => set.has(b.norm));
 });
+
 
 const availableTypes = computed(() => {
-  const byName = new Map();
+  const set = new Set();
 
   products.value.forEach((p) => {
-    // 1️⃣ если выбран бренд → НЕ фильтровать по категории
-    if (!draftBrand.value.length) {
-      // обычная проверка категории
-      if (
-        draftCategories.value.length &&
-        !draftCategories.value.includes(p.categoryUuid)
-      )
+    // фильтр по категориям
+    if (
+      draftCategories.value.length &&
+      !draftCategories.value.includes(p.categoryUuid)
+    )
+      return;
+
+    // фильтр по брендам
+    if (draftBrand.value.length) {
+      if (!p.brandName) return;
+      if (!draftBrand.value.includes(normalizeBrandName(p.brandName)))
         return;
     }
-    if (draftBrand.value.length) {
-      const brandObj = mergedBrands.value.find((b) =>
-        draftBrand.value.includes(b.norm)
-      );
-      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
-    }
 
-    const info = typeMap.value.get(p.typeUuid);
-    if (!info) return;
-
-    const { name, norm } = info;
-
-    if (!byName.has(norm)) {
-      byName.set(norm, {
-        id: norm,
-        name,
-      });
+    if (p.typeName) {
+      set.add(normalizeTypeName(p.typeName));
     }
   });
 
-  return Array.from(byName.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "ru")
-  );
+  return Array.from(set).map((norm) => {
+    const typeObj = types.value.find(
+      (t) => normalizeTypeName(t.name) === norm
+    );
+
+    return {
+      id: norm,
+      name: typeObj ? typeObj.name : norm,
+    };
+  });
 });
+
 
 const filteredBrands = computed(() => {
   let list = mergedBrands.value.map((b) => {
     const active = products.value.some((p) => {
+      // фильтр типов
       if (draftType.value.length) {
         const info = typeMap.value.get(p.typeUuid);
         if (!info || !draftType.value.includes(info.norm)) return false;
       }
-      return b.uuids.has(p.brandUuid);
+
+      // фильтр категорий
+      if (
+        draftCategories.value.length &&
+        !draftCategories.value.includes(p.categoryUuid)
+      )
+        return false;
+
+      // сравнение брендов по имени
+      return normalizeBrandName(p.brandName) === b.norm;
     });
 
     return {
@@ -516,71 +522,76 @@ const filteredBrands = computed(() => {
     };
   });
 
-  // 👉 СНАЧАЛА ПОИСК
+  // поиск
   const query = brandSearch.value.trim().toLowerCase();
   if (query) {
     list = list.filter((b) => b.name.toLowerCase().includes(query));
   }
 
-  // 👉 ПОТОМ СОРТИРОВКА
+  // сортировка
   return list.sort((a, b) => {
     if (a.disabled !== b.disabled) return a.disabled - b.disabled;
     return a.name.localeCompare(b.name, "ru");
   });
 });
+
 
 const visibleBrands = computed(() => {
   if (showAllBrands.value) return filteredBrands.value;
   return filteredBrands.value.slice(0, 5);
 });
 
-// УНИКАЛЬНЫЕ ТИПЫ + DISABLED как у категорий
 const filteredTypes = computed(() => {
-  const byNorm = new Map();
+  const map = new Map();
 
+  // создаём список всех типов
   types.value.forEach((t) => {
-    const info = typeMap.value.get(t.uuid);
-    if (!info) return;
-
-    if (!byNorm.has(info.norm)) {
-      byNorm.set(info.norm, {
-        id: info.norm,
-        name: info.name,
-        disabled: true,
-      });
-    }
+    const norm = normalizeTypeName(t.name);
+    map.set(norm, {
+      id: norm,
+      name: t.name,
+      disabled: true,
+    });
   });
 
+  // активируем те, что реально встречаются в товарах
   products.value.forEach((p) => {
-    const info = typeMap.value.get(p.typeUuid);
-    if (!info) return;
+    const norm = normalizeTypeName(p.typeName);
 
+    // фильтр по категориям
+    if (
+      draftCategories.value.length &&
+      !draftCategories.value.includes(p.categoryUuid)
+    )
+      return;
+
+    // фильтр по брендам
     if (draftBrand.value.length) {
-      const brandObj = mergedBrands.value.find((b) =>
-        draftBrand.value.includes(b.norm)
-      );
-      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
+      if (!p.brandName) return;
+      if (!draftBrand.value.includes(normalizeBrandName(p.brandName)))
+        return;
     }
 
-    if (byNorm.has(info.norm)) {
-      byNorm.get(info.norm).disabled = false;
+    if (map.has(norm)) {
+      map.get(norm).disabled = false;
     }
   });
 
-  let list = Array.from(byNorm.values());
+  let list = Array.from(map.values());
 
-  // 👉 СНАЧАЛА ПОИСК
+  // поиск по типу
   const query = typeSearch.value.trim().toLowerCase();
   if (query) {
     list = list.filter((t) => t.name.toLowerCase().includes(query));
   }
 
-  // 👉 ПОТОМ СОРТИРОВКА
+  // сортировка
   return list.sort((a, b) => {
     if (a.disabled !== b.disabled) return a.disabled - b.disabled;
     return a.name.localeCompare(b.name, "ru");
   });
 });
+
 
 const visibleTypes = computed(() => {
   if (showAllTypes.value) return filteredTypes.value;
@@ -613,31 +624,28 @@ const filteredProducts = computed(() => {
   return products.value.filter((p) => {
     const price = Number(p.price) || 0;
 
+    // категория
     if (
       selectedCategories.value.length &&
       !selectedCategories.value.includes(p.categoryUuid)
     )
       return false;
 
+    // бренд — сравнение по brandName
     if (selectedBrand.value.length) {
-      // если у товара НЕТ бренда → он НЕ подходит под выбор брендов
-      if (!p.brandUuid) return false;
+      if (!p.brandName) return false;
+      const normBrand = normalizeBrandName(p.brandName);
 
-      // найдём объект бренда по имени
-      const brandObj = mergedBrands.value.find((b) =>
-        selectedBrand.value.includes(b.norm)
-      );
-
-      // если не нашли или UUID товара не относится к выбранному бренду
-      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return false;
+      if (!selectedBrand.value.includes(normBrand)) return false;
     }
 
+    // тип товара — сравнение по typeName
     if (selectedType.value.length) {
-      const info = typeMap.value.get(p.typeUuid);
-      if (!info || !selectedType.value.includes(info.norm)) return false;
+      const normType = normalizeTypeName(p.typeName);
+      if (!selectedType.value.includes(normType)) return false;
     }
 
-    // 🔥 Фильтр по фото
+    // Фото
     if (photoFilter.value === "with") {
       if (!p.images || p.images.length === 0) return false;
     }
@@ -646,12 +654,14 @@ const filteredProducts = computed(() => {
       if (p.images && p.images.length > 0) return false;
     }
 
+    // Цена
     if (price < priceRange.value[0] || price > priceRange.value[1])
       return false;
 
     return true;
   });
 });
+
 
 function applyFilters() {
   selectedCategories.value = [...draftCategories.value];
@@ -756,7 +766,13 @@ watch(showFilters, (v) => {
 });
 </script>
 
+
 <style scoped>
+
+.filters-header {
+  position: sticky;
+}
+
 .loading {
   width: 100%;
   height: 100vh;
@@ -801,6 +817,13 @@ watch(showFilters, (v) => {
   margin-bottom: 10px;
   padding-left: 5px;
 }
+
+.brands-scroll, .types-scroll {
+  max-height: 300px; /* можно 400, 500 — как хочешь */
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
 
 .filter-content-wrapper {
   max-height: 0;
@@ -1321,7 +1344,6 @@ watch(showFilters, (v) => {
     left: 0;
     width: 100%;
     height: calc(100vh - 69px);
-    background: #1c1e22;
     padding: 0;
     border-radius: 0;
     transform: translateY(100%);
@@ -1339,7 +1361,6 @@ watch(showFilters, (v) => {
   .filters-header {
     position: sticky;
     top: 0;
-    background: #1c1e22;
     z-index: 20;
     padding: 16px 20px;
     border-bottom: 1px solid #333;

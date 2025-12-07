@@ -27,9 +27,8 @@ if (!is_array($data)) {
 }
 
 // =======================================================================
-//  🔥  ФУНКЦИЯ ПОИСКА ВСЕХ ФОТОГРАФИЙ ТОВАРА
+// ФУНКЦИЯ поиска изображений
 // =======================================================================
-
 function findProductImages($barcode) {
     if (!$barcode) return [];
 
@@ -46,54 +45,47 @@ function findProductImages($barcode) {
 
         if (!is_file($path)) continue;
 
-        // основное фото без суффикса
         foreach ($extensions as $ext) {
             if ($file === "{$barcode}.{$ext}") {
-                $images[1] = $urlBase . "{$barcode}.webp";
+                $images[] = $urlBase . "{$barcode}.webp";
             }
         }
 
-        // варианты _2, _3, _10 ...
         if (preg_match("/^{$barcode}_(\d+)\.(jpg|jpeg|png|webp)$/i", $file, $m)) {
-            $num = intval($m[1]);
-            $images[$num] = $urlBase . "{$barcode}_{$num}.webp";
+            $images[] = $urlBase . "{$barcode}_{$m[1]}.webp";
         }
     }
 
-    // сортируем по номеру фото
-    ksort($images);
-
-    return array_values($images);
+    return $images;
 }
 
 // =======================================================================
-// 1) Разделяем группы и товары
+// Разделяем группы и товары
 // =======================================================================
 
 $groups = [];
-$products = [];
+$productsRaw = [];
 
 foreach ($data as $item) {
     if (!empty($item["group"])) {
         $groups[$item["uuid"]] = [
-            "uuid"        => $item["uuid"],
-            "name"        => $item["name"],
-            "parent"      => $item["parentUuid"] ?? null,
-            "children"    => [],
-            "depth"       => null
+            "uuid"   => $item["uuid"],
+            "name"   => $item["name"],
+            "parent" => $item["parentUuid"] ?? null,
+            "depth"  => null
         ];
     } else {
-        $products[] = $item;
+        $productsRaw[] = $item;
     }
 }
 
 // =======================================================================
-// 2) Глубина групп
+// Расчёт глубины (depth)
 // =======================================================================
 
 function getDepth($uuid, $groups) {
     $depth = 1;
-    while (!empty($groups[$uuid]["parent"])) {
+    while (!empty($groups[$uuid]["parent"]) && isset($groups[$uuid]["parent"])) {
         $uuid = $groups[$uuid]["parent"];
         $depth++;
     }
@@ -106,12 +98,11 @@ foreach ($groups as $uuid => &$g) {
 unset($g);
 
 // =======================================================================
-// 3) Категории, бренды, типы
+// Категории и Типы (Новая Логика)
 // =======================================================================
 
-$categories = [];
-$brands = [];
-$types = [];
+$categories = []; // depth = 1
+$types = [];      // depth = 3
 
 foreach ($groups as $g) {
     if ($g["depth"] === 1) {
@@ -120,13 +111,8 @@ foreach ($groups as $g) {
             "name" => $g["name"]
         ];
     }
-    elseif ($g["depth"] === 3) {
-        $brands[$g["uuid"]] = [
-            "uuid" => $g["uuid"],
-            "name" => $g["name"]
-        ];
-    }
-    elseif ($g["depth"] >= 4) {
+
+    if ($g["depth"] === 3) {   // НОВОЕ: depth=3 = типы товаров
         $types[$g["uuid"]] = [
             "uuid" => $g["uuid"],
             "name" => $g["name"]
@@ -135,83 +121,102 @@ foreach ($groups as $g) {
 }
 
 // =======================================================================
-// 4) Привязка товаров
+// Функция извлечения бренда из названия
 // =======================================================================
 
-function getVirtualType() {
-    return [
-        "uuid" => "type-other",
-        "name" => "Разное"
-    ];
+function extractBrand($name) {
+
+    // ищем ТОЛЬКО ПОСЛЕДНИЕ скобки в конце строки
+    if (!preg_match('/\(([^()]*)\)\s*$/u', $name, $m)) {
+        return "";
+    }
+
+    $value = trim($m[1]);
+
+    // если там цифры, размер, объём — это НЕ бренд
+    if (preg_match('/^\d+(\s*(см|mm|м|l|л|шт|g|гр))?$/iu', $value)) {
+        return "";
+    }
+
+    // первая буква большая
+    return mb_convert_case($value, MB_CASE_TITLE, "UTF-8");
 }
 
-$virtualType = getVirtualType();
-$types[$virtualType["uuid"]] = $virtualType;
+
+// =======================================================================
+// Финальная сборка товаров
+// =======================================================================
 
 $resultProducts = [];
+$brandList = [];
 
-foreach ($products as $p) {
+foreach ($productsRaw as $p) {
 
-    if (empty($p["parentUuid"])) continue;
+    $barcode = $p["barCodes"][0] ?? "";
+    $title = $p["name"] ?? "";
 
-    $gid = $p["parentUuid"];
+    // Определяем бренд именем
+    $brandName = extractBrand($title);
 
-    $chain = [];
-    $current = $gid;
+    if ($brandName !== "") {
+        $brandList[] = $brandName;
+    }
 
-    while (!empty($current) && isset($groups[$current])) {
-        $chain[] = $current;
+    // Определяем категорию (depth=1) и тип продукции (depth=3)
+    $catUuid = null;
+    $catName = null;
+    $typeUuid = null;
+    $typeName = null;
+
+    $current = $p["parentUuid"];
+
+    while ($current && isset($groups[$current])) {
+        $depth = $groups[$current]["depth"];
+
+        if ($depth === 1) {
+            $catUuid = $groups[$current]["uuid"];
+            $catName = $groups[$current]["name"];
+        }
+
+        if ($depth === 3) {
+            $typeUuid = $groups[$current]["uuid"];
+            $typeName = $groups[$current]["name"];
+        }
+
         $current = $groups[$current]["parent"];
     }
 
-    usort($chain, function($a, $b) use ($groups) {
-        return $groups[$a]["depth"] <=> $groups[$b]["depth"];
-    });
-
-    $cat = null;
-    $brand = null;
-    $type = null;
-
-    foreach ($chain as $uuid) {
-        $depth = $groups[$uuid]["depth"];
-
-        if ($depth === 1) $cat = $uuid;
-        elseif ($depth === 3) $brand = $uuid;
-        elseif ($depth >= 4) $type = $uuid;
-    }
-
-    if (!$type) $type = $virtualType["uuid"];
-
-    // штрихкод
-    $barcode = $p["barCodes"][0] ?? "";
-
-    // 🔥 НАХОДИМ ВСЕ ФОТО ТОВАРА
     $images = findProductImages($barcode);
 
-    // финальный объект товара
     $resultProducts[] = [
-        "uuid"      => $p["uuid"],
-        "name"      => $p["name"],
-        "price"     => $p["price"] ?? 0,
-        "quantity"  => $p["quantity"] ?? 0,
-        "barcode"   => $barcode,
-        "article"   => $p["articleNumber"] ?? "",
-        "categoryUuid" => $cat,
-        "brandUuid"    => $brand,
-        "typeUuid"     => $type,
-
-        // 🔥 теперь массив изображений
-        "images"       => $images  
+        "uuid"         => $p["uuid"],
+        "name"         => $title,
+        "price"        => $p["price"] ?? 0,
+        "quantity"     => $p["quantity"] ?? 0,
+        "barcode"      => $barcode,
+        "article"      => $p["articleNumber"] ?? "",
+        "brandName"    => $brandName,
+        "categoryUuid" => $catUuid,
+        "categoryName" => $catName,
+        "typeUuid"     => $typeUuid,
+        "typeName"     => $typeName,
+        "images"       => $images
     ];
 }
 
 // =======================================================================
-// 5) JSON вывод
+// Уникальные бренды
+// =======================================================================
+
+$brandsUnique = array_values(array_unique(array_filter($brandList)));
+
+// =======================================================================
+// JSON вывод
 // =======================================================================
 
 echo json_encode([
     "categories" => array_values($categories),
-    "brands"     => array_values($brands),
     "types"      => array_values($types),
+    "brands"     => $brandsUnique,
     "products"   => $resultProducts
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

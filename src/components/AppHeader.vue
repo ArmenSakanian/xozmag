@@ -249,6 +249,7 @@ onMounted(() => {
   position: relative;
   padding-bottom: 4px;
   cursor: pointer;
+  color: white;
 }
 
 .mobile-item::after {
