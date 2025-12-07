@@ -27,6 +27,46 @@ if (!is_array($data)) {
 }
 
 // =======================================================================
+//  🔥  ФУНКЦИЯ ПОИСКА ВСЕХ ФОТОГРАФИЙ ТОВАРА
+// =======================================================================
+
+function findProductImages($barcode) {
+    if (!$barcode) return [];
+
+    $folder = $_SERVER["DOCUMENT_ROOT"] . "/photo_product_vitrina/";
+    $urlBase = "/photo_product_vitrina/";
+
+    if (!is_dir($folder)) return [];
+
+    $extensions = ["jpg", "jpeg", "png", "webp"];
+    $images = [];
+
+    foreach (scandir($folder) as $file) {
+        $path = $folder . $file;
+
+        if (!is_file($path)) continue;
+
+        // основное фото без суффикса
+        foreach ($extensions as $ext) {
+            if ($file === "{$barcode}.{$ext}") {
+                $images[1] = $urlBase . "{$barcode}.webp";
+            }
+        }
+
+        // варианты _2, _3, _10 ...
+        if (preg_match("/^{$barcode}_(\d+)\.(jpg|jpeg|png|webp)$/i", $file, $m)) {
+            $num = intval($m[1]);
+            $images[$num] = $urlBase . "{$barcode}_{$num}.webp";
+        }
+    }
+
+    // сортируем по номеру фото
+    ksort($images);
+
+    return array_values($images);
+}
+
+// =======================================================================
 // 1) Разделяем группы и товары
 // =======================================================================
 
@@ -40,7 +80,7 @@ foreach ($data as $item) {
             "name"        => $item["name"],
             "parent"      => $item["parentUuid"] ?? null,
             "children"    => [],
-            "depth"       => null // определим позже
+            "depth"       => null
         ];
     } else {
         $products[] = $item;
@@ -48,10 +88,9 @@ foreach ($data as $item) {
 }
 
 // =======================================================================
-// 2) Строим дерево + определяем глубину каждой группы
+// 2) Глубина групп
 // =======================================================================
 
-// Рекурсивная функция определения глубины
 function getDepth($uuid, $groups) {
     $depth = 1;
     while (!empty($groups[$uuid]["parent"])) {
@@ -61,19 +100,18 @@ function getDepth($uuid, $groups) {
     return $depth;
 }
 
-// Вычисляем глубину для всех групп
 foreach ($groups as $uuid => &$g) {
     $g["depth"] = getDepth($uuid, $groups);
 }
 unset($g);
 
 // =======================================================================
-// 3) Создаем уровни: категории, бренды, типы
+// 3) Категории, бренды, типы
 // =======================================================================
 
-$categories = []; // depth = 1
-$brands = [];     // depth = 3
-$types = [];      // depth >= 4
+$categories = [];
+$brands = [];
+$types = [];
 
 foreach ($groups as $g) {
     if ($g["depth"] === 1) {
@@ -97,12 +135,9 @@ foreach ($groups as $g) {
 }
 
 // =======================================================================
-// 4) Привязываем товары к категории, бренду, типу
+// 4) Привязка товаров
 // =======================================================================
 
-$resultProducts = [];
-
-// Генерация виртуального типа
 function getVirtualType() {
     return [
         "uuid" => "type-other",
@@ -111,7 +146,9 @@ function getVirtualType() {
 }
 
 $virtualType = getVirtualType();
-$types[$virtualType["uuid"]] = $virtualType; // добавляем в список типов
+$types[$virtualType["uuid"]] = $virtualType;
+
+$resultProducts = [];
 
 foreach ($products as $p) {
 
@@ -119,7 +156,6 @@ foreach ($products as $p) {
 
     $gid = $p["parentUuid"];
 
-    // определяем всю цепочку родителей
     $chain = [];
     $current = $gid;
 
@@ -128,12 +164,10 @@ foreach ($products as $p) {
         $current = $groups[$current]["parent"];
     }
 
-    // сортируем цепочку по глубине
     usort($chain, function($a, $b) use ($groups) {
         return $groups[$a]["depth"] <=> $groups[$b]["depth"];
     });
 
-    // Инициализация
     $cat = null;
     $brand = null;
     $type = null;
@@ -141,38 +175,38 @@ foreach ($products as $p) {
     foreach ($chain as $uuid) {
         $depth = $groups[$uuid]["depth"];
 
-        if ($depth === 1) { 
-            $cat = $uuid;
-        }
-        elseif ($depth === 3) {
-            $brand = $uuid;
-        }
-        elseif ($depth >= 4) {
-            $type = $uuid;
-        }
+        if ($depth === 1) $cat = $uuid;
+        elseif ($depth === 3) $brand = $uuid;
+        elseif ($depth >= 4) $type = $uuid;
     }
 
-    // если товара нет типа → присваиваем "Разное"
-    if (!$type) {
-        $type = $virtualType["uuid"];
-    }
+    if (!$type) $type = $virtualType["uuid"];
 
-    // готовим товар
+    // штрихкод
+    $barcode = $p["barCodes"][0] ?? "";
+
+    // 🔥 НАХОДИМ ВСЕ ФОТО ТОВАРА
+    $images = findProductImages($barcode);
+
+    // финальный объект товара
     $resultProducts[] = [
         "uuid"      => $p["uuid"],
         "name"      => $p["name"],
         "price"     => $p["price"] ?? 0,
         "quantity"  => $p["quantity"] ?? 0,
-        "barcode"   => $p["barCodes"][0] ?? "",
+        "barcode"   => $barcode,
         "article"   => $p["articleNumber"] ?? "",
         "categoryUuid" => $cat,
         "brandUuid"    => $brand,
-        "typeUuid"     => $type
+        "typeUuid"     => $type,
+
+        // 🔥 теперь массив изображений
+        "images"       => $images  
     ];
 }
 
 // =======================================================================
-// 5) Возвращаем результат
+// 5) JSON вывод
 // =======================================================================
 
 echo json_encode([
