@@ -260,7 +260,7 @@
       </div>
 
       <div
-        v-for="item in filteredProducts"
+        v-for="item in paginatedProducts"
         :key="item.uuid"
         class="product-card"
       >
@@ -316,6 +316,14 @@
         <div class="product-qty">Остаток: {{ item.quantity }}</div>
       </div>
     </div>
+    <div class="pagination">
+  <button @click="prevPage" :disabled="currentPage === 1">← Назад</button>
+
+  <span>{{ currentPage }} / {{ totalPages }}</span>
+
+  <button @click="nextPage" :disabled="currentPage === totalPages">Вперёд →</button>
+</div>
+
   </div>
 </template>
 
@@ -343,6 +351,28 @@ const categories = ref([]);
 const brands = ref([]);
 const types = ref([]);
 const products = ref([]);
+
+// === ПАГИНАЦИЯ ===
+const currentPage = ref(1);
+const perPage = 20;
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * perPage;
+  return filteredProducts.value.slice(start, start + perPage);
+});
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredProducts.value.length / perPage))
+);
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) currentPage.value++;
+}
+
+function prevPage() {
+  if (currentPage.value > 1) currentPage.value--;
+}
+
 
 const selectedCategories = ref([]);
 const selectedBrand = ref([]);
@@ -397,8 +427,8 @@ async function loadData() {
     categories.value = data.categories || [];
     brands.value = data.brands || [];
     types.value = data.types || [];
-     products.value = data.products || []; // остатое
-    //products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
+
+    products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
 
     if (products.value.length) {
       const prices = products.value.map((p) => Number(p.price) || 0);
@@ -651,6 +681,32 @@ watch(showFilters, (v) => {
 
 
 <style scoped>
+.pagination {
+  margin-left: 280px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
+}
+
+.pagination button {
+  background: var(--accent-color);
+  color: white;
+  padding: 10px 16px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background: #333;
+  color: #777;
+  cursor: not-allowed;
+}
+
+
 .filters-header {
   position: sticky;
 }
