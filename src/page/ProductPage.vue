@@ -1,17 +1,20 @@
 <template>
   <div class="catalog-page">
+    <!-- Загрузка / ошибка -->
     <div v-if="loading" class="loading">
       <div class="loader"></div>
       <p>Загрузка товаров...</p>
     </div>
     <div v-if="error" class="error">{{ error }}</div>
 
+    <!-- Затемнение при открытых фильтрах -->
     <div
       v-if="showFilters"
       class="filters-backdrop"
       @click="showFilters = false"
     ></div>
 
+    <!-- === ФИЛЬТРЫ === -->
     <div class="filters" :class="{ open: showFilters }">
       <div class="filters-header">
         <h2>Фильтры</h2>
@@ -35,21 +38,18 @@
       </div>
 
       <div class="filters-scroll">
+
+        <!-- Категории -->
         <div class="filter-section">
           <h3
             class="filter-title"
             @click="filterOpen.categories = !filterOpen.categories"
           >
             Категории
-            <span
-              ><i class="arrow" :class="{ open: filterOpen.categories }"></i
-            ></span>
+            <span><i class="arrow" :class="{ open: filterOpen.categories }"></i></span>
           </h3>
 
-          <div
-            class="filter-content-wrapper"
-            :class="{ open: filterOpen.categories }"
-          >
+          <div class="filter-content-wrapper" :class="{ open: filterOpen.categories }">
             <div class="filter-content">
               <div
                 v-for="cat in categoryState"
@@ -68,22 +68,20 @@
             </div>
           </div>
         </div>
+
         <hr />
+
+        <!-- Фото -->
         <div class="filter-section">
           <h3
             class="filter-title"
             @click="filterOpen.photo = !filterOpen.photo"
           >
             Фото
-            <span
-              ><i class="arrow" :class="{ open: filterOpen.photo }"></i
-            ></span>
+            <span><i class="arrow" :class="{ open: filterOpen.photo }"></i></span>
           </h3>
 
-          <div
-            class="filter-content-wrapper"
-            :class="{ open: filterOpen.photo }"
-          >
+          <div class="filter-content-wrapper" :class="{ open: filterOpen.photo }">
             <div class="filter-content photo-filter">
               <label class="radio-row">
                 <input type="radio" value="all" v-model="draftPhotoFilter" />
@@ -98,11 +96,7 @@
               </label>
 
               <label class="radio-row">
-                <input
-                  type="radio"
-                  value="without"
-                  v-model="draftPhotoFilter"
-                />
+                <input type="radio" value="without" v-model="draftPhotoFilter" />
                 <span class="radio-check"></span>
                 <span class="radio-text">Только без фото</span>
               </label>
@@ -110,145 +104,126 @@
           </div>
         </div>
 
+        <!-- Бренды -->
         <div class="filter-section">
           <h3
             class="filter-title"
             @click="filterOpen.brands = !filterOpen.brands"
           >
             Бренд
-            <span
-              ><i class="arrow" :class="{ open: filterOpen.brands }"></i
-            ></span>
+            <span><i class="arrow" :class="{ open: filterOpen.brands }"></i></span>
           </h3>
 
-          <div
-            class="filter-content-wrapper"
-            :class="{ open: filterOpen.brands }"
-          >
+          <div class="filter-content-wrapper" :class="{ open: filterOpen.brands }">
             <div class="filter-content">
-<div class="filter-search-wrapper">
-  <i class="fa-solid fa-magnifying-glass search-icon"></i>
 
-  <input
-    type="text"
-    v-model="brandSearch"
-    placeholder="Поиск бренда..."
-    class="filter-search"
-  />
-</div>
+              <div class="filter-search-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input
+                  type="text"
+                  v-model="brandSearch"
+                  placeholder="Поиск бренда..."
+                  class="filter-search"
+                />
+              </div>
 
+              <div class="brands-scroll">
+                <div
+                  v-for="b in visibleBrands"
+                  :key="b.norm"
+                  class="category-filter"
+                  :class="{ disabled: b.disabled }"
+                >
+                  <input
+                    type="checkbox"
+                    :id="'brand-' + b.norm"
+                    :value="b.norm"
+                    v-model="draftBrand"
+                  />
+                  <label :for="'brand-' + b.norm">{{ b.name }}</label>
+                </div>
+              </div>
 
-  <!-- ПОКАЗЫВАЕМ ТОЛЬКО visibleBrands -->
-<div class="brands-scroll">
+              <div class="show-more-btn" @click="showAllBrands = !showAllBrands">
+                {{ showAllBrands ? "Скрыть" : "Показать все" }}
+              </div>
 
-  <div
-    v-for="b in visibleBrands"
-    :key="b.norm"
-    class="category-filter"
-    :class="{ disabled: b.disabled }"
-  >
-    <input
-      type="checkbox"
-      :id="'brand-' + b.norm"
-      :value="b.norm"
-      v-model="draftBrand"
-    />
-    <label :for="'brand-' + b.norm">{{ b.name }}</label>
-  </div>
+              <button class="reset-button-filters" @click="draftBrand = []">
+                Сбросить бренд
+              </button>
 
-</div>
-
-
-  <!-- 👇 КНОПКА ВСЕГДА СТАВИТСЯ ЗДЕСЬ (под v-for, НО внутри filter-content) -->
-  <div class="show-more-btn" @click="showAllBrands = !showAllBrands">
-    {{ showAllBrands ? "Скрыть" : "Показать все" }}
-  </div>
-
-  <button class="reset-button-filters" @click="draftBrand = []">
-    Сбросить бренд
-  </button>
-</div>
-
+            </div>
           </div>
         </div>
 
         <hr />
 
+        <!-- Тип товара -->
         <div class="filter-section">
           <h3
             class="filter-title"
             @click="filterOpen.types = !filterOpen.types"
           >
             Тип товара
-            <span
-              ><i class="arrow" :class="{ open: filterOpen.types }"></i
-            ></span>
+            <span><i class="arrow" :class="{ open: filterOpen.types }"></i></span>
           </h3>
 
-          <div
-            class="filter-content-wrapper"
-            :class="{ open: filterOpen.types }"
-          >
+          <div class="filter-content-wrapper" :class="{ open: filterOpen.types }">
             <div class="filter-content">
-  <div class="filter-search-wrapper">
-      <i class="fa-solid fa-magnifying-glass search-icon"></i>
-    <input
-      type="text"
-      v-model="typeSearch"
-      placeholder="Поиск типа..."
-      class="filter-search"
-    />
-  </div>
 
-<div class="types-scroll">
+              <div class="filter-search-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
 
-  <div
-    v-for="t in visibleTypes"
-    :key="t.id"
-    class="category-filter"
-    :class="{ disabled: t.disabled }"
-  >
-    <input
-      type="checkbox"
-      :id="'type-' + t.id"
-      :value="t.id"
-      v-model="draftType"
-    />
-    <label :for="'type-' + t.id">{{ t.name }}</label>
-  </div>
+                <input
+                  type="text"
+                  v-model="typeSearch"
+                  placeholder="Поиск типа..."
+                  class="filter-search"
+                />
+              </div>
 
-</div>
+              <div class="types-scroll">
+                <div
+                  v-for="t in visibleTypes"
+                  :key="t.id"
+                  class="category-filter"
+                  :class="{ disabled: t.disabled }"
+                >
+                  <input
+                    type="checkbox"
+                    :id="'type-' + t.id"
+                    :value="t.id"
+                    v-model="draftType"
+                  />
+                  <label :for="'type-' + t.id">{{ t.name }}</label>
+                </div>
+              </div>
 
+              <div class="show-more-btn" @click="showAllTypes = !showAllTypes">
+                {{ showAllTypes ? "Скрыть" : "Показать все" }}
+              </div>
 
-  <!-- 👇 ПРАВИЛЬНОЕ МЕСТО -->
-  <div class="show-more-btn" @click="showAllTypes = !showAllTypes">
-    {{ showAllTypes ? "Скрыть" : "Показать все" }}
-  </div>
+              <button class="reset-button-filters" @click="draftType = []">
+                Сбросить тип
+              </button>
 
-  <button class="reset-button-filters" @click="draftType = []">
-    Сбросить тип
-  </button>
-</div>
-
+            </div>
           </div>
         </div>
 
         <hr />
+
+        <!-- Цена -->
         <div class="filter-section">
           <h3
             class="filter-title"
             @click="filterOpen.price = !filterOpen.price"
           >
             Цена
-            <span
-              ><i class="arrow" :class="{ open: filterOpen.price }"></i
-            ></span>
+            <span><i class="arrow" :class="{ open: filterOpen.price }"></i></span>
           </h3>
 
-          <div
-            class="filter-content-wrapper"
-            :class="{ open: filterOpen.price }"
-          >
+          <div class="filter-content-wrapper" :class="{ open: filterOpen.price }">
             <div class="filter-content">
               <div class="price-range-inputs">
                 <input
@@ -273,10 +248,12 @@
       </div>
     </div>
 
+    <!-- Кнопка фильтров -->
     <button class="mobile-filters-btn" @click="showFilters = true">
       Фильтры
     </button>
 
+    <!-- === ТОВАРЫ === -->
     <div class="products-grid">
       <div v-if="!loading && filteredProducts.length === 0" class="no-products">
         Товаров по текущим выбранным фильтрам нет
@@ -287,27 +264,51 @@
         :key="item.uuid"
         class="product-card"
       >
-        <div class="main-image-wrapper">
-          <img
-            :src="
-              activeImage[item.uuid] || item.images[0] || '/img/no-photo.png'
-            "
-            class="product-img-big"
-            @click="nextImage(item)"
-            alt=""
-          />
+        <!-- ==== ЕСЛИ ФОТО НЕТ ==== -->
+        <div v-if="!item.images || item.images.length === 0" class="main-image-wrapper">
+          <img src="/img/no-photo.png" class="product-img-big" />
         </div>
 
-        <div v-if="item.images.length > 1" class="thumbs">
-          <img
-            v-for="(img, i) in item.images"
-            :key="i"
-            :src="img"
-            :class="['thumb', { active: activeImage[item.uuid] === img }]"
-            @click="setActiveImage(item.uuid, img)"
-          />
+        <!-- ==== ЕСЛИ ФОТО ЕСТЬ ==== -->
+        <div v-else>
+          <!-- БОЛЬШОЙ SWIPER -->
+          <Swiper
+            class="main-swiper"
+            :modules="[Navigation, Thumbs]"
+            :navigation="true"
+            :thumbs="{ swiper: thumbsSwiper[item.uuid] }"
+            :slidesPerView="1"
+          >
+            <SwiperSlide
+              v-for="(img, index) in item.images"
+              :key="index"
+            >
+              <div class="main-image-wrapper">
+                <img :src="img" class="product-img-big" />
+              </div>
+            </SwiperSlide>
+          </Swiper>
+
+          <!-- THUMBS SWIPER -->
+          <Swiper
+            class="thumbs-swiper"
+            :modules="[Thumbs]"
+            :slidesPerView="4"
+            :spaceBetween="8"
+            watchSlidesProgress
+            @swiper="(val) => (thumbsSwiper[item.uuid] = val)"
+          >
+            <SwiperSlide
+              v-for="(img, index) in item.images"
+              :key="'thumb-' + index"
+              class="thumb-slide"
+            >
+              <img :src="img" class="thumb-img" />
+            </SwiperSlide>
+          </Swiper>
         </div>
 
+        <!-- ИНФО О ТОВАРЕ -->
         <h3 class="product-name">{{ item.name }}</h3>
         <div class="product-price">{{ item.price }} ₽</div>
         <div class="product-barcode">Штрихкод: {{ item.barcode }}</div>
@@ -318,9 +319,21 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 
+// === SWIPER ===
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Navigation, Thumbs } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/thumbs";
+
+// Объект для хранения thumb-swiper для каждого товара
+const thumbsSwiper = ref({});
+
+// === ТВОИ ПЕРЕМЕННЫЕ ===
 const showFilters = ref(false);
 
 const loading = ref(true);
@@ -349,29 +362,11 @@ const typeSearch = ref("");
 const showAllBrands = ref(false);
 const showAllTypes = ref(false);
 
-// фильтр: с фото / без фото
+// фильтр фото
 const photoFilter = ref("all");
-// all | with | without
 const draftPhotoFilter = ref("all");
 
-// --- Галерея изображений --- //
-const activeImage = ref({});
-
-function setActiveImage(uuid, img) {
-  activeImage.value[uuid] = img;
-}
-
-function nextImage(item) {
-  if (!item.images || item.images.length <= 1) return;
-
-  const arr = item.images;
-  const current = activeImage.value[item.uuid] || arr[0];
-  const idx = arr.indexOf(current);
-
-  const next = arr[(idx + 1) % arr.length];
-  activeImage.value[item.uuid] = next;
-}
-
+// вкладки фильтров (открыты/закрыты)
 const filterOpen = ref({
   categories: true,
   brands: true,
@@ -380,6 +375,20 @@ const filterOpen = ref({
   price: true,
 });
 
+// === НОРМАЛИЗАЦИЯ ===
+function normalizeTypeName(name = "") {
+  return String(name)
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeBrandName(name = "") {
+  return String(name).trim().toLowerCase();
+}
+
+// === ЗАГРУЗКА ДАННЫХ ===
 async function loadData() {
   try {
     const r = await fetch("/api/vitrina/evotor_catalog.php");
@@ -405,36 +414,25 @@ async function loadData() {
   }
 }
 
-function normalizeTypeName(name = "") {
-  return String(name)
-    .replace(/\u00A0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-function normalizeBrandName(name = "") {
-  return String(name).trim().toLowerCase();
-}
-
+// === МАП ТИПОВ ===
 const typeMap = computed(() => {
   const map = new Map();
   types.value.forEach((t) => {
     const name = t.name || "";
-    map.set(t.uuid, {
-      name,
-      norm: normalizeTypeName(name),
-    });
+    map.set(t.uuid, { name, norm: normalizeTypeName(name) });
   });
   return map;
 });
-// Бренды теперь приходят как обычный массив строк
-const mergedBrands = computed(() => {
-  return brands.value.map((name) => ({
-    name,
-    norm: normalizeBrandName(name)
-  }));
-});
 
+// === БРЕНДЫ ===
+const mergedBrands = computed(() =>
+  brands.value.map((name) => ({
+    name,
+    norm: normalizeBrandName(name),
+  }))
+);
+
+// бренды, доступные по выбранным фильтрам
 const availableBrands = computed(() => {
   const set = new Set();
 
@@ -450,101 +448,51 @@ const availableBrands = computed(() => {
       if (!info || !draftType.value.includes(info.norm)) return;
     }
 
-    // Берём бренд товара
-    if (p.brandName) {
-      set.add(normalizeBrandName(p.brandName));
-    }
+    if (p.brandName) set.add(normalizeBrandName(p.brandName));
   });
 
   return mergedBrands.value.filter((b) => set.has(b.norm));
 });
 
-
-const availableTypes = computed(() => {
-  const set = new Set();
-
-  products.value.forEach((p) => {
-    // фильтр по категориям
-    if (
-      draftCategories.value.length &&
-      !draftCategories.value.includes(p.categoryUuid)
-    )
-      return;
-
-    // фильтр по брендам
-    if (draftBrand.value.length) {
-      if (!p.brandName) return;
-      if (!draftBrand.value.includes(normalizeBrandName(p.brandName)))
-        return;
-    }
-
-    if (p.typeName) {
-      set.add(normalizeTypeName(p.typeName));
-    }
-  });
-
-  return Array.from(set).map((norm) => {
-    const typeObj = types.value.find(
-      (t) => normalizeTypeName(t.name) === norm
-    );
-
-    return {
-      id: norm,
-      name: typeObj ? typeObj.name : norm,
-    };
-  });
-});
-
-
+// бренды для отображения (с disabled)
 const filteredBrands = computed(() => {
   let list = mergedBrands.value.map((b) => {
     const active = products.value.some((p) => {
-      // фильтр типов
       if (draftType.value.length) {
         const info = typeMap.value.get(p.typeUuid);
         if (!info || !draftType.value.includes(info.norm)) return false;
       }
 
-      // фильтр категорий
       if (
         draftCategories.value.length &&
         !draftCategories.value.includes(p.categoryUuid)
       )
         return false;
 
-      // сравнение брендов по имени
       return normalizeBrandName(p.brandName) === b.norm;
     });
 
-    return {
-      ...b,
-      disabled: !active,
-    };
+    return { ...b, disabled: !active };
   });
 
-  // поиск
   const query = brandSearch.value.trim().toLowerCase();
-  if (query) {
-    list = list.filter((b) => b.name.toLowerCase().includes(query));
-  }
+  if (query) list = list.filter((b) => b.name.toLowerCase().includes(query));
 
-  // сортировка
   return list.sort((a, b) => {
     if (a.disabled !== b.disabled) return a.disabled - b.disabled;
     return a.name.localeCompare(b.name, "ru");
   });
 });
 
+// бренды в списке (5 или все)
+const visibleBrands = computed(() =>
+  showAllBrands.value ? filteredBrands.value : filteredBrands.value.slice(0, 5)
+);
 
-const visibleBrands = computed(() => {
-  if (showAllBrands.value) return filteredBrands.value;
-  return filteredBrands.value.slice(0, 5);
-});
-
+// === ТИПЫ ===
 const filteredTypes = computed(() => {
   const map = new Map();
 
-  // создаём список всех типов
   types.value.forEach((t) => {
     const norm = normalizeTypeName(t.name);
     map.set(norm, {
@@ -554,162 +502,47 @@ const filteredTypes = computed(() => {
     });
   });
 
-  // активируем те, что реально встречаются в товарах
   products.value.forEach((p) => {
     const norm = normalizeTypeName(p.typeName);
 
-    // фильтр по категориям
     if (
       draftCategories.value.length &&
       !draftCategories.value.includes(p.categoryUuid)
     )
       return;
 
-    // фильтр по брендам
     if (draftBrand.value.length) {
       if (!p.brandName) return;
-      if (!draftBrand.value.includes(normalizeBrandName(p.brandName)))
-        return;
+      if (!draftBrand.value.includes(normalizeBrandName(p.brandName))) return;
     }
 
-    if (map.has(norm)) {
-      map.get(norm).disabled = false;
-    }
+    if (map.has(norm)) map.get(norm).disabled = false;
   });
 
   let list = Array.from(map.values());
 
-  // поиск по типу
   const query = typeSearch.value.trim().toLowerCase();
-  if (query) {
-    list = list.filter((t) => t.name.toLowerCase().includes(query));
-  }
+  if (query) list = list.filter((t) => t.name.toLowerCase().includes(query));
 
-  // сортировка
   return list.sort((a, b) => {
     if (a.disabled !== b.disabled) return a.disabled - b.disabled;
     return a.name.localeCompare(b.name, "ru");
   });
 });
 
+const visibleTypes = computed(() =>
+  showAllTypes.value ? filteredTypes.value : filteredTypes.value.slice(0, 5)
+);
 
-const visibleTypes = computed(() => {
-  if (showAllTypes.value) return filteredTypes.value;
-  return filteredTypes.value.slice(0, 5);
-});
-
-const availableCategories = computed(() => {
-  const set = new Set();
-
-  products.value.forEach((p) => {
-    if (draftBrand.value.length) {
-      const brandObj = mergedBrands.value.find((b) =>
-        draftBrand.value.includes(b.norm)
-      );
-      if (!brandObj || !brandObj.uuids.has(p.brandUuid)) return;
-    }
-
-    if (draftType.value.length) {
-      const info = typeMap.value.get(p.typeUuid);
-      if (!info || !draftType.value.includes(info.norm)) return;
-    }
-
-    set.add(p.categoryUuid);
-  });
-
-  return categories.value.filter((c) => set.has(c.uuid));
-});
-
-const filteredProducts = computed(() => {
-  return products.value.filter((p) => {
-    const price = Number(p.price) || 0;
-
-    // категория
-    if (
-      selectedCategories.value.length &&
-      !selectedCategories.value.includes(p.categoryUuid)
-    )
-      return false;
-
-    // бренд — сравнение по brandName
-    if (selectedBrand.value.length) {
-      if (!p.brandName) return false;
-      const normBrand = normalizeBrandName(p.brandName);
-
-      if (!selectedBrand.value.includes(normBrand)) return false;
-    }
-
-    // тип товара — сравнение по typeName
-    if (selectedType.value.length) {
-      const normType = normalizeTypeName(p.typeName);
-      if (!selectedType.value.includes(normType)) return false;
-    }
-
-    // Фото
-    if (photoFilter.value === "with") {
-      if (!p.images || p.images.length === 0) return false;
-    }
-
-    if (photoFilter.value === "without") {
-      if (p.images && p.images.length > 0) return false;
-    }
-
-    // Цена
-    if (price < priceRange.value[0] || price > priceRange.value[1])
-      return false;
-
-    return true;
-  });
-});
-
-
-function applyFilters() {
-  selectedCategories.value = [...draftCategories.value];
-  selectedBrand.value = [...draftBrand.value];
-  selectedType.value = [...draftType.value];
-  priceRange.value = [...draftPrice.value];
-
-  photoFilter.value = draftPhotoFilter.value;
-}
-
-function resetAllFilters() {
-  draftCategories.value = [];
-  draftBrand.value = [];
-  draftType.value = [];
-  draftPrice.value = [0, maxPrice.value];
-  draftPhotoFilter.value = "all";
-
-  // Применить сразу
-  applyFilters();
-}
-
-const filtersChanged = computed(() => {
-  return (
-    JSON.stringify(selectedCategories.value) !==
-      JSON.stringify(draftCategories.value) ||
-    JSON.stringify(selectedBrand.value) !== JSON.stringify(draftBrand.value) ||
-    JSON.stringify(selectedType.value) !== JSON.stringify(draftType.value) ||
-    JSON.stringify(priceRange.value) !== JSON.stringify(draftPrice.value) ||
-    photoFilter.value !== draftPhotoFilter.value
-  );
-});
-
+// === СОСТОЯНИЕ КАТЕГОРИЙ ===
 const categoryState = computed(() => {
   const active = new Set();
 
   products.value.forEach((p) => {
-    // Если выбран бренд → категории должны зависеть ТОЛЬКО от бренда
     if (draftBrand.value.length) {
-      const brandObj = mergedBrands.value.find((b) =>
-        draftBrand.value.includes(b.norm)
-      );
-      if (brandObj && brandObj.uuids.has(p.brandUuid)) {
-        active.add(p.categoryUuid);
-      }
       return;
     }
 
-    // Если бренд НЕ выбран → обычная логика с типами
     if (draftType.value.length) {
       const info = typeMap.value.get(p.typeUuid);
       if (!info || !draftType.value.includes(info.norm)) return;
@@ -724,12 +557,11 @@ const categoryState = computed(() => {
   }));
 });
 
+// клик по категории
 function onCategoryClick(cat) {
   if (!cat.disabled) {
     if (draftCategories.value.includes(cat.uuid)) {
-      draftCategories.value = draftCategories.value.filter(
-        (id) => id !== cat.uuid
-      );
+      draftCategories.value = draftCategories.value.filter((id) => id !== cat.uuid);
     } else {
       draftCategories.value.push(cat.uuid);
     }
@@ -741,26 +573,77 @@ function onCategoryClick(cat) {
   draftCategories.value = [cat.uuid];
 }
 
-watch(
-  () => [draftBrand.value, draftType.value, categories.value],
-  () => {
-    const valid = categoryState.value
-      .filter((c) => !c.disabled)
-      .map((c) => c.uuid);
+// === ОТФИЛЬТРОВАННЫЕ ТОВАРЫ ===
+const filteredProducts = computed(() => {
+  return products.value.filter((p) => {
+    const price = Number(p.price) || 0;
 
-    draftCategories.value = draftCategories.value.filter((id) =>
-      valid.includes(id)
-    );
+    if (
+      selectedCategories.value.length &&
+      !selectedCategories.value.includes(p.categoryUuid)
+    )
+      return false;
 
-    // if (draftBrand.value.length) {
-    //   draftCategories.value = [...valid];
-    // }
-  },
-  { immediate: true }
-);
+    if (selectedBrand.value.length) {
+      if (!p.brandName) return false;
+      if (!selectedBrand.value.includes(normalizeBrandName(p.brandName)))
+        return false;
+    }
 
+    if (selectedType.value.length) {
+      const norm = normalizeTypeName(p.typeName);
+      if (!selectedType.value.includes(norm)) return false;
+    }
+
+    if (photoFilter.value === "with") {
+      if (!p.images || p.images.length === 0) return false;
+    }
+
+    if (photoFilter.value === "without") {
+      if (p.images && p.images.length > 0) return false;
+    }
+
+    if (price < priceRange.value[0] || price > priceRange.value[1]) return false;
+
+    return true;
+  });
+});
+
+// === ПРИМЕНЕНИЕ ФИЛЬТРОВ ===
+function applyFilters() {
+  selectedCategories.value = [...draftCategories.value];
+  selectedBrand.value = [...draftBrand.value];
+  selectedType.value = [...draftType.value];
+  priceRange.value = [...draftPrice.value];
+  photoFilter.value = draftPhotoFilter.value;
+}
+
+// === СБРОС ===
+function resetAllFilters() {
+  draftCategories.value = [];
+  draftBrand.value = [];
+  draftType.value = [];
+  draftPrice.value = [0, maxPrice.value];
+  draftPhotoFilter.value = "all";
+
+  applyFilters();
+}
+
+// === ФЛАГ ИЗМЕНЕНИЙ ===
+const filtersChanged = computed(() => {
+  return (
+    JSON.stringify(selectedCategories.value) !== JSON.stringify(draftCategories.value) ||
+    JSON.stringify(selectedBrand.value) !== JSON.stringify(draftBrand.value) ||
+    JSON.stringify(selectedType.value) !== JSON.stringify(draftType.value) ||
+    JSON.stringify(priceRange.value) !== JSON.stringify(draftPrice.value) ||
+    photoFilter.value !== draftPhotoFilter.value
+  );
+});
+
+// === LOADING ===
 onMounted(loadData);
 
+// === ОТКЛЮЧАТЬ СКРОЛЛ ПРИ ОТКРЫТЫХ ФИЛЬТРАХ ===
 watch(showFilters, (v) => {
   document.body.style.overflow = v ? "hidden" : "auto";
 });
@@ -768,7 +651,6 @@ watch(showFilters, (v) => {
 
 
 <style scoped>
-
 .filters-header {
   position: sticky;
 }
@@ -818,12 +700,12 @@ watch(showFilters, (v) => {
   padding-left: 5px;
 }
 
-.brands-scroll, .types-scroll {
+.brands-scroll,
+.types-scroll {
   max-height: 300px; /* можно 400, 500 — как хочешь */
   overflow-y: auto;
   padding-right: 5px;
 }
-
 
 .filter-content-wrapper {
   max-height: 0;
@@ -994,7 +876,6 @@ watch(showFilters, (v) => {
   background: rgba(255, 255, 255, 0.18);
 }
 
-
 .reset-button-filters {
   color: var(--delete-color);
   background: transparent;
@@ -1044,14 +925,13 @@ watch(showFilters, (v) => {
 
 .search-icon {
   position: absolute;
-    left: 15px;
-    top: 21px;
+  left: 15px;
+  top: 21px;
   transform: translateY(-50%);
   font-size: 16px;
   color: #8a8d92;
   pointer-events: none;
 }
-
 
 /* САМО ПОЛЕ ПОИСКА */
 .filter-search {
@@ -1082,7 +962,6 @@ watch(showFilters, (v) => {
   box-shadow: 0 0 0 3px rgba(76, 125, 255, 0.35);
   background: #202328;
 }
-
 
 /* Кнопка закрытия внутри фильтров — по умолчанию скрыта */
 .close-filters {
@@ -1141,8 +1020,6 @@ watch(showFilters, (v) => {
   background-position: 50% 56%; /* <<< идеальный центр */
   background-repeat: no-repeat;
 }
-
-
 
 .category-filter label {
   color: white;
@@ -1268,10 +1145,190 @@ watch(showFilters, (v) => {
   color: var(--accent-color);
 }
 
+
+.main-swiper {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Высота как у тебя сейчас */
+.main-swiper .main-image-wrapper {
+  width: 100%;
+  height: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-swiper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Стрелки */
+.swiper-button-prev,
+.swiper-button-next {
+  color: var(--accent-color);
+  scale: 0.7;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  color: white;
+}
+
+/* ------------------------------ */
+/*       THUMBS SWIPER            */
+/* ------------------------------ */
+
+.thumbs-swiper {
+  width: 100%;
+  margin-top: 10px;
+  padding-bottom: 5px;
+}
+
+.thumbs-swiper .swiper-slide {
+  width: 25%;        /* >>> 4 миниатюры в ряд */
+  aspect-ratio: 1/1; /* квадратные превьюшки */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #222;
+  opacity: 0.6;
+  border: 2px solid transparent;
+  transition: 0.25s;
+}
+
+.thumb-img:hover {
+  opacity: 1;
+}
+
+.swiper-slide-thumb-active .thumb-img {
+  opacity: 1;
+  border-color: var(--accent-color);
+}
+
+/* ------------------------------ */
+/*   ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ = OFF   */
+/* ------------------------------ */
+
+.thumbs-swiper .swiper-wrapper {
+  width: 100%;
+}
+
+/* Отключаем выделение И кликовые подсветки только у swiper */
+.main-swiper,
+.thumbs-swiper,
+.thumbs-swiper .swiper-slide,
+.thumb-img,
+.swiper-button-prev,
+.swiper-button-next {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.swiper-button-prev:focus,
+.swiper-button-next:focus,
+.thumbs-swiper .swiper-slide:focus,
+.thumb-img:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 /* ————————————————————— */
 /*   МОБИЛЬНАЯ АДАПТАЦИЯ   */
 /* ————————————————————— */
 @media (max-width: 768px) {
+
+ /* Большое фото */
+  .main-swiper {
+    width: 100%;
+    height: 220px;          /* фикс как в desktop */
+    max-height: 220px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .main-swiper .swiper-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+
+  .main-swiper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Стрелки */
+  .main-swiper .swiper-button-prev,
+  .main-swiper .swiper-button-next {
+    width: 26px;
+    height: 26px;
+    color: var(--accent-color);
+  }
+
+  /* Миниатюры */
+  .thumbs-swiper {
+    width: 100%;
+    margin-top: 10px;
+    overflow-x: hidden !important;
+  }
+
+  .thumbs-swiper .swiper-wrapper {
+    display: flex;
+    overflow: hidden;
+    max-width: 100%;   /* главное, чтобы wrapper не ломал верстку */
+    overflow: hidden !important;
+  }
+.product-card {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  .thumbs-swiper .swiper-slide {
+    width: 58px !important;
+    height: 58px;
+    flex-shrink: 0;     /* запрещаем уменьшение */
+    margin-right: 8px !important;
+  }
+
+  .thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #222;
+    border-radius: 6px;
+    opacity: 0.6;
+    transition: 0.25s;
+  }
+
+  .thumb-img.active {
+    opacity: 1;
+    border: 2px solid var(--accent-color);
+  }
+
+  /* Если фото нет */
+  .no-photo-wrapper img {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 12px;
+  }
+
   .catalog-page {
     padding: 12px;
   }
