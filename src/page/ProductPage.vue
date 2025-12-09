@@ -397,8 +397,8 @@ async function loadData() {
     categories.value = data.categories || [];
     brands.value = data.brands || [];
     types.value = data.types || [];
-
-    products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
+     products.value = data.products || []; // остатое
+    //products.value = (data.products || []).filter((p) => (p.quantity ?? 0) > 0);
 
     if (products.value.length) {
       const prices = products.value.map((p) => Number(p.price) || 0);
