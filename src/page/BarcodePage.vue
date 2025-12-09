@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" @mousedown="dragStart">
     <!-- === ПАНЕЛЬ ДЛЯ ВЫБРАННЫХ === -->
     <div v-if="selectedIds.length >= 2" class="selected-controls">
       <!-- БЛОК 1 — РАЗМЕР -->
@@ -20,7 +20,6 @@
 
       <!-- БЛОК 2 — НАЗВАНИЕ -->
       <div class="bulk-block bulk-name">
-
         <label class="param-row">
           <input
             type="checkbox"
@@ -33,7 +32,6 @@
 
       <!-- БЛОК 3 — ЦЕНА -->
       <div class="bulk-block bulk-price">
-
         <label class="param-row">
           <input
             type="checkbox"
@@ -60,10 +58,9 @@
         Удалить выбранные ({{ selectedIds.length }})
       </button>
       <button class="button-main button-export" @click="exportSelected">
-  <i class="fa-solid fa-file-excel"></i>
-  Экспорт ({{ selectedIds.length }})
-</button>
-
+        <i class="fa-solid fa-file-excel"></i>
+        Экспорт ({{ selectedIds.length }})
+      </button>
     </div>
 
     <!-- === ВЕРХ === -->
@@ -156,8 +153,15 @@
     <!-- === СПИСОК === -->
     <div class="list-section">
       <div class="grid">
-        <div class="card" v-for="item in barcodes" :key="item.id">
-          <div class="card-tools">
+        <div
+          class="card"
+          v-for="item in barcodes"
+          :key="item.id"
+          :data-id="item.id"
+          :class="{ selected: selectedIds.includes(item.id) }"
+          @click="cardClick($event, item.id)"
+        >
+          <div class="card-tools-box">
             <div
               class="card-tool-btn card-tool-edit"
               @click.stop="startEdit(item)"
@@ -197,6 +201,10 @@
             <svg :id="'g-' + item.id"></svg>
 
             <p class="code" v-html="highlight(item.barcode, search)"></p>
+            <i
+              class="fa-solid fa-copy copy-icon"
+              @click="copy(item.product_name)"
+            ></i>
 
             <div class="print-params">
               <div class="param-row-container">
@@ -234,7 +242,13 @@
           <div class="card-right">
             <div class="card-information">
               <div class="information-row">
-                <div class="information-title"><b>Товар:</b><i class="fa-solid fa-copy copy-icon" @click="copy(item.product_name)"></i></div>
+                <div class="information-title">
+                  <b>Товар:</b
+                  ><i
+                    class="fa-solid fa-copy copy-icon"
+                    @click="copy(item.product_name)"
+                  ></i>
+                </div>
                 <div
                   class="information-text"
                   v-html="highlight(item.product_name, search)"
@@ -242,7 +256,13 @@
               </div>
 
               <div class="information-row">
-                <div class="information-title"><b>Артикул:</b><i class="fa-solid fa-copy copy-icon" @click="copy(item.product_name)"></i></div>
+                <div class="information-title">
+                  <b>Артикул:</b
+                  ><i
+                    class="fa-solid fa-copy copy-icon"
+                    @click="copy(item.sku)"
+                  ></i>
+                </div>
                 <div
                   class="information-text"
                   v-html="highlight(item.sku, search)"
@@ -250,13 +270,12 @@
               </div>
 
               <div class="information-row">
-  <div class="information-title"><b>Остаток:</b><i class="fa-solid fa-copy copy-icon" @click="copy(item.product_name)"></i></div>
-  <div class="information-text">{{ item.stock }}</div>
-</div>
-
+                <div class="information-title"><b>Остаток:</b></div>
+                <div class="information-text">{{ item.stock }}</div>
+              </div>
 
               <div class="information-row">
-                <div class="information-title"><b>Контрагент:</b><i class="fa-solid fa-copy copy-icon" @click="copy(item.product_name)"></i></div>
+                <div class="information-title"><b>Контрагент:</b></div>
                 <div
                   class="information-text"
                   v-html="highlight(item.contractor, search)"
@@ -264,7 +283,7 @@
               </div>
 
               <div class="information-row">
-                <div class="information-title"><b>Цена:</b><i class="fa-solid fa-copy copy-icon" @click="copy(item.product_name)"></i></div>
+                <div class="information-title"><b>Цена:</b></div>
                 <div
                   class="information-text"
                   v-html="highlight(item.price, search)"
@@ -273,7 +292,7 @@
             </div>
 
             <!-- Настройки печати одной -->
-            <div class="card-photo-box" v-if="item.photo">
+            <div class="photo-box" v-if="item.photo">
               <img
                 :src="item.photo"
                 class="card-photo"
@@ -307,11 +326,12 @@
         </button>
       </div>
     </div>
+    <div v-if="drag.active" class="drag-rect" :style="dragStyle"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from "vue";
+import { ref, nextTick, onMounted, computed } from "vue";
 import JsBarcode from "jsbarcode";
 
 const bulkWithName = ref(false);
@@ -324,6 +344,119 @@ const labelSizes = [
   { value: "30x20", text: "30 × 20 мм" },
   { value: "42x25", text: "42 × 25 мм" },
 ];
+
+// ==== DRAG SELECT ====
+
+const drag = ref({
+  active: false,
+  startX: 0,
+  startY: 0,
+  x: 0,
+  y: 0,
+  w: 0,
+  h: 0,
+});
+
+// старт
+function dragStart(e) {
+  // НЕ начинаем если выделяют текст
+  if (window.getSelection().toString().length > 0) return;
+
+  // НЕ начинаем если клик по кнопкам / чекбоксам
+  const ignore = ["BUTTON", "INPUT", "LABEL", "I", "SVG", "SELECT"];
+  if (ignore.includes(e.target.tagName)) return;
+
+  drag.value.active = true;
+  drag.value.startX = e.pageX;
+  drag.value.startY = e.pageY;
+
+  selectedIds.value = []; // сброс выбора (как в Windows)
+
+  window.addEventListener("mousemove", dragMove);
+  window.addEventListener("mouseup", dragEnd);
+}
+
+function dragMove(e) {
+  if (!drag.value.active) return;
+
+  const dx = e.pageX - drag.value.startX;
+  const dy = e.pageY - drag.value.startY;
+
+  drag.value.x = dx < 0 ? e.pageX : drag.value.startX;
+  drag.value.y = dy < 0 ? e.pageY : drag.value.startY;
+
+  drag.value.w = Math.abs(dx);
+  drag.value.h = Math.abs(dy);
+
+  detectSelection();
+}
+
+function dragEnd() {
+  drag.value.active = false;
+  window.removeEventListener("mousemove", dragMove);
+  window.removeEventListener("mouseup", dragEnd);
+}
+
+function detectSelection() {
+  const rect = {
+    left: drag.value.x,
+    top: drag.value.y,
+    right: drag.value.x + drag.value.w,
+    bottom: drag.value.y + drag.value.h,
+  };
+
+  document.querySelectorAll(".card").forEach((el) => {
+    const box = el.getBoundingClientRect();
+
+    const elRect = {
+      left: box.left + window.scrollX,
+      top: box.top + window.scrollY,
+      right: box.right + window.scrollX,
+      bottom: box.bottom + window.scrollY,
+    };
+
+    const overlap =
+      rect.left < elRect.right &&
+      rect.right > elRect.left &&
+      rect.top < elRect.bottom &&
+      rect.bottom > elRect.top;
+
+    const idAttr = el.getAttribute("data-id");
+if (!idAttr) return;       // если нет id → пропускаем элемент
+const itemId = Number(idAttr);
+
+
+    if (overlap) {
+      if (!selectedIds.value.includes(itemId)) {
+        selectedIds.value.push(itemId);
+      }
+    } else {
+      selectedIds.value = selectedIds.value.filter((x) => x !== itemId);
+    }
+  });
+}
+
+// стиль прямоугольника
+const dragStyle = computed(() => ({
+  left: drag.value.x + "px",
+  top: drag.value.y + "px",
+  width: drag.value.w + "px",
+  height: drag.value.h + "px",
+}));
+
+function cardClick(e, id) {
+  // --- 1) Если выделяется текст — НИЧЕГО НЕ ДЕЛАЕМ ---
+  if (window.getSelection?.().toString().length > 0) {
+    return;
+  }
+
+  // --- 2) Если клик был по кнопкам/инпутам внутри карточки — НЕ выбираем ---
+  const ignore = ["BUTTON", "INPUT", "LABEL", "SELECT", "I", "SVG"];
+  if (ignore.includes(e.target.tagName)) return;
+
+  // --- 3) Переключаем выбор ---
+  toggleSelect(id);
+}
 
 function toggleSelect(id) {
   const arr = selectedIds.value;
@@ -638,7 +771,6 @@ async function deleteItem(id) {
   }
 }
 
-
 async function deleteSelected() {
   if (!confirm("Удалить все выбранные штрихкоды?")) return;
 
@@ -661,7 +793,10 @@ async function exportSelected() {
   const payload = JSON.stringify(selectedIds.value);
 
   // Скачать Excel
-  window.open("/api/export_excel.php?ids=" + encodeURIComponent(payload), "_blank");
+  window.open(
+    "/api/export_excel.php?ids=" + encodeURIComponent(payload),
+    "_blank"
+  );
 }
 
 function openPrint(item) {
@@ -730,13 +865,15 @@ onMounted(loadBarcodes);
 </script>
 
 <style scoped>
-
-
+.drag-rect {
+  position: absolute;
+  border: 2px dashed var(--accent-color);
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  z-index: 99999;
+}
 .highlight-row {
-  background: var(--delete-color) !important;
-  color: #ffffff !important;
-  padding: 2px 4px;
-  border-radius: 6px;
+  color: green;
 }
 
 .card-left {
@@ -791,10 +928,10 @@ onMounted(loadBarcodes);
 }
 
 .param-row-container {
-display: flex;
-    flex-direction: row;
-    gap: 20px;
-    justify-content: center;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
 }
 .grid {
   display: flex;
@@ -818,6 +955,11 @@ display: flex;
   min-height: 260px;
   box-sizing: border-box;
   transition: 0.25s;
+}
+
+.card.selected {
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-color);
 }
 
 .card:hover {
@@ -844,7 +986,7 @@ display: flex;
   cursor: pointer;
 }
 
-.card-tools {
+.card-tools-box {
   position: absolute;
   top: 55px;
   right: 15px;
@@ -897,16 +1039,16 @@ svg {
 }
 
 /* фото внутри карточки */
-.card-photo-box {
+.photo-box {
   width: 100%;
 }
 
 .card-photo {
-width: 200px;
-    height: 130px;
-    object-fit: cover;
-    border-radius: 12px;
-    cursor: pointer;
+  width: 200px;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .no-photo-text {
@@ -962,8 +1104,8 @@ width: 200px;
 
 .label-size-select,
 .bulk-size-select {
-    width: 100%;
-    padding: 10px;
+  width: 100%;
+  padding: 10px;
   background: var(--background-container);
   color: var(--accent-color);
   border: 1px solid var(--border-color);
@@ -1001,80 +1143,77 @@ width: 200px;
 }
 
 .selected-controls {
-position: fixed;
-    left: 40px;
-    bottom: 10px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    z-index: 9999;
-    background: var(--background-container);
-    padding: 20px;
-    border-radius: 20px;
+  position: fixed;
+  left: 40px;
+  bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  z-index: 9999;
+  background: var(--background-container);
+  padding: 20px;
+  border-radius: 20px;
 }
 
 .bulk-size {
   grid-column: 1 / 3;
 }
 
-
 .cancel-edit-btn {
-    background: var(--cancel-color);
-    padding: 12px;
-    border-radius: 12px;
-    grid-column: 2 / 3;
-    color: #fff;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
+  background: var(--cancel-color);
+  padding: 12px;
+  border-radius: 12px;
+  grid-column: 2 / 3;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .delete-selected-btn {
-background: var(--delete-color);
-    grid-column: 1 / 2;
-    padding: 12px;
-    border-radius: 12px;
-    color: #fff;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 15px;
-    box-shadow: 0 0 10px var(--background-container);
-    transition: .3;
+  background: var(--delete-color);
+  grid-column: 1 / 2;
+  padding: 12px;
+  border-radius: 12px;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 15px;
+  box-shadow: 0 0 10px var(--background-container);
+  transition: 0.3;
 }
-
-
 
 .delete-selected-btn:hover {
   background: #ff6666;
 }
 
-
-
-.delete-selected-btn:hover, .floating-print:hover, .cancel-edit-btn:hover, .button-export:hover {
+.delete-selected-btn:hover,
+.floating-print:hover,
+.cancel-edit-btn:hover,
+.button-export:hover {
   transform: translateY(-3px);
-  transition: .3s;
+  transition: 0.3s;
 }
 
 .button-export {
   grid-column: 2 / 3;
-
 }
 
 /* === ПЛАВАЮЩАЯ КНОПКА ПЕЧАТИ === */
 .floating-print {
-    background: var(--accent-color);
-    grid-column: 1 / 2;
-    color: var(--background-container);
-    padding: 14px 22px;
-    border-radius: 14px;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    z-index: 9999;
-    font-size: 16px;
-    box-shadow: 0 0 15px var(--background-container);
-    transition: .2s;
+  background: var(--accent-color);
+  grid-column: 1 / 2;
+  color: var(--background-container);
+  padding: 14px 22px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 9999;
+  font-size: 16px;
+  box-shadow: 0 0 15px var(--background-container);
+  transition: 0.2s;
 }
 
 .floating-print:hover {
@@ -1126,8 +1265,6 @@ background: var(--delete-color);
   }
 }
 
-
-
 .page {
   margin: 0 auto;
   padding: 20px;
@@ -1137,12 +1274,12 @@ background: var(--delete-color);
 }
 
 .top-row {
-width: 40%;
-    display: flex;
-    gap: 24px;
-    margin-bottom: 32px;
-    flex-direction: column;
-    align-items: flex-start;
+  width: 40%;
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .list-section {
@@ -1156,7 +1293,7 @@ width: 40%;
   border-radius: 14px;
   padding: 20px;
   min-height: 210px;
-  box-shadow: 0 0 12px var(--background-container)5;
+  box-shadow: 0 0 12px var(--background-container) 5;
 }
 
 .search-container {
@@ -1183,7 +1320,7 @@ width: 40%;
 /* ——— СОЗДАНИЕ ——— */
 .create-row {
   display: flex;
-flex-direction: column;
+  flex-direction: column;
   gap: 10px;
 }
 
@@ -1201,14 +1338,14 @@ input:not(:placeholder-shown) {
 }
 
 .button-main {
-    padding: 12px 20px;
-    background: var(--accent-color);
-    border-radius: 10px;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    transition: .2s;
-    color: var(--background-container);
+  padding: 12px 20px;
+  background: var(--accent-color);
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+  color: var(--background-container);
 }
 
 .button-main:hover {
@@ -1304,7 +1441,7 @@ input:not(:placeholder-shown) {
   justify-content: center;
   font-size: 18px;
   color: black;
-  box-shadow: 0 0 10px var(--background-container)8;
+  box-shadow: 0 0 10px var(--background-container) 8;
   transition: 0.2s;
 }
 
@@ -1454,7 +1591,6 @@ input:not(:placeholder-shown) {
   font-size: 14px;
 }
 
-
 @media (max-width: 1300px) {
   .page {
     flex-direction: column;
@@ -1495,7 +1631,7 @@ input:not(:placeholder-shown) {
   .list-section {
     width: 100%;
   }
-  .card-tools {
+  .card-tools-box {
     top: 15px;
   }
   .card {
@@ -1665,12 +1801,6 @@ input:not(:placeholder-shown) {
     border-radius: 12px;
     width: 100%;
   }
-
-
-  
-
-
-  
 
   /* ======= УДАЛИТЬ ВНИЗУ на всю ширину ======= */
   .selected-controls .delete-selected-btn {
