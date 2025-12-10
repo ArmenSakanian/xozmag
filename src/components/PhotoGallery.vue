@@ -51,15 +51,14 @@ import "swiper/css/navigation";
 /* Фото */
 const outsidePhotos = Array.from(
   { length: 4 },
-  (_, i) =>
-    new URL(`/img/photo-shop/outside${i + 1}.webp`, import.meta.url).href
+  (_, i) => `/img/photo-shop/outside${i + 1}.webp`
 );
 
 const productPhotos = Array.from(
   { length: 20 },
-  (_, i) =>
-    new URL(`/img/photo-shop/product${i + 1}.webp`, import.meta.url).href
+  (_, i) => `/img/photo-shop/product${i + 1}.webp`
 );
+
 
 const mode = ref("outside");
 
