@@ -52,13 +52,13 @@ import "swiper/css/navigation";
 const outsidePhotos = Array.from(
   { length: 4 },
   (_, i) =>
-    new URL(`../assets/photo-shop/outside${i + 1}.webp`, import.meta.url).href
+    new URL(`/img/photo-shop/outside${i + 1}.webp`, import.meta.url).href
 );
 
 const productPhotos = Array.from(
   { length: 20 },
   (_, i) =>
-    new URL(`../assets/photo-shop/product${i + 1}.webp`, import.meta.url).href
+    new URL(`/img/photo-shop/product${i + 1}.webp`, import.meta.url).href
 );
 
 const mode = ref("outside");

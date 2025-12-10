@@ -9,13 +9,28 @@ const routes = [
   { path: "/", name: "home", component: HomePage },
   { path: "/product", name: "product", component: ProductPage },
   { path: "/login", name: "login", component: LoginPage },
-
+  { path: "/barcode", name: "barcode", component: BarcodePage, meta: { requiresAuth: true } },
   {
-    path: "/barcode",
-    name: "barcode",
-    component: BarcodePage,
-    meta: { requiresAuth: true }
-  }
+  path: "/admin",
+  component: () => import("@/admin/AdminPanel.vue"),
+},
+{
+  path: "/admin/categories",
+  component: () => import("@/admin/CategoriesPage.vue"),
+},
+{
+  path: "/admin/subcategories",
+  component: () => import("@/admin/SubcategoriesPage.vue"),
+},
+{
+  path: "/admin/tree",
+  component: () => import("@/admin/AdminTreePage.vue"),
+},
+{
+  path: "/admin/products",
+  component: () => import("@/admin/AdminProductsPage.vue"),
+},
+
 ];
 
 const router = createRouter({
