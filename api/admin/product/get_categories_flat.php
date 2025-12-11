@@ -5,11 +5,13 @@ header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
 try {
-    // Загружаем все категории с нужными полями
+    // Загружаем все категории с полями, нужными для дерева
     $sql = "
         SELECT 
             id,
             name,
+            parent_id,
+            level,
             level_code,
             CONCAT(level_code, ' — ', name) AS full_name
         FROM categories
@@ -28,3 +30,5 @@ try {
         "message" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
+
+?>

@@ -266,10 +266,12 @@ function getOrCreateCategoryPath(PDO $pdo, string $path): int {
     if (!$parts) return 0;
 
     $parent = null;
+    $parentLevelCode = "";
+    $parentLevel = 0;
 
     foreach ($parts as $name) {
 
-        // ищем категорию
+        // ищем существующую категорию
         if ($parent === null) {
             $stmt = $pdo->prepare("SELECT * FROM categories WHERE name = :n AND parent_id IS NULL LIMIT 1");
             $stmt->execute([":n" => $name]);
@@ -281,32 +283,55 @@ function getOrCreateCategoryPath(PDO $pdo, string $path): int {
         $cat = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($cat) {
+            // категория существует — обновляем данные для следующего уровня
             $parent = (int)$cat["id"];
+            $parentLevel = (int)$cat["level"];
+            $parentLevelCode = (string)$cat["level_code"];
             continue;
         }
 
-        // создаём новую категорию
+        // === СОЗДАЁМ НОВУЮ КАТЕГОРИЮ ===
+
+        // уровень = уровень родителя + 1
+        $level = $parentLevel + 1;
+
+        // level_code = уровень родителя + "/" + ID (временно пусто, обновим после INSERT)
+        $level_code = ""; // пока пусто, обновим после вставки
+
         $stmt = $pdo->prepare("
             INSERT INTO categories (name, parent_id, level, level_code, position, path)
-            VALUES (:n, :p, 1, '', 0, '')
+            VALUES (:n, :p, :l, :lc, 0, '')
         ");
         $stmt->execute([
-            ":n" => $name,
-            ":p" => $parent
+            ":n"  => $name,
+            ":p"  => $parent,
+            ":l"  => $level,
+            ":lc" => $level_code
         ]);
 
         $newId = (int)$pdo->lastInsertId();
-        $parent = $newId;
 
-        // path
-        $pdo->prepare("UPDATE categories SET path = :p WHERE id = :id")
+        // формируем корректный level_code
+        if ($parent === null) {
+            $newLevelCode = "." . $newId;
+        } else {
+            $newLevelCode = $parentLevelCode . "." . $newId;
+        }
+
+        $pdo->prepare("UPDATE categories SET level_code = :lc WHERE id = :id")
             ->execute([
-                ":p" => ($parent ? $parent : $newId),
+                ":lc" => $newLevelCode,
                 ":id" => $newId
             ]);
+
+        // готовим данные для следующего уровня
+        $parent = $newId;
+        $parentLevelCode = $newLevelCode;
+        $parentLevel = $level;
     }
 
     return $parent ?? 0;
 }
+
 
 ?>
