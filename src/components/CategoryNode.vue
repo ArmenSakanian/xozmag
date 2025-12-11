@@ -31,6 +31,7 @@
         :key="child.id"
         :node="child"
         :selected="selected"
+        :expanded="expanded"
         @toggle="$emit('toggle', $event)"
       />
     </ul>
@@ -39,16 +40,24 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 const props = defineProps({
   node: { type: Object, required: true },
-  selected: { type: Array, required: true }
+  selected: { type: Array, required: true },
+  expanded: { type: Array, required: true }
 });
 
 const emit = defineEmits(["toggle"]);
 
 const open = ref(false);
+
+onMounted(() => {
+  // Если эта категория входит в путь — автоматически раскрываем
+  if (props.expanded.includes(props.node.code)) {
+    open.value = true;
+  }
+});
 
 function toggleOpen() {
   open.value = !open.value;
@@ -60,12 +69,10 @@ function toggleSelf() {
 </script>
 
 <style scoped>
-/* Элемент */
 .cat-item {
   margin: 6px 0;
 }
 
-/* Основная строка категории */
 .cat-row {
   display: flex;
   align-items: center;
@@ -77,10 +84,9 @@ function toggleSelf() {
 }
 
 .cat-row:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.05);
 }
 
-/* СТРЕЛКА */
 .arrow {
   width: 10px;
   height: 10px;
@@ -95,7 +101,6 @@ function toggleSelf() {
   transform: rotate(-135deg);
 }
 
-/* ЧЕКБОКС */
 .cat-check {
   display: flex;
   align-items: center;
@@ -132,14 +137,12 @@ function toggleSelf() {
   line-height: 16px;
 }
 
-/* Название категории */
 .cat-name {
   color: white;
   font-size: 15px;
   user-select: none;
 }
 
-/* Дети */
 .cat-children {
   list-style: none;
   padding-left: 18px;

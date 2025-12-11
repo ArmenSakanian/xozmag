@@ -1,7 +1,7 @@
 <template>
   <div class="catalog-wrapper">
 
-    <!-- === ЛЕВАЯ ПАНЕЛЬ ФИЛЬТРОВ === -->
+    <!-- === ФИЛЬТРЫ === -->
     <aside class="filters-panel">
 
       <!-- ПОИСК -->
@@ -13,7 +13,7 @@
         />
       </div>
 
-      <!-- === КАТЕГОРИИ (ДЕРЕВО) === -->
+      <!-- === КАТЕГОРИИ === -->
       <div class="filter-block">
         <h3 class="filter-title">Категории</h3>
 
@@ -23,6 +23,7 @@
             :key="n.id"
             :node="n"
             :selected="selectedCategories"
+            :expanded="expandedCategories"
             @toggle="toggleCategory"
           />
         </ul>
@@ -51,7 +52,6 @@
       <div class="filter-block" v-if="brands.length">
         <h3 class="filter-title">Бренды</h3>
 
-        <!-- Поиск по брендам -->
         <input
           v-model="brandSearch"
           class="search-brands"
@@ -71,11 +71,7 @@
       </div>
 
       <!-- === ХАРАКТЕРИСТИКИ === -->
-      <div
-        class="filter-block"
-        v-for="(vals, attr) in attributeFilters"
-        :key="attr"
-      >
+      <div class="filter-block" v-for="(vals, attr) in attributeFilters" :key="attr">
         <h3 class="filter-title">{{ attr }}</h3>
 
         <div class="scroll-list small-scroll">
@@ -142,7 +138,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import CategoryNode from "@/components/CategoryNode.vue";
+
+const route = useRoute();
 
 const loading = ref(true);
 const error = ref(null);
@@ -151,9 +150,11 @@ const products = ref([]);
 const categories = ref([]);
 
 const selectedCategories = ref([]);
+const expandedCategories = ref([]);
 
 const search = ref("");
 const photoFilter = ref("");
+
 const selectedBrands = ref([]);
 const brandSearch = ref("");
 
@@ -163,11 +164,12 @@ const maxPrice = ref(null);
 const selectedAttributes = ref({});
 const attributeFilters = ref({});
 
-// ===== LOAD =====
+// ================= LOAD DATA =================
 async function loadData() {
   try {
     const r1 = await fetch("/api/admin/product/get_categories_flat.php");
     const rawCats = await r1.json();
+
     categories.value = rawCats.map(c => ({
       id: c.id,
       name: c.name,
@@ -175,7 +177,7 @@ async function loadData() {
       parent: c.parent_id
     }));
 
-    const r2 = await fetch("/api/catalog/get_products.php");
+    const r2 = await fetch("/api/admin/product/get_products.php");
     const base = await r2.json();
 
     const r3 = await fetch("/api/vitrina/evotor_catalog.php");
@@ -200,9 +202,37 @@ async function loadData() {
   }
 }
 
-onMounted(loadData);
+// ========== ВЫЧИСЛЕНИЕ ПУТИ ДЛЯ РАСКРЫТИЯ ==========
+function expandCategoryPath(code) {
+  const parts = code.split(".").filter(Boolean);
+  const res = [];
+  let c = "";
 
-// ===== CATEGORY TREE =====
+  parts.forEach(p => {
+    c += "." + p;
+    res.push(c);
+  });
+
+  return res;
+}
+
+// ========== onMounted (галочка + раскрытие) ==========
+onMounted(async () => {
+  await loadData();
+
+  const catFromUrl = route.query.cat;
+
+  if (catFromUrl) {
+    if (!selectedCategories.value.includes(catFromUrl)) {
+      selectedCategories.value.push(catFromUrl);
+    }
+
+    expandedCategories.value = expandCategoryPath(catFromUrl);
+  }
+});
+
+// ========== CATEGORY TREE ==========
+
 const categoryTree = computed(() => {
   const map = {};
   categories.value.forEach(c => map[c.id] = { ...c, children: [] });
@@ -226,7 +256,7 @@ function toggleCategory(cat) {
   }
 }
 
-// ===== ATTRIBUTES =====
+// ========== ATTRIBUTES ==========
 function buildAttributes(list) {
   const temp = {};
 
@@ -237,13 +267,13 @@ function buildAttributes(list) {
     });
   });
 
-  for (const key in temp) {
-    attributeFilters.value[key] = Array.from(temp[key]);
-    selectedAttributes.value[key] = [];
+  for (const k in temp) {
+    attributeFilters.value[k] = Array.from(temp[k]);
+    selectedAttributes.value[k] = [];
   }
 }
 
-// ===== BRANDS FILTERED LIST =====
+// ========== BRANDS ==========
 const brands = computed(() =>
   Array.from(new Set(products.value.map(p => p.brand).filter(Boolean)))
 );
@@ -254,7 +284,7 @@ const filteredBrands = computed(() => {
   return brands.value.filter(b => b.toLowerCase().includes(s));
 });
 
-// ===== FINAL FILTER =====
+// ========== FINAL FILTER ==========
 const filteredProducts = computed(() => {
   return products.value.filter(p => {
 
@@ -288,6 +318,7 @@ const filteredProducts = computed(() => {
       const ok = p.attributes?.some(a =>
         a.name === attr && vals.includes(a.value)
       );
+
       if (!ok) return false;
     }
 
@@ -324,7 +355,7 @@ const filteredProducts = computed(() => {
   margin-bottom: 8px;
 }
 
-/* ===== INPUTS ===== */
+/* INPUTS */
 .search-input,
 .select-box,
 .search-brands,
@@ -347,13 +378,13 @@ const filteredProducts = computed(() => {
   box-shadow: 0 0 0 2px rgba(255,0,80,0.2);
 }
 
-/* ===== PRICE ROW ===== */
+/* PRICE */
 .price-row {
   display: flex;
   gap: 10px;
 }
 
-/* ===== SCROLL LISTS ===== */
+/* SCROLL LISTS */
 .scroll-list {
   max-height: 160px;
   overflow-y: auto;
@@ -367,13 +398,12 @@ const filteredProducts = computed(() => {
   max-height: 120px;
 }
 
-/* ===== CHECKBOXES ===== */
+/* CHECKBOXES */
 .check-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
-  cursor: pointer;
 }
 
 .check-row input {
@@ -401,7 +431,7 @@ const filteredProducts = computed(() => {
   font-weight: 900;
 }
 
-/* ===== PRODUCTS ===== */
+/* PRODUCTS */
 .products-area {
   flex: 1;
   padding: 26px;
