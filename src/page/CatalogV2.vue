@@ -284,8 +284,11 @@ const filteredBrands = computed(() => {
   return brands.value.filter(b => b.toLowerCase().includes(s));
 });
 
+
+
 // ========== FINAL FILTER ==========
 const filteredProducts = computed(() => {
+  
   return products.value.filter(p => {
 
     if (search.value) {
@@ -294,12 +297,29 @@ const filteredProducts = computed(() => {
         return false;
     }
 
-    if (selectedCategories.value.length) {
-      const ok = selectedCategories.value.some(code =>
-        p.category_code?.startsWith(code)
-      );
-      if (!ok) return false;
-    }
+if (selectedCategories.value.length) {
+
+  console.log("ТЕСТ ФИЛЬТРА >>>");
+  console.log("Выбранные категории:", selectedCategories.value);
+  console.log("Категория товара:", p.category_code);
+
+  // нормализуем для проверки
+  const normalized = p.category_code?.startsWith(".")
+    ? p.category_code
+    : "." + p.category_code;
+
+  console.log("Нормализованная категория товара:", normalized);
+
+  const ok = selectedCategories.value.some(code =>
+    normalized.startsWith(code)
+  );
+
+  console.log("ПРОЙДЁТ ФИЛЬТР?", ok);
+  console.log("-----------------------------");
+
+  if (!ok) return false;
+}
+
 
     if (photoFilter.value === "with" && !p.images.length) return false;
     if (photoFilter.value === "without" && p.images.length) return false;

@@ -1,6 +1,6 @@
 
 <template>
-    <CategoryTiles />
+    <!-- <CategoryTiles /> -->
     <Aboutus />
     <Contact />
     <StoreConditions />
@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import CategoryTiles from '@/components/CategoryTiles.vue';
+// import CategoryTiles from '@/components/CategoryTiles.vue';
 import Aboutus from '@/components/Aboutus.vue';
 import Contact from '@/components/Contact.vue';
 import StoreConditions from '@/components/StoreConditions.vue';
