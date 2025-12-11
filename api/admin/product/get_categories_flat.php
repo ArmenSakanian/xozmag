@@ -2,7 +2,7 @@
 header("Content-Type: application/json; charset=utf-8");
 
 // Подключение к базе
-require_once __DIR__ . "/../db.php";
+require_once __DIR__ . "/../../db.php";
 
 try {
     // Загружаем все категории с нужными полями

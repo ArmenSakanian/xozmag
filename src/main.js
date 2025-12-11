@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './assets/admin.css'
 import './assets/swiper-custom.css'
 
 import { createApp } from 'vue'

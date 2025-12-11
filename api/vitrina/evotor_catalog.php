@@ -216,6 +216,7 @@ foreach ($productsRaw as $p) {
         "barcode"      => $barcode,
         "article"      => $p["articleNumber"] ?? "",
         "brandName"    => $brandName,
+        "description"  => $p["description"] ?? "",
         "categoryUuid" => $catUuid,
         "categoryName" => $catName,
         "typeUuid"     => $typeUuid,

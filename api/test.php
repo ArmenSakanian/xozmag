@@ -1,15 +1,12 @@
 <?php
-echo "OK 1<br>";
+echo "DOC_ROOT = " . $_SERVER['DOCUMENT_ROOT'] . "<br>";
 
-require_once "db.php";
+$path = $_SERVER['DOCUMENT_ROOT'] . "/vendor/autoload.php";
 
-echo "OK 2<br>";
+echo "CHECK = " . $path . "<br>";
 
-$barcode = "TEST-123456789";
-
-$stmt = $pdo->prepare("SELECT id FROM barcodes WHERE barcode = ?");
-$stmt->execute([$barcode]);
-
-echo "OK 3<br>";
-
-var_dump($stmt->fetch());
+if (file_exists($path)) {
+    echo "FOUND!";
+} else {
+    echo "NOT FOUND!";
+}
