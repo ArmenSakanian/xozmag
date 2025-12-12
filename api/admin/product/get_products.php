@@ -12,8 +12,10 @@ SELECT
     p.name,
     p.price,
     p.brand,
+    p.type,
     p.barcode,
     p.description,
+
 
     c.name AS category_name,
     c.level_code AS category_code

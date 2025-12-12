@@ -26,21 +26,24 @@ $updated = 0;
 // 2. Подготавливаем SQL
 $sqlSelect = $pdo->prepare("SELECT id FROM products WHERE barcode = ?");
 $sqlInsert = $pdo->prepare("
-    INSERT INTO products 
-    (name, article, brand, price, barcode, description, photo, quantity, category_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
+INSERT INTO products 
+(name, article, brand, type, price, barcode, description, photo, quantity, category_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+
 ");
 
 $sqlUpdate = $pdo->prepare("
-    UPDATE products SET 
-        name = ?, 
-        article = ?, 
-        brand = ?, 
-        price = ?, 
-        description = ?, 
-        photo = ?, 
-        quantity = ?
-    WHERE barcode = ?
+UPDATE products SET 
+    name = ?, 
+    article = ?, 
+    brand = ?, 
+    type = ?,
+    price = ?, 
+    description = ?, 
+    photo = ?, 
+    quantity = ?
+WHERE barcode = ?
+
 ");
 
 foreach ($products as $p) {
@@ -51,6 +54,7 @@ foreach ($products as $p) {
     $barcode     = $p["barcode"] ?? "";
     $article     = $p["article"] ?? "";
     $brand       = $p["brandName"] ?? "";
+    $type        = $p["typeName"] ?? null;
     $description = $p["description"] ?? "";
     $images      = json_encode($p["images"] ?? [], JSON_UNESCAPED_UNICODE);
 
@@ -62,30 +66,18 @@ foreach ($products as $p) {
 
     if ($exists) {
         // UPDATE
-        $sqlUpdate->execute([
-            $name,
-            $article,
-            $brand,
-            $price,
-            $description,
-            $images,
-            $quantity,
-            $barcode
-        ]);
+$sqlUpdate->execute([
+  $name, $article, $brand, $type, $price, $description, $images, $quantity, $barcode
+]);
+
         $updated++;
 
     } else {
         // INSERT
-        $sqlInsert->execute([
-            $name,
-            $article,
-            $brand,
-            $price,
-            $barcode,
-            $description,
-            $images,
-            $quantity
-        ]);
+$sqlInsert->execute([
+  $name, $article, $brand, $type, $price, $barcode, $description, $images, $quantity
+]);
+
         $inserted++;
     }
 }

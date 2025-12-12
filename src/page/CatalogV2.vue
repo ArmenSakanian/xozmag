@@ -1,9 +1,7 @@
 <template>
   <div class="catalog-wrapper">
-
     <!-- === ФИЛЬТРЫ === -->
     <aside class="filters-panel">
-
       <!-- ПОИСК -->
       <div class="filter-block">
         <input
@@ -15,7 +13,9 @@
 
       <!-- === КАТЕГОРИИ === -->
       <div class="filter-block">
-        <h3 class="filter-title">Категории</h3>
+        <div class="filter-header">
+          <h3 class="filter-title">Категории</h3>
+        </div>
 
         <ul class="category-tree">
           <CategoryNode
@@ -43,69 +43,121 @@
       <div class="filter-block">
         <h3 class="filter-title">Цена</h3>
         <div class="price-row">
-          <input class="input-box" type="number" v-model.number="minPrice" placeholder="От" />
-          <input class="input-box" type="number" v-model.number="maxPrice" placeholder="До" />
+          <input
+            class="input-box"
+            type="number"
+            v-model.number="minPrice"
+            placeholder="От"
+          />
+          <input
+            class="input-box"
+            type="number"
+            v-model.number="maxPrice"
+            placeholder="До"
+          />
         </div>
       </div>
 
       <!-- === БРЕНДЫ === -->
       <div class="filter-block" v-if="brands.length">
-        <h3 class="filter-title">Бренды</h3>
+<div class="filter-header" @click="showBrands = !showBrands">
+  <h3 class="filter-title">Бренды</h3>
+  <i
+    class="fa-solid"
+    :class="showBrands ? 'fa-chevron-up' : 'fa-chevron-down'"
+  ></i>
+</div>
 
-        <input
-          v-model="brandSearch"
-          class="search-brands"
-          placeholder="Поиск бренда..."
-        />
+<transition name="collapse">
+  <div v-show="showBrands" class="collapse-body">
+    <input
+      v-model="brandSearch"
+      class="search-brands"
+      placeholder="Поиск бренда..."
+    />
 
-        <div class="scroll-list">
-          <label
-            v-for="b in filteredBrands"
-            :key="b"
-            class="check-row"
-          >
-            <input type="checkbox" :value="b" v-model="selectedBrands" />
-            <span>{{ b }}</span>
+    <label
+      v-for="b in limitedBrands"
+      :key="b"
+      class="check-row"
+    >
+      <input type="checkbox" :value="b" v-model="selectedBrands" />
+      <span>{{ b }}</span>
+    </label>
+
+    <button
+      v-if="filteredBrands.length > 6"
+      class="show-more-btn"
+      @click="showAllBrands = !showAllBrands"
+    >
+      {{ showAllBrands ? "Скрыть" : "Показать все" }}
+    </button>
+  </div>
+</transition>
+
+      </div>
+
+      <!-- === ТИПЫ === -->
+      <div class="filter-block" v-if="types.length">
+        <div class="filter-header" @click="showTypes = !showTypes">
+  <h3 class="filter-title">Типы</h3>
+  <i
+    class="fa-solid"
+    :class="showTypes ? 'fa-chevron-up' : 'fa-chevron-down'"
+  ></i>
+</div>
+
+<transition name="collapse">
+  <div v-show="showTypes" class="collapse-body">
+          <input
+            v-model="typeSearch"
+            class="search-brands"
+            placeholder="Поиск типа..."
+          />
+
+          <label v-for="t in limitedTypes" :key="t" class="check-row">
+            <input type="checkbox" :value="t" v-model="selectedTypes" />
+            <span>{{ t }}</span>
           </label>
-        </div>
+
+          <button
+            v-if="filteredTypes.length > 6"
+            class="show-more-btn"
+            @click="showAllTypes = !showAllTypes"
+          >
+            {{ showAllTypes ? "Скрыть" : "Показать все" }}
+          </button>
+  </div>
+</transition>
       </div>
 
       <!-- === ХАРАКТЕРИСТИКИ === -->
-      <div class="filter-block" v-for="(vals, attr) in attributeFilters" :key="attr">
+      <div
+        class="filter-block"
+        v-for="(vals, attr) in attributeFilters"
+        :key="attr"
+      >
         <h3 class="filter-title">{{ attr }}</h3>
 
-        <div class="scroll-list small-scroll">
-          <label
-            v-for="v in vals"
-            :key="v"
-            class="check-row"
-          >
-            <input
-              type="checkbox"
-              :value="v"
-              v-model="selectedAttributes[attr]"
-            />
-            <span>{{ v }}</span>
-          </label>
-        </div>
+        <label v-for="v in vals" :key="v" class="check-row">
+          <input
+            type="checkbox"
+            :value="v"
+            v-model="selectedAttributes[attr]"
+          />
+          <span>{{ v }}</span>
+        </label>
       </div>
-
     </aside>
 
     <!-- === ТОВАРЫ === -->
     <main class="products-area">
-
       <div v-if="loading" class="loading-center">
         <div class="loader"></div>
       </div>
 
       <div class="products-grid" v-if="!loading">
-        <div
-          v-for="p in filteredProducts"
-          :key="p.id"
-          class="product-card"
-        >
-
+        <div v-for="p in filteredProducts" :key="p.id" class="product-card">
           <div class="img-box">
             <img
               :src="p.images.length ? p.images[0] : '/img/no-photo.png'"
@@ -122,22 +174,18 @@
               <span v-if="p.brand">Бренд: {{ p.brand }}</span>
             </div>
           </div>
-
         </div>
 
         <div v-if="filteredProducts.length === 0" class="empty">
           Нет товаров
         </div>
-
       </div>
-
     </main>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import CategoryNode from "@/components/CategoryNode.vue";
 
@@ -151,6 +199,7 @@ const categories = ref([]);
 
 const selectedCategories = ref([]);
 const expandedCategories = ref([]);
+const selectedTypes = ref([]);
 
 const search = ref("");
 const photoFilter = ref("");
@@ -163,6 +212,29 @@ const maxPrice = ref(null);
 
 const selectedAttributes = ref({});
 const attributeFilters = ref({});
+const showBrands = ref(true);
+const showAllBrands = ref(false);
+const BRANDS_LIMIT = 6;
+
+const limitedBrands = computed(() => {
+  if (showAllBrands.value) return filteredBrands.value;
+  return filteredBrands.value.slice(0, 6);
+});
+
+const showTypes = ref(true);
+const showAllTypes = ref(false);
+const typeSearch = ref("");
+
+const filteredTypes = computed(() => {
+  if (!typeSearch.value.trim()) return types.value;
+  const s = typeSearch.value.toLowerCase();
+  return types.value.filter((t) => t.toLowerCase().includes(s));
+});
+
+const limitedTypes = computed(() => {
+  if (showAllTypes.value) return filteredTypes.value;
+  return filteredTypes.value.slice(0, 6);
+});
 
 // ================= LOAD DATA =================
 async function loadData() {
@@ -170,11 +242,11 @@ async function loadData() {
     const r1 = await fetch("/api/admin/product/get_categories_flat.php");
     const rawCats = await r1.json();
 
-    categories.value = rawCats.map(c => ({
+    categories.value = rawCats.map((c) => ({
       id: c.id,
       name: c.name,
       code: c.level_code,
-      parent: c.parent_id
+      parent: c.parent_id,
     }));
 
     const r2 = await fetch("/api/admin/product/get_products.php");
@@ -184,17 +256,14 @@ async function loadData() {
     const ev = await r3.json();
 
     const map = {};
-    (ev.products || []).forEach(p => {
+    (ev.products || []).forEach((p) => {
       map[p.barcode] = p.images || [];
     });
 
-    products.value = base.map(p => ({
+    products.value = base.map((p) => ({
       ...p,
-      images: map[p.barcode] || []
+      images: map[p.barcode] || [],
     }));
-
-    buildAttributes(products.value);
-
   } catch (e) {
     error.value = e.message;
   } finally {
@@ -208,7 +277,7 @@ function expandCategoryPath(code) {
   const res = [];
   let c = "";
 
-  parts.forEach(p => {
+  parts.forEach((p) => {
     c += "." + p;
     res.push(c);
   });
@@ -235,11 +304,11 @@ onMounted(async () => {
 
 const categoryTree = computed(() => {
   const map = {};
-  categories.value.forEach(c => map[c.id] = { ...c, children: [] });
+  categories.value.forEach((c) => (map[c.id] = { ...c, children: [] }));
 
   const roots = [];
 
-  categories.value.forEach(c => {
+  categories.value.forEach((c) => {
     if (!c.parent) roots.push(map[c.id]);
     else map[c.parent]?.children.push(map[c.id]);
   });
@@ -250,7 +319,9 @@ const categoryTree = computed(() => {
 function toggleCategory(cat) {
   const code = cat.code;
   if (selectedCategories.value.includes(code)) {
-    selectedCategories.value = selectedCategories.value.filter(x => x !== code);
+    selectedCategories.value = selectedCategories.value.filter(
+      (x) => x !== code
+    );
   } else {
     selectedCategories.value.push(code);
   }
@@ -260,8 +331,8 @@ function toggleCategory(cat) {
 function buildAttributes(list) {
   const temp = {};
 
-  list.forEach(p => {
-    (p.attributes || []).forEach(a => {
+  list.forEach((p) => {
+    (p.attributes || []).forEach((a) => {
       if (!temp[a.name]) temp[a.name] = new Set();
       temp[a.name].add(a.value);
     });
@@ -273,53 +344,153 @@ function buildAttributes(list) {
   }
 }
 
+watch(selectedTypes, () => {
+  // если тип НЕ выбран — скрываем характеристики
+  if (!selectedTypes.value.length) {
+    attributeFilters.value = {};
+    selectedAttributes.value = {};
+    return;
+  }
+
+  // товары ТОЛЬКО выбранных типов
+  const byType = products.value.filter((p) =>
+    selectedTypes.value.includes(p.type)
+  );
+
+  const temp = {};
+
+  byType.forEach((p) => {
+    (p.attributes || []).forEach((a) => {
+      if (!temp[a.name]) temp[a.name] = new Set();
+      temp[a.name].add(a.value);
+    });
+  });
+
+  attributeFilters.value = {};
+  selectedAttributes.value = {};
+
+  for (const k in temp) {
+    attributeFilters.value[k] = Array.from(temp[k]);
+    selectedAttributes.value[k] = [];
+  }
+});
+
+const productsForFilters = computed(() => {
+  let list = products.value;
+
+  // 1. Тип — самый высокий приоритет
+  if (selectedTypes.value.length) {
+    list = list.filter((p) => selectedTypes.value.includes(p.type));
+  }
+
+  // 2. Категория
+  if (selectedCategories.value.length) {
+    list = list.filter((p) => {
+      if (!p.category_code) return false;
+      return selectedCategories.value.some((code) =>
+        p.category_code.startsWith(code)
+      );
+    });
+  }
+
+  // 3. Бренды (ВОТ ЭТОГО НЕ ХВАТАЛО)
+  if (selectedBrands.value.length) {
+    list = list.filter((p) => selectedBrands.value.includes(p.brand));
+  }
+
+  return list;
+});
+
+watch(
+  () => selectedCategories.value,
+  () => {
+    // если выбран тип — категории не влияют
+    if (selectedTypes.value.length) return;
+
+    // если категория не выбрана — скрываем характеристики
+    if (!selectedCategories.value.length) {
+      attributeFilters.value = {};
+      selectedAttributes.value = {};
+      return;
+    }
+
+    const byCategory = products.value.filter((p) => {
+      if (!p.category_code) return false;
+
+      return selectedCategories.value.some((code) =>
+        p.category_code.startsWith(code)
+      );
+    });
+
+    const temp = {};
+
+    byCategory.forEach((p) => {
+      (p.attributes || []).forEach((a) => {
+        if (!temp[a.name]) temp[a.name] = new Set();
+        temp[a.name].add(a.value);
+      });
+    });
+
+    attributeFilters.value = {};
+    selectedAttributes.value = {};
+
+    for (const k in temp) {
+      attributeFilters.value[k] = Array.from(temp[k]);
+      selectedAttributes.value[k] = [];
+    }
+  },
+  { deep: true }
+);
+
 // ========== BRANDS ==========
 const brands = computed(() =>
-  Array.from(new Set(products.value.map(p => p.brand).filter(Boolean)))
+  Array.from(
+    new Set(productsForFilters.value.map((p) => p.brand).filter(Boolean))
+  ).sort()
+);
+
+const types = computed(() =>
+  Array.from(
+    new Set(productsForFilters.value.map((p) => p.type).filter(Boolean))
+  ).sort()
 );
 
 const filteredBrands = computed(() => {
   if (!brandSearch.value.trim()) return brands.value;
   const s = brandSearch.value.toLowerCase();
-  return brands.value.filter(b => b.toLowerCase().includes(s));
+  return brands.value.filter((b) => b.toLowerCase().includes(s));
 });
-
-
 
 // ========== FINAL FILTER ==========
 const filteredProducts = computed(() => {
-  
-  return products.value.filter(p => {
-
+  return products.value.filter((p) => {
     if (search.value) {
       const s = search.value.toLowerCase();
       if (!p.name.toLowerCase().includes(s) && !p.barcode.includes(s))
         return false;
     }
 
-if (selectedCategories.value.length) {
+    if (selectedCategories.value.length) {
+      console.log("ТЕСТ ФИЛЬТРА >>>");
+      console.log("Выбранные категории:", selectedCategories.value);
+      console.log("Категория товара:", p.category_code);
 
-  console.log("ТЕСТ ФИЛЬТРА >>>");
-  console.log("Выбранные категории:", selectedCategories.value);
-  console.log("Категория товара:", p.category_code);
+      // нормализуем для проверки
+      const normalized = p.category_code?.startsWith(".")
+        ? p.category_code
+        : "." + p.category_code;
 
-  // нормализуем для проверки
-  const normalized = p.category_code?.startsWith(".")
-    ? p.category_code
-    : "." + p.category_code;
+      console.log("Нормализованная категория товара:", normalized);
 
-  console.log("Нормализованная категория товара:", normalized);
+      const ok = selectedCategories.value.some((code) =>
+        normalized.startsWith(code)
+      );
 
-  const ok = selectedCategories.value.some(code =>
-    normalized.startsWith(code)
-  );
+      console.log("ПРОЙДЁТ ФИЛЬТР?", ok);
+      console.log("-----------------------------");
 
-  console.log("ПРОЙДЁТ ФИЛЬТР?", ok);
-  console.log("-----------------------------");
-
-  if (!ok) return false;
-}
-
+      if (!ok) return false;
+    }
 
     if (photoFilter.value === "with" && !p.images.length) return false;
     if (photoFilter.value === "without" && p.images.length) return false;
@@ -330,13 +501,15 @@ if (selectedCategories.value.length) {
 
     if (selectedBrands.value.length && !selectedBrands.value.includes(p.brand))
       return false;
+    if (selectedTypes.value.length && !selectedTypes.value.includes(p.type))
+      return false;
 
     for (const attr in selectedAttributes.value) {
       const vals = selectedAttributes.value[attr];
       if (!vals.length) continue;
 
-      const ok = p.attributes?.some(a =>
-        a.name === attr && vals.includes(a.value)
+      const ok = p.attributes?.some(
+        (a) => a.name === attr && vals.includes(a.value)
       );
 
       if (!ok) return false;
@@ -361,7 +534,7 @@ if (selectedCategories.value.length) {
   width: 280px;
   padding: 22px;
   background: #15161a;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   overflow-y: auto;
 }
 
@@ -387,7 +560,7 @@ if (selectedCategories.value.length) {
   border-radius: 10px;
   color: white;
   font-size: 14px;
-  transition: .2s;
+  transition: 0.2s;
 }
 
 .search-input:focus,
@@ -395,7 +568,7 @@ if (selectedCategories.value.length) {
 .search-brands:focus,
 .input-box:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(255,0,80,0.2);
+  box-shadow: 0 0 0 2px rgba(255, 0, 80, 0.2);
 }
 
 /* PRICE */
@@ -404,14 +577,39 @@ if (selectedCategories.value.length) {
   gap: 10px;
 }
 
-/* SCROLL LISTS */
-.scroll-list {
-  max-height: 160px;
-  overflow-y: auto;
-  background: #1b1d21;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #2b2d32;
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.show-more-btn {
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ===== COLLAPSE ANIMATION ===== */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+  max-height: 600px;
+  opacity: 1;
 }
 
 .small-scroll {
@@ -434,7 +632,7 @@ if (selectedCategories.value.length) {
   border: 2px solid #555;
   border-radius: 4px;
   cursor: pointer;
-  transition: .2s;
+  transition: 0.2s;
 }
 
 .check-row input:checked {
@@ -467,14 +665,14 @@ if (selectedCategories.value.length) {
   background: #16171b;
   border-radius: 14px;
   padding: 14px;
-  border: 1px solid rgba(255,255,255,0.05);
-  transition: .25s;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: 0.25s;
 }
 
 .product-card:hover {
   transform: translateY(-5px);
   border-color: var(--accent-color);
-  box-shadow: 0 8px 20px rgba(255,0,80,0.25);
+  box-shadow: 0 8px 20px rgba(255, 0, 80, 0.25);
 }
 
 .img-box {
