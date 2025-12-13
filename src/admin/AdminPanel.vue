@@ -7,6 +7,7 @@
       <router-link to="/admin/subcategories" class="tile">Подкатегории</router-link>
       <router-link to="/admin/tree" class="tile">Дерево категорий</router-link>
       <router-link to="/admin/products" class="tile">Товары</router-link>
+      <router-link to="/admin/addproducts" class="tile">Добавить товары</router-link>
     </div>
   </div>
 </template>

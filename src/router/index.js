@@ -34,6 +34,10 @@ const routes = [
   path: "/admin/products",
   component: () => import("@/admin/AdminProductsPage.vue"),
 },
+{
+  path: "/admin/addproducts",
+  component: () => import("@/admin/AdminAddProductsPage.vue"),
+},
 
 ];
 

@@ -1,43 +1,12 @@
 <template>
   <div class="admin-page">
-    <!-- ================== ADD PRODUCT ================== -->
-    <h2 class="title">Добавление товара</h2>
-
-    <div class="card form-grid">
-      <input v-model="form.name" class="input" placeholder="Название *" />
-      <input v-model="form.article" class="input" placeholder="Артикул" />
-      <input v-model="form.brand" class="input" placeholder="Бренд" />
-      <input v-model="form.type" class="input" placeholder="Тип" />
-      <input
-        v-model="form.price"
-        type="number"
-        class="input"
-        placeholder="Цена"
-      />
-      <input v-model="form.barcode" class="input" placeholder="Штрихкод" />
-
-      <select v-model="form.category_id" class="select">
-        <option value="">Категория *</option>
-        <option v-for="c in categories" :key="c.id" :value="c.id">
-          {{ c.full_name }}
-        </option>
-      </select>
-
-      <textarea
-        v-model="form.description"
-        class="input textarea"
-        placeholder="Описание"
-      ></textarea>
-
-      <button class="save-btn" @click="createProduct">Создать товар</button>
-    </div>
-
-    <!-- ================== TABLE ================== -->
+    <!-- ================== TABLE HEADER ================== -->
     <div class="head-row">
       <h3 class="block-title">Товары</h3>
       <button class="ghost-btn" @click="loadProducts">Обновить</button>
     </div>
 
+    <!-- ================== TABLE ================== -->
     <div class="table-shell">
       <div ref="tableRef" class="product-table"></div>
     </div>
@@ -59,15 +28,10 @@
           <div v-for="(row, i) in attrsDraft" :key="i" class="attr-row">
             <input v-model="row.name" class="input" placeholder="Название" />
             <input v-model="row.value" class="input" placeholder="Значение" />
-            <button class="danger-btn" @click="attrsDraft.splice(i, 1)">
-              ✕
-            </button>
+            <button class="danger-btn" @click="attrsDraft.splice(i, 1)">✕</button>
           </div>
 
-          <button
-            class="ghost-btn"
-            @click="attrsDraft.push({ name: '', value: '' })"
-          >
+          <button class="ghost-btn" @click="attrsDraft.push({ name: '', value: '' })">
             + Добавить
           </button>
         </div>
@@ -91,59 +55,27 @@ let table;
 
 /* ===== DATA ===== */
 const categories = ref([]);
-const form = ref({
-  name: "",
-  article: "",
-  brand: "",
-  type: "",
-  price: "",
-  barcode: "",
-  description: "",
-  category_id: "",
-});
 
 const attrsModal = ref({ open: false, product: null });
 const attrsDraft = ref([]);
 
 /* ===== LOADERS ===== */
 const loadCategories = async () => {
-  categories.value = await fetch(
-    "/api/admin/product/get_categories_flat.php"
-  ).then((r) => r.json());
+  categories.value = await fetch("/api/admin/product/get_categories_flat.php").then((r) =>
+    r.json()
+  );
 };
 
 const loadProducts = async () => {
-  const data = await fetch("/api/admin/product/get_products.php").then((r) =>
-    r.json()
-  );
+  const data = await fetch("/api/admin/product/get_products.php").then((r) => r.json());
 
   data.forEach((p) => {
     p.attributes = p.attributes || [];
     p.__has_attrs = p.attributes.length > 0;
-    p.attributes_text = p.attributes
-      .map((a) => `${a.name}: ${a.value}`)
-      .join(" · ");
+    p.attributes_text = p.attributes.map((a) => `${a.name}: ${a.value}`).join(" · ");
   });
 
   table.setData(data);
-};
-
-/* ===== CREATE ===== */
-const createProduct = async () => {
-  if (!form.value.name || !form.value.category_id) {
-    alert("Заполни обязательные поля");
-    return;
-  }
-  const fd = new FormData();
-  Object.entries(form.value).forEach(([k, v]) => fd.append(k, v));
-  const res = await fetch("/api/admin/product/create_product.php", {
-    method: "POST",
-    body: fd,
-  });
-  const out = await res.json();
-  if (out.success) {
-    loadProducts();
-  }
 };
 
 /* ===== ATTRS ===== */
@@ -151,9 +83,11 @@ const openAttrs = (p) => {
   attrsModal.value = { open: true, product: p };
   attrsDraft.value = (p.attributes || []).map((a) => ({ ...a }));
 };
+
 const closeAttrs = () => {
   attrsModal.value.open = false;
 };
+
 const saveAttrs = async () => {
   await fetch("/api/admin/product/update_product_attributes.php", {
     method: "POST",
@@ -163,6 +97,7 @@ const saveAttrs = async () => {
       attributes: attrsDraft.value,
     }),
   });
+
   loadProducts();
   closeAttrs();
 };
@@ -170,6 +105,7 @@ const saveAttrs = async () => {
 /* ===== INIT TABLE ===== */
 onMounted(async () => {
   await loadCategories();
+
   table = new Tabulator(tableRef.value, {
     layout: "fitDataStretch",
     height: "70vh",
@@ -182,94 +118,83 @@ onMounted(async () => {
       },
 
       {
-  title: "Название",
-  field: "name",
-  minWidth: 650,    
-  widthGrow: 4,
-  headerFilter: "input",
-  formatter: (cell) => {
-    const value = cell.getValue() || "";
-    return `
-      <div class="name-edit">
-        <span class="name-text">${value}</span>
-        <button class="mini-btn edit-name">Изменить</button>
-      </div>
-    `;
-  },
+        title: "Название",
+        field: "name",
+        minWidth: 650,
+        widthGrow: 4,
+        headerFilter: "input",
+        formatter: (cell) => {
+          const value = cell.getValue() || "";
+          return `
+            <div class="name-edit">
+              <span class="name-text">${value}</span>
+              <button class="mini-btn edit-name">Изменить</button>
+            </div>
+          `;
+        },
+        cellClick: (e, cell) => {
+          if (!e.target.classList.contains("edit-name")) return;
 
-  cellClick: (e, cell) => {
-    if (!e.target.classList.contains("edit-name")) return;
+          const row = cell.getRow();
+          const data = row.getData();
+          const el = cell.getElement();
 
-    const row = cell.getRow();
-    const data = row.getData();
-    const el = cell.getElement();
+          const oldValue = data.name || "";
 
-    const oldValue = data.name || "";
-
-    // режим редактирования
-    el.innerHTML = `
-      <div class="name-edit">
-        <input class="input name-input" value="${oldValue}" />
+          el.innerHTML = `
+            <div class="name-edit">
+              <input class="input name-input" value="${oldValue}" />
               <div class="button-save-canc">
-        <button class="mini-btn save-name">Сохранить</button>
-        <button class="mini-btn cancel-name">Отмена</button>
-        </div>
-      </div>
-    `;
+                <button class="mini-btn save-name">Сохранить</button>
+                <button class="mini-btn cancel-name">Отмена</button>
+              </div>
+            </div>
+          `;
 
-    const input = el.querySelector(".name-input");
-    const saveBtn = el.querySelector(".save-name");
-    const cancelBtn = el.querySelector(".cancel-name");
+          const input = el.querySelector(".name-input");
+          const saveBtn = el.querySelector(".save-name");
+          const cancelBtn = el.querySelector(".cancel-name");
 
-    input.focus();
+          input.focus();
 
-    // ✅ СОХРАНИТЬ
-    saveBtn.onclick = async () => {
-      const newValue = input.value.trim();
+          saveBtn.onclick = async () => {
+            const newValue = input.value.trim();
 
-      // если ничего не поменяли — просто вернём вид
-      if (!newValue || newValue === oldValue) {
-        row.update({ name: oldValue });
-        return;
-      }
+            if (!newValue || newValue === oldValue) {
+              row.update({ name: oldValue });
+              return;
+            }
 
-      await fetch("/api/admin/product/update_product_basic.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: data.id,
-          name: newValue,
-        }),
-      });
+            await fetch("/api/admin/product/update_product_basic.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: data.id,
+                name: newValue,
+              }),
+            });
 
-      // обновляем данные строки → formatter снова покажет "Изменить"
-      row.update({ name: newValue });
-    };
+            row.update({ name: newValue });
+          };
 
-    // ❌ ОТМЕНА
-cancelBtn.onclick = () => {
-  // принудительно вернуть старое значение
-  cell.setValue(oldValue, true);
-};
-
-  },
-},
-
+          cancelBtn.onclick = () => {
+            cell.setValue(oldValue, true);
+          };
+        },
+      },
 
       {
         title: "Бренд",
         field: "brand",
         headerFilter: "input",
-        formatter: (cell) =>
-          `<span class="t-brand">${cell.getValue() || "—"}</span>`,
+        formatter: (cell) => `<span class="t-brand">${cell.getValue() || "—"}</span>`,
       },
 
       {
         title: "Тип",
         field: "type",
         headerFilter: "input",
-        formatter: (cell) =>
-          `<span class="t-type">${cell.getValue() || "—"}</span>`,
+        formatter: (cell) => `<span class="t-type">${cell.getValue() || "—"}</span>`,
       },
 
       {
@@ -278,8 +203,7 @@ cancelBtn.onclick = () => {
         hozAlign: "right",
         formatter: (cell) => {
           const v = cell.getValue();
-          if (v === null || v === undefined || v === "")
-            return `<span class="t-empty">—</span>`;
+          if (v === null || v === undefined || v === "") return `<span class="t-empty">—</span>`;
           return `<span class="t-price">${v}</span>`;
         },
       },
@@ -290,29 +214,26 @@ cancelBtn.onclick = () => {
         headerFilter: "input",
         formatter: (cell) => {
           const v = cell.getValue();
-          return v
-            ? `<span class="t-barcode">${v}</span>`
-            : `<span class="t-empty">—</span>`;
+          return v ? `<span class="t-barcode">${v}</span>` : `<span class="t-empty">—</span>`;
         },
       },
 
       {
         title: "Категория",
         field: "category_id",
-        minWidth: 470,    
+        minWidth: 470,
         widthGrow: 4,
         formatter: (cell) => {
           const id = cell.getValue();
           const cat = categories.value.find((c) => c.id == id);
 
           return `
-      <div class="cat-edit">
-        <span class="cat-text">${cat ? cat.full_name : "—"}</span>
-        <button class="mini-btn edit-cat">Изменить</button>
-      </div>
-    `;
+            <div class="cat-edit">
+              <span class="cat-text">${cat ? cat.full_name : "—"}</span>
+              <button class="mini-btn edit-cat">Изменить</button>
+            </div>
+          `;
         },
-
         cellClick: (e, cell) => {
           if (!e.target.classList.contains("edit-cat")) return;
 
@@ -322,57 +243,53 @@ cancelBtn.onclick = () => {
           const oldCatId = data.category_id;
 
           el.innerHTML = `
-  <div class="cat-edit">
-    <select class="select cat-select">
-      <option value="">— Без категории —</option>
-      ${categories.value
-        .map(
-          (c) =>
-            `<option value="${c.id}" ${
-              c.id == data.category_id ? "selected" : ""
-            }>${c.full_name}</option>`
-        )
-        .join("")}
-    </select>
+            <div class="cat-edit">
+              <select class="select cat-select">
+                <option value="">— Без категории —</option>
+                ${categories.value
+                  .map(
+                    (c) =>
+                      `<option value="${c.id}" ${c.id == data.category_id ? "selected" : ""}>${
+                        c.full_name
+                      }</option>`
+                  )
+                  .join("")}
+              </select>
 
-    <div class="button-save-canc">
-      <button class="mini-btn save-cat">Сохранить</button>
-      <button class="mini-btn cancel-cat">Отмена</button>
-    </div>
-  </div>
-`;
+              <div class="button-save-canc">
+                <button class="mini-btn save-cat">Сохранить</button>
+                <button class="mini-btn cancel-cat">Отмена</button>
+              </div>
+            </div>
+          `;
 
+          const select = el.querySelector(".cat-select");
+          const saveBtn = el.querySelector(".save-cat");
+          const cancelBtn = el.querySelector(".cancel-cat");
 
-const select = el.querySelector(".cat-select");
-const saveBtn = el.querySelector(".save-cat");
-const cancelBtn = el.querySelector(".cancel-cat");
+          saveBtn.onclick = async () => {
+            const newCatId = select.value ? Number(select.value) : null;
 
-saveBtn.onclick = async () => {
-  const newCatId = select.value ? Number(select.value) : null;
+            if (newCatId === oldCatId) {
+              cell.setValue(oldCatId, true);
+              return;
+            }
 
-  if (newCatId === oldCatId) {
-    cell.setValue(oldCatId, true);
-    return;
-  }
+            await fetch("/api/admin/product/update_product_basic.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: data.id,
+                category_id: newCatId,
+              }),
+            });
 
-  await fetch("/api/admin/product/update_product_basic.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: data.id,
-      category_id: newCatId,
-    }),
-  });
+            cell.setValue(newCatId, true);
+          };
 
-  cell.setValue(newCatId, true);
-};
-
-// ❌ ОТМЕНА
-cancelBtn.onclick = () => {
-  cell.setValue(oldCatId, true);
-};
-
-
+          cancelBtn.onclick = () => {
+            cell.setValue(oldCatId, true);
+          };
         },
       },
 
@@ -392,10 +309,7 @@ cancelBtn.onclick = () => {
           const row = cell.getRow().getData();
 
           if (e.target.classList.contains("add-btn")) {
-            openAttrs({
-              ...row,
-              attributes: [],
-            });
+            openAttrs({ ...row, attributes: [] });
           }
 
           if (e.target.classList.contains("edit-btn")) {
@@ -405,9 +319,11 @@ cancelBtn.onclick = () => {
       },
     ],
   });
+
   loadProducts();
 });
 </script>
+
 <style scoped>
 /* ================================================= */
 /* ================= PAGE =========================== */
@@ -420,32 +336,17 @@ cancelBtn.onclick = () => {
   font-family: Inter, system-ui, Arial, sans-serif;
 }
 
-.title {
-  font-size: 22px;
-  font-weight: 800;
-  margin-bottom: 14px;
-}
-
 .block-title {
   font-size: 16px;
   font-weight: 800;
 }
 
-/* ================================================= */
-/* ================= FORM =========================== */
-/* ================================================= */
-.card {
-  background: #121827;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 22px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  gap: 16px 18px;
+.head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 /* ================================================= */
@@ -492,7 +393,6 @@ cancelBtn.onclick = () => {
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
   border-radius: 12px;
-  margin-top: 10px;
   padding: 10px 14px;
   font-weight: 700;
   cursor: pointer;
@@ -560,37 +460,23 @@ cancelBtn.onclick = () => {
 /* ================================================= */
 /* ====== РАЗНЫЕ ЦВЕТА ДЛЯ СТОЛБЦОВ ================= */
 /* ================================================= */
-:deep(.t-name) {
-  color: #e9ecf4;
-  font-weight: 800;
-}
-
 :deep(.t-brand) {
-  color: #4fc3f7; /* голубой */
+  color: #4fc3f7;
   font-weight: 700;
 }
-
 :deep(.t-type) {
-  color: #ce93d8; /* фиолетовый */
+  color: #ce93d8;
   font-weight: 700;
 }
-
 :deep(.t-price) {
-  color: #81c784; /* зелёный */
+  color: #81c784;
   font-weight: 800;
 }
-
 :deep(.t-barcode) {
-  color: #90caf9; /* синий */
+  color: #90caf9;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
-
-:deep(.t-cat) {
-  color: #ffd54f; /* жёлтый */
-  font-weight: 700;
-}
-
 :deep(.t-empty) {
   color: rgba(233, 236, 244, 0.4);
 }
@@ -607,49 +493,38 @@ cancelBtn.onclick = () => {
   font-weight: 800;
   cursor: pointer;
 }
-
 :deep(.mini-btn:hover) {
   background: #4f6cff;
 }
 
-:deep(.edit-name),
-:deep(.edit-cat)  {
-  position: absolute;
-  right: 10px;
-}
-
 :deep(.button-save-canc) {
-display: flex;
-    gap: 5px;
+  display: flex;
+  gap: 5px;
 }
 
 :deep(.save-name),
 :deep(.save-cat) {
-    background-color: green;
-    border: none;
-    transition: .5s;
+  background-color: green;
+  border: none;
+  transition: 0.5s;
 }
-
 :deep(.save-name:hover),
 :deep(.save-cat:hover) {
-    background-color: rgb(117, 255, 117);
-    color: black;
+  background-color: rgb(117, 255, 117);
+  color: black;
 }
 
 :deep(.cancel-name),
 :deep(.cancel-cat) {
   background-color: red;
   border: none;
-  transition: .5s;
+  transition: 0.5s;
 }
-
 :deep(.cancel-name:hover),
 :deep(.cancel-cat:hover) {
   background-color: rgb(255, 158, 158);
   color: black;
-
 }
-
 
 :deep(.name-input) {
   padding: 10px;
@@ -658,6 +533,43 @@ display: flex;
   width: 70%;
 }
 
+:deep(.name-edit),
+:deep(.cat-edit) {
+  display: flex;
+  gap: 10px;
+  flex-direction: row;
+}
+
+:deep(.name-text) {
+  display: block;
+  padding-right: 120px;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* ===== HEADER FILTER STYLE ===== */
+:deep(.tabulator-header-filter input) {
+  appearance: none;
+  border-radius: 10px;
+  background-color: white !important;
+  color: black !important;
+  transition: 0.5s;
+}
+
+:deep(.tabulator .tabulator-header .tabulator-col) {
+  background-color: #333 !important;
+  transition: 0.5s;
+}
+
+:deep(.tabulator .tabulator-header .tabulator-col:hover) {
+  background-color: #941b0c !important;
+}
+
+:deep(.tabulator .tabulator-header .tabulator-col:hover input) {
+  background-color: black !important;
+  color: white !important;
+  border-radius: 0px;
+}
 
 /* ================================================= */
 /* ================= MODAL ========================== */
@@ -714,7 +626,6 @@ display: flex;
   gap: 12px;
 }
 
-/* icon-btn */
 .icon-btn {
   width: 36px;
   height: 36px;
@@ -729,7 +640,6 @@ display: flex;
   background: #e53935;
 }
 
-/* danger-btn */
 .danger-btn {
   width: 36px;
   height: 36px;
@@ -740,48 +650,7 @@ display: flex;
   cursor: pointer;
 }
 
-:deep(.name-edit),
-:deep(.cat-edit) {
-display: flex;
-    gap: 10px;
-    flex-direction: row;
-}
-
-:deep(.name-text) {
-  display: block;
-  padding-right: 120px; /* 👈 место под кнопки */
-  white-space: normal;
-  line-height: 1.3;
-}
-
-:deep(.tabulator-header-filter input) {
-    appearance: none;
-    border-radius: 10px;
-    background-color: white !important;
-    color: black !important;
-    transition: .5s;
-}
-
-:deep(.tabulator .tabulator-header .tabulator-col) {
-  background-color: #333 !important;
-  transition: .5s;
-}
-
-:deep(.tabulator .tabulator-header .tabulator-col:hover) {
-  background-color: #941b0c !important;
-}
-:deep(.tabulator .tabulator-header .tabulator-col:hover input) {
-  background-color: black !important;
-  color: white !important;
-  border-radius: 0px;
-}
-
-
-@media (max-width:768px) {
-  .form-grid {
-    display: flex;
-    flex-direction: column;
-  }
+@media (max-width: 768px) {
   .attr-row {
     gap: 5px;
   }
@@ -797,5 +666,4 @@ display: flex;
     height: 25px;
   }
 }
-
 </style>
