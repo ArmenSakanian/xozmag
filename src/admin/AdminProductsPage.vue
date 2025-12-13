@@ -492,9 +492,16 @@ cancelBtn.onclick = () => {
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
   border-radius: 12px;
+  margin-top: 10px;
   padding: 10px 14px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.attr-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 /* ================================================= */
@@ -747,7 +754,48 @@ display: flex;
   line-height: 1.3;
 }
 
-.name-input {
-  min-width: 240px;
+:deep(.tabulator-header-filter input) {
+    appearance: none;
+    border-radius: 10px;
+    background-color: white !important;
+    color: black !important;
+    transition: .5s;
 }
+
+:deep(.tabulator .tabulator-header .tabulator-col) {
+  background-color: #333 !important;
+  transition: .5s;
+}
+
+:deep(.tabulator .tabulator-header .tabulator-col:hover) {
+  background-color: #941b0c !important;
+}
+:deep(.tabulator .tabulator-header .tabulator-col:hover input) {
+  background-color: black !important;
+  color: white !important;
+  border-radius: 0px;
+}
+
+
+@media (max-width:768px) {
+  .form-grid {
+    display: flex;
+    flex-direction: column;
+  }
+  .attr-row {
+    gap: 5px;
+  }
+  .input {
+    padding: 8px 5px;
+    width: 40%;
+  }
+  .danger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+  }
+}
+
 </style>

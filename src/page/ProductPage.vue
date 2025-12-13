@@ -1308,6 +1308,9 @@ watch(showFilters, (v) => {
 /* ————————————————————— */
 @media (max-width: 768px) {
 
+  .pagination {
+    margin: 0 auto;
+  }
  /* Большое фото */
   .main-swiper {
     width: 100%;
@@ -1472,6 +1475,7 @@ watch(showFilters, (v) => {
 
   /* ВЕРХНЯЯ ПАНЕЛЬ */
   .filters-header {
+    background: var(--background-container);
     position: sticky;
     top: 0;
     z-index: 20;
