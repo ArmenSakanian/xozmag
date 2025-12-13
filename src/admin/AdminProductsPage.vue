@@ -3,7 +3,18 @@
     <!-- ================== TABLE HEADER ================== -->
     <div class="head-row">
       <h3 class="block-title">Товары</h3>
-      <button class="ghost-btn" @click="loadProducts">Обновить</button>
+
+      <div class="head-actions">
+        <button
+          v-if="selectedProducts.length > 0"
+          class="save-btn"
+          @click="openBulkAttrs"
+        >
+          Характеристики ({{ selectedProducts.length }})
+        </button>
+
+        <button class="ghost-btn" @click="loadProducts">Обновить</button>
+      </div>
     </div>
 
     <!-- ================== TABLE ================== -->
@@ -25,13 +36,43 @@
         </div>
 
         <div class="modal-body">
+          <!-- === НОВАЯ СИСТЕМА: SELECT + SELECT === -->
           <div v-for="(row, i) in attrsDraft" :key="i" class="attr-row">
-            <input v-model="row.name" class="input" placeholder="Название" />
-            <input v-model="row.value" class="input" placeholder="Значение" />
-            <button class="danger-btn" @click="attrsDraft.splice(i, 1)">✕</button>
+            <select
+              v-model="row.attribute_id"
+              class="select"
+              @change="onAttributeChange(row)"
+            >
+              <option value="">— Характеристика —</option>
+              <option v-for="a in allAttributes" :key="a.id" :value="a.id">
+                {{ a.name }}
+              </option>
+            </select>
+
+            <select
+              v-model="row.option_id"
+              class="select"
+              :disabled="!row.attribute_id"
+            >
+              <option value="">— Значение —</option>
+              <option
+                v-for="o in attributeOptions[row.attribute_id] || []"
+                :key="o.id"
+                :value="o.id"
+              >
+                {{ o.value }}
+              </option>
+            </select>
+
+            <button class="danger-btn" @click="attrsDraft.splice(i, 1)">
+              ✕
+            </button>
           </div>
 
-          <button class="ghost-btn" @click="attrsDraft.push({ name: '', value: '' })">
+          <button
+            class="ghost-btn"
+            @click="attrsDraft.push({ attribute_id: null, option_id: null })"
+          >
             + Добавить
           </button>
         </div>
@@ -42,11 +83,81 @@
         </div>
       </div>
     </div>
+    <!-- ================== BULK ATTR MODAL ================== -->
+    <div
+      v-if="bulkAttrsModal"
+      class="modal-backdrop"
+      @click.self="bulkAttrsModal = false"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">
+              Характеристики для {{ selectedProducts.length }} товаров
+            </div>
+          </div>
+          <button class="icon-btn" @click="bulkAttrsModal = false">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div v-for="(row, i) in bulkAttrsDraft" :key="i" class="attr-row">
+            <select
+              v-model="row.attribute_id"
+              class="select"
+              @change="onAttributeChange(row)"
+            >
+              <option value="">— Характеристика —</option>
+              <option v-for="a in allAttributes" :key="a.id" :value="a.id">
+                {{ a.name }}
+              </option>
+            </select>
+
+            <select
+              v-model="row.option_id"
+              class="select"
+              :disabled="!row.attribute_id"
+            >
+              <option value="">— Значение —</option>
+              <option
+                v-for="o in attributeOptions[row.attribute_id] || []"
+                :key="o.id"
+                :value="o.id"
+              >
+                {{ o.value }}
+              </option>
+            </select>
+
+            <button class="danger-btn" @click="bulkAttrsDraft.splice(i, 1)">
+              ✕
+            </button>
+          </div>
+
+          <button
+            class="ghost-btn"
+            @click="
+              bulkAttrsDraft.push({ attribute_id: null, option_id: null })
+            "
+          >
+            + Добавить
+          </button>
+        </div>
+
+        <div class="modal-foot">
+          <button class="ghost-btn" @click="bulkAttrsModal = false">
+            Отмена
+          </button>
+          <button class="save-btn" @click="saveBulkAttrs">
+            Применить ко всем
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
+import Swal from "sweetalert2";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 
@@ -58,21 +169,88 @@ const categories = ref([]);
 
 const attrsModal = ref({ open: false, product: null });
 const attrsDraft = ref([]);
+const selectedProducts = ref([]);
+
+/* ===== BULK ATTRIBUTES ===== */
+const bulkAttrsModal = ref(false);
+const bulkAttrsDraft = ref([{ attribute_id: null, option_id: null }]);
+
+/* ===== НОВОЕ: справочник характеристик ===== */
+const allAttributes = ref([]);
+const attributeOptions = ref({}); // { [attribute_id]: [{id,value}] }
 
 /* ===== LOADERS ===== */
 const loadCategories = async () => {
-  categories.value = await fetch("/api/admin/product/get_categories_flat.php").then((r) =>
-    r.json()
+  categories.value = await fetch(
+    "/api/admin/product/get_categories_flat.php"
+  ).then((r) => r.json());
+};
+
+const loadAllAttributes = async () => {
+  allAttributes.value = await fetch(
+    "/api/admin/attribute/get_attributes.php"
+  ).then((r) => r.json());
+};
+
+const openBulkAttrs = () => {
+  bulkAttrsDraft.value = [{ attribute_id: null, option_id: null }];
+  bulkAttrsModal.value = true;
+};
+
+const saveBulkAttrs = async () => {
+  const clean = bulkAttrsDraft.value.filter(
+    (r) => r.attribute_id && r.option_id
   );
+
+  if (clean.length === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Ничего не выбрано",
+      text: "Добавьте хотя бы одну характеристику",
+      timer: 3000,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  await fetch("/api/admin/attribute/save_attributes_bulk.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_ids: selectedProducts.value.map((p) => p.id),
+      attributes: clean,
+    }),
+  });
+
+  bulkAttrsModal.value = false;
+
+  table.deselectRow(); // ❗ СБРОС В TABULATOR
+  selectedProducts.value = [];
+
+  loadProducts();
+};
+
+const loadOptions = async (attributeId) => {
+  if (!attributeId) return;
+  if (attributeOptions.value[attributeId]) return;
+
+  attributeOptions.value[attributeId] = await fetch(
+    `/api/admin/attribute/get_options.php?attribute_id=${attributeId}`
+  ).then((r) => r.json());
 };
 
 const loadProducts = async () => {
-  const data = await fetch("/api/admin/product/get_products.php").then((r) => r.json());
+  const data = await fetch("/api/admin/product/get_products.php").then((r) =>
+    r.json()
+  );
 
   data.forEach((p) => {
+    p.__selected = false; // ← ВАЖНО
     p.attributes = p.attributes || [];
     p.__has_attrs = p.attributes.length > 0;
-    p.attributes_text = p.attributes.map((a) => `${a.name}: ${a.value}`).join(" · ");
+    p.attributes_text = p.attributes
+      .map((a) => `${a.name}: ${a.value}`)
+      .join(" · ");
   });
 
   table.setData(data);
@@ -81,20 +259,56 @@ const loadProducts = async () => {
 /* ===== ATTRS ===== */
 const openAttrs = (p) => {
   attrsModal.value = { open: true, product: p };
-  attrsDraft.value = (p.attributes || []).map((a) => ({ ...a }));
+
+  // p.attributes приходит уже с attribute_id, name, value (+ option_id если есть)
+  attrsDraft.value = (p.attributes || []).map((a) => ({
+    attribute_id: a.attribute_id || null,
+    option_id: a.option_id || null,
+  }));
+
+  // Если нет ни одной — создаём одну пустую строку
+  if (attrsDraft.value.length === 0) {
+    attrsDraft.value = [{ attribute_id: null, option_id: null }];
+  }
+
+  // Подгружаем варианты для уже выбранных
+  attrsDraft.value.forEach((r) => loadOptions(r.attribute_id));
 };
 
 const closeAttrs = () => {
   attrsModal.value.open = false;
 };
 
+// При смене характеристики — сбрасываем выбранное значение
+const onAttributeChange = (row) => {
+  row.option_id = null;
+
+  if (!row.attribute_id) return;
+
+  loadOptions(row.attribute_id);
+};
+
 const saveAttrs = async () => {
-  await fetch("/api/admin/product/update_product_attributes.php", {
+  const clean = attrsDraft.value.filter((r) => r.attribute_id && r.option_id);
+
+  if (clean.length === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Нет характеристик",
+      text: "Выберите хотя бы одну характеристику",
+      timer: 3000,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  // ✅ ВАЖНО: новый endpoint и новые поля
+  await fetch("/api/admin/product/save_attributes.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id: attrsModal.value.product.id,
-      attributes: attrsDraft.value,
+      product_id: attrsModal.value.product.id,
+      attributes: clean,
     }),
   });
 
@@ -105,11 +319,31 @@ const saveAttrs = async () => {
 /* ===== INIT TABLE ===== */
 onMounted(async () => {
   await loadCategories();
+  await loadAllAttributes();
 
   table = new Tabulator(tableRef.value, {
     layout: "fitDataStretch",
     height: "70vh",
     columns: [
+      {
+        title: "",
+        width: 50,
+        hozAlign: "center",
+        formatter: (cell) => {
+          const checked = cell.getRow().getData().__selected;
+          return `<input type="checkbox" ${checked ? "checked" : ""} />`;
+        },
+        cellClick: (e, cell) => {
+          const row = cell.getRow();
+          const data = row.getData();
+
+          data.__selected = !data.__selected;
+          row.update({ __selected: data.__selected });
+
+          selectedProducts.value = table.getData().filter((p) => p.__selected);
+        },
+      },
+
       {
         title: "ID",
         field: "id",
@@ -187,14 +421,16 @@ onMounted(async () => {
         title: "Бренд",
         field: "brand",
         headerFilter: "input",
-        formatter: (cell) => `<span class="t-brand">${cell.getValue() || "—"}</span>`,
+        formatter: (cell) =>
+          `<span class="t-brand">${cell.getValue() || "—"}</span>`,
       },
 
       {
         title: "Тип",
         field: "type",
         headerFilter: "input",
-        formatter: (cell) => `<span class="t-type">${cell.getValue() || "—"}</span>`,
+        formatter: (cell) =>
+          `<span class="t-type">${cell.getValue() || "—"}</span>`,
       },
 
       {
@@ -203,7 +439,8 @@ onMounted(async () => {
         hozAlign: "right",
         formatter: (cell) => {
           const v = cell.getValue();
-          if (v === null || v === undefined || v === "") return `<span class="t-empty">—</span>`;
+          if (v === null || v === undefined || v === "")
+            return `<span class="t-empty">—</span>`;
           return `<span class="t-price">${v}</span>`;
         },
       },
@@ -214,7 +451,9 @@ onMounted(async () => {
         headerFilter: "input",
         formatter: (cell) => {
           const v = cell.getValue();
-          return v ? `<span class="t-barcode">${v}</span>` : `<span class="t-empty">—</span>`;
+          return v
+            ? `<span class="t-barcode">${v}</span>`
+            : `<span class="t-empty">—</span>`;
         },
       },
 
@@ -249,9 +488,9 @@ onMounted(async () => {
                 ${categories.value
                   .map(
                     (c) =>
-                      `<option value="${c.id}" ${c.id == data.category_id ? "selected" : ""}>${
-                        c.full_name
-                      }</option>`
+                      `<option value="${c.id}" ${
+                        c.id == data.category_id ? "selected" : ""
+                      }>${c.full_name}</option>`
                   )
                   .join("")}
               </select>
@@ -355,7 +594,7 @@ onMounted(async () => {
 .input,
 .select,
 .textarea {
-  background: #0f1424;
+  background: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
   border-radius: 12px;
@@ -495,6 +734,10 @@ onMounted(async () => {
 }
 :deep(.mini-btn:hover) {
   background: #4f6cff;
+}
+
+:deep(.edit-name) {
+  position: absolute;
 }
 
 :deep(.button-save-canc) {
@@ -648,6 +891,14 @@ onMounted(async () => {
   color: #ffffff;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.tabulator-row.tabulator-selected {
+  background-color: rgba(0, 150, 255, 0.25) !important;
+}
+
+.tabulator-row.tabulator-selected:hover {
+  background-color: rgba(0, 150, 255, 0.35) !important;
 }
 
 @media (max-width: 768px) {

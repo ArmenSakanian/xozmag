@@ -332,10 +332,12 @@ function buildAttributes(list) {
   const temp = {};
 
   list.forEach((p) => {
-    (p.attributes || []).forEach((a) => {
-      if (!temp[a.name]) temp[a.name] = new Set();
-      temp[a.name].add(a.value);
-    });
+(p.attributes || []).forEach((a) => {
+  if (a.value == null || a.value === "") return; // 🔴 КЛЮЧЕВО
+  if (!temp[a.name]) temp[a.name] = new Set();
+  temp[a.name].add(a.value);
+});
+
   });
 
   for (const k in temp) {
@@ -508,9 +510,13 @@ const filteredProducts = computed(() => {
       const vals = selectedAttributes.value[attr];
       if (!vals.length) continue;
 
-      const ok = p.attributes?.some(
-        (a) => a.name === attr && vals.includes(a.value)
-      );
+const ok = p.attributes?.some(
+  (a) =>
+    a.name === attr &&
+    a.value != null &&
+    vals.includes(a.value)
+);
+
 
       if (!ok) return false;
     }
