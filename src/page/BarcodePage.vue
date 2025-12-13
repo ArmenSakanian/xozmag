@@ -1268,6 +1268,7 @@ svg {
 .page {
   margin: 0 auto;
   padding: 20px;
+  gap: 30px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -1283,7 +1284,7 @@ svg {
 }
 
 .list-section {
-  width: 50%;
+  width: 90%;
 }
 
 .create-box {

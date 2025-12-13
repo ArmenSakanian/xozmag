@@ -6,7 +6,7 @@ require_once __DIR__ . "/libs/tcpdf/tcpdf.php";
 $id        = intval($_GET['id'] ?? 0);
 $withName  = intval($_GET['withName'] ?? 0);
 $withPrice = intval($_GET['withPrice'] ?? 0);
-$size      = $_GET['size'] ?? "42x25"; // теперь по умолчанию 42x25
+$size      = $_GET['size'] ?? "42x25";
 
 /* === ПОЛУЧЕНИЕ ТОВАРА === */
 $stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
@@ -15,9 +15,18 @@ $item = $stmt->fetch();
 
 if (!$item) die("Not found");
 
-$code = str_replace("-", "", $item["barcode"]);
+/* === ПОДГОТОВКА ШТРИХКОДА === */
+$cleanCode = preg_replace('/\D/', '', $item["barcode"]);
+if (!$cleanCode) die("Invalid barcode");
 
-/* === РАЗМЕРЫ (ТЕПЕРЬ ТОЛЬКО 2 ВАРИАНТА) === */
+/* === ОПРЕДЕЛЕНИЕ ТИПА === */
+if (strlen($cleanCode) === 13) {
+    $barcodeType = 'EAN13';
+} else {
+    $barcodeType = 'C128';
+}
+
+/* === РАЗМЕРЫ === */
 switch ($size) {
 
     case "30x20":
@@ -76,36 +85,47 @@ $barcodeTop = 2;
 
 if ($withName && !empty($item["product_name"])) {
 
-    $maxWidth = $width - 2;
+    $maxWidth = $width - 3;
     $maxFont = ($size === "30x20") ? 7 : 8;
 
     $fit = fitOrWrap($pdf, $item["product_name"], $maxWidth, $maxFont);
     $pdf->SetFont('dejavusans', '', $fit["font"], '', true);
 
     if ($fit["lines"] == 1) {
-        $pdf->SetXY(1, 1);
+        $pdf->SetXY(1.5, 1);
         $pdf->Cell($maxWidth, 3.5, $item["product_name"], 0, 0, "C");
         $barcodeTop = ($size === "30x20") ? 5 : 6;
     } else {
-        $pdf->SetXY(1, 1);
+        $pdf->SetXY(1.5, 1);
         $pdf->Cell($maxWidth, 3.2, $fit["l1"], 0, 0, "C");
 
-        $pdf->SetXY(1, 4);
+        $pdf->SetXY(1.5, 4);
         $pdf->Cell($maxWidth, 3.2, $fit["l2"], 0, 0, "C");
 
         $barcodeTop = ($size === "30x20") ? 7.5 : 9;
     }
 }
 
-/* === ШТРИХКОД === */
-if ($size === "30x20") {
+/* === ПАРАМЕТРЫ ШТРИХКОДА === */
+if ($size === "42x25") {
+
+    if ($barcodeType === 'EAN13') {
+        $barcodeHeight = 13;
+        $barcodeModule = 0.35;
+        $barcodeFont   = 8;
+    } else {
+        $barcodeHeight = 10;
+        $barcodeModule = 0.30;
+        $barcodeFont   = 7;
+    }
+
+} else { // 30x20
     $barcodeHeight = 9;
-    $barcodeModule = 0.25;
-} else { // 42x25
-    $barcodeHeight = 10;
-    $barcodeModule = 0.30;
+    $barcodeModule = 0.28;
+    $barcodeFont   = 7;
 }
 
+/* === РИСОВАНИЕ ШТРИХКОДА === */
 $style = [
     'border' => false,
     'padding' => 0,
@@ -113,17 +133,16 @@ $style = [
     'bgcolor' => false,
     'text' => true,
     'font' => 'dejavusans',
-    'fontsize' => 7,
-    'label' => $code,
-    'drawbars' => true,
+    'fontsize' => $barcodeFont,
+    'stretchtext' => false,
 ];
 
 $pdf->write1DBarcode(
-    $code,
-    'C128B',
-    1,
+    $cleanCode,
+    $barcodeType,
+    1.5,
     $barcodeTop,
-    $width - 2,
+    $width - 3,
     $barcodeHeight,
     $barcodeModule,
     $style,
@@ -137,13 +156,11 @@ if ($withPrice && !empty($item["price"])) {
         $pdf->SetFont('dejavusans', '', 6.5, '', true);
         $pdf->SetXY(1, $height - 4);
         $pdf->Cell($width - 2, 3, $item["price"] . " руб", 0, 0, "C");
-    }
-
-    else { // 42x25
+    } else {
         $pdf->SetFont('dejavusans', '', 7.5, '', true);
         $pdf->SetXY(1, $height - 5);
         $pdf->Cell($width - 2, 4, $item["price"] . " руб", 0, 0, "C");
     }
 }
 
-$pdf->Output("barcode-$code.pdf", "I");
+$pdf->Output("barcode-$cleanCode.pdf", "I");
