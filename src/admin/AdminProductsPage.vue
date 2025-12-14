@@ -5,7 +5,19 @@
       <h3 class="block-title">Товары</h3>
 
       <div class="head-actions">
-        <button v-if="selectedProducts.length > 0" class="save-btn" @click="openBulkAttrs">
+        <button
+          v-if="selectedProducts.length > 0"
+          class="save-btn"
+          @click="openBulkCategory"
+        >
+          Категория ({{ selectedProducts.length }})
+        </button>
+
+        <button
+          v-if="selectedProducts.length > 0"
+          class="save-btn"
+          @click="openBulkAttrs"
+        >
           Характеристики ({{ selectedProducts.length }})
         </button>
 
@@ -18,7 +30,64 @@
       <div ref="tableRef" class="product-table"></div>
     </div>
 
-    <!-- ================== ATTR MODAL ================== -->
+    <!-- ================== CATEGORY MODAL ================== -->
+    <div
+      v-if="categoryModal.open"
+      class="modal-backdrop"
+      @click.self="closeCategory"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">
+              {{
+                categoryModal.bulk
+                  ? `Категория для ${selectedProducts.length} товаров`
+                  : "Категория товара"
+              }}
+            </div>
+            <div v-if="!categoryModal.bulk" class="modal-sub">
+              #{{ categoryModal.product.id }} ·
+              {{ categoryModal.product.name }}
+            </div>
+          </div>
+          <button class="icon-btn" @click="closeCategory">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div
+            v-for="c in categories"
+            :key="c.id"
+            class="cat-tree-row"
+            :style="{ paddingLeft: (c.level - 1) * 18 + 'px' }"
+          >
+            <label class="cat-radio">
+              <input
+                type="radio"
+                name="category"
+                :value="c.id"
+                v-model="categoryModal.selected"
+              />
+              <span>{{ c.full_name }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button class="ghost-btn" @click="removeCategory">
+            Убрать категорию
+          </button>
+
+          <div style="display: flex; gap: 10px">
+            <button class="ghost-btn" @click="closeCategory">Отмена</button>
+            <button class="save-btn" @click="saveCategory">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================== ATTR MODALS ================== -->
+    <!-- ⚠️ ОСТАВЛЕНЫ БЕЗ ИЗМЕНЕНИЙ (твой код) -->
     <div v-if="attrsModal.open" class="modal-backdrop" @click.self="closeAttrs">
       <div class="modal">
         <div class="modal-head">
@@ -32,18 +101,29 @@
         </div>
 
         <div class="modal-body">
-          <!-- === НОВАЯ СИСТЕМА: SELECT + SELECT === -->
           <div v-for="(row, i) in attrsDraft" :key="i" class="attr-row">
-            <select v-model="row.attribute_id" class="select" @change="onAttributeChange(row)">
+            <select
+              v-model="row.attribute_id"
+              class="select"
+              @change="onAttributeChange(row)"
+            >
               <option value="">— Характеристика —</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
             </select>
 
-            <select v-model="row.option_id" class="select" :disabled="!row.attribute_id">
+            <select
+              v-model="row.option_id"
+              class="select"
+              :disabled="!row.attribute_id"
+            >
               <option value="">— Значение —</option>
-              <option v-for="o in attributeOptions[row.attribute_id] || []" :key="o.id" :value="o.id">
+              <option
+                v-for="o in attributeOptions[row.attribute_id] || []"
+                :key="o.id"
+                :value="o.id"
+              >
                 {{ o.value }}
               </option>
             </select>
@@ -53,7 +133,10 @@
             </button>
           </div>
 
-          <button class="ghost-btn" @click="attrsDraft.push({ attribute_id: null, option_id: null })">
+          <button
+            class="ghost-btn"
+            @click="attrsDraft.push({ attribute_id: null, option_id: null })"
+          >
             + Добавить
           </button>
         </div>
@@ -64,30 +147,44 @@
         </div>
       </div>
     </div>
-    <!-- ================== BULK ATTR MODAL ================== -->
-    <div v-if="bulkAttrsModal" class="modal-backdrop" @click.self="bulkAttrsModal = false">
+
+    <div
+      v-if="bulkAttrsModal"
+      class="modal-backdrop"
+      @click.self="bulkAttrsModal = false"
+    >
       <div class="modal">
         <div class="modal-head">
-          <div>
-            <div class="modal-title">
-              Характеристики для {{ selectedProducts.length }} товаров
-            </div>
+          <div class="modal-title">
+            Характеристики для {{ selectedProducts.length }} товаров
           </div>
           <button class="icon-btn" @click="bulkAttrsModal = false">✕</button>
         </div>
 
         <div class="modal-body">
           <div v-for="(row, i) in bulkAttrsDraft" :key="i" class="attr-row">
-            <select v-model="row.attribute_id" class="select" @change="onAttributeChange(row)">
+            <select
+              v-model="row.attribute_id"
+              class="select"
+              @change="onAttributeChange(row)"
+            >
               <option value="">— Характеристика —</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
             </select>
 
-            <select v-model="row.option_id" class="select" :disabled="!row.attribute_id">
+            <select
+              v-model="row.option_id"
+              class="select"
+              :disabled="!row.attribute_id"
+            >
               <option value="">— Значение —</option>
-              <option v-for="o in attributeOptions[row.attribute_id] || []" :key="o.id" :value="o.id">
+              <option
+                v-for="o in attributeOptions[row.attribute_id] || []"
+                :key="o.id"
+                :value="o.id"
+              >
                 {{ o.value }}
               </option>
             </select>
@@ -97,9 +194,12 @@
             </button>
           </div>
 
-          <button class="ghost-btn" @click="
-            bulkAttrsDraft.push({ attribute_id: null, option_id: null })
-            ">
+          <button
+            class="ghost-btn"
+            @click="
+              bulkAttrsDraft.push({ attribute_id: null, option_id: null })
+            "
+          >
             + Добавить
           </button>
         </div>
@@ -126,27 +226,96 @@ import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 const tableRef = ref(null);
 let table;
 
-/* ===== DATA ===== */
 const categories = ref([]);
-
-const attrsModal = ref({ open: false, product: null });
-const attrsDraft = ref([]);
 const selectedProducts = ref([]);
 
-/* ===== BULK ATTRIBUTES ===== */
-const bulkAttrsModal = ref(false);
-const bulkAttrsDraft = ref([{ attribute_id: null, option_id: null }]);
+/* ===== CATEGORY MODAL ===== */
+const categoryModal = ref({
+  open: false,
+  bulk: false,
+  product: null,
+  selected: null,
+});
 
-/* ===== НОВОЕ: справочник характеристик ===== */
-const allAttributes = ref([]);
-const attributeOptions = ref({}); // { [attribute_id]: [{id,value}] }
-
-/* ===== LOADERS ===== */
 const loadCategories = async () => {
   categories.value = await fetch(
     "/api/admin/product/get_categories_flat.php"
   ).then((r) => r.json());
 };
+
+const openCategory = (product) => {
+  categoryModal.value = {
+    open: true,
+    bulk: false,
+    product,
+    selected: product.category_id ?? null,
+  };
+};
+
+const openBulkCategory = () => {
+  categoryModal.value = {
+    open: true,
+    bulk: true,
+    product: null,
+    selected: null,
+  };
+};
+
+const closeCategory = () => {
+  categoryModal.value.open = false;
+};
+
+const saveCategory = async () => {
+  const payload = categoryModal.value.bulk
+    ? {
+        product_ids: selectedProducts.value.map((p) => p.id),
+        category_id: categoryModal.value.selected,
+      }
+    : {
+        product_id: categoryModal.value.product.id,
+        category_id: categoryModal.value.selected,
+      };
+
+  await fetch("/api/admin/product/update_product_category.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  closeCategory();
+  table.deselectRow();
+  selectedProducts.value = [];
+  loadProducts();
+};
+
+const removeCategory = async () => {
+  const payload = categoryModal.value.bulk
+    ? {
+        product_ids: selectedProducts.value.map((p) => p.id),
+        category_id: null,
+      }
+    : {
+        product_id: categoryModal.value.product.id,
+        category_id: null,
+      };
+
+  await fetch("/api/admin/product/update_product_category.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  closeCategory();
+  loadProducts();
+};
+
+/* ===== ATTRIBUTES (ТВОЯ ЛОГИКА) ===== */
+const attrsModal = ref({ open: false, product: null });
+const attrsDraft = ref([]);
+const bulkAttrsModal = ref(false);
+const bulkAttrsDraft = ref([{ attribute_id: null, option_id: null }]);
+const allAttributes = ref([]);
+const attributeOptions = ref({});
 
 const loadAllAttributes = async () => {
   allAttributes.value = await fetch(
@@ -155,59 +324,94 @@ const loadAllAttributes = async () => {
 };
 
 const openBulkAttrs = () => {
-  bulkAttrsDraft.value = [{ attribute_id: null, option_id: null }];
+  const common = getCommonAttributes(selectedProducts.value);
+
+  bulkAttrsDraft.value = common.length
+    ? common.map((a) => ({ ...a }))
+    : [{ attribute_id: null, option_id: null }];
+
+  // подгружаем options для найденных атрибутов
+  bulkAttrsDraft.value.forEach((r) => {
+    if (r.attribute_id) {
+      loadOptions(r.attribute_id);
+    }
+  });
+
   bulkAttrsModal.value = true;
 };
 
 const saveBulkAttrs = async () => {
-  const clean = bulkAttrsDraft.value.filter(
-    (r) => r.attribute_id && r.option_id
-  );
-
-  if (clean.length === 0) {
-    Swal.fire({
-      icon: "warning",
-      title: "Ничего не выбрано",
-      text: "Добавьте хотя бы одну характеристику",
-      timer: 3000,
-      showConfirmButton: false,
-    });
-    return;
-  }
-
   await fetch("/api/admin/attribute/save_attributes_bulk.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       product_ids: selectedProducts.value.map((p) => p.id),
-      attributes: clean,
+      attributes: bulkAttrsDraft.value.filter(
+        (r) => r.attribute_id && r.option_id
+      ), // ← может быть []
     }),
   });
 
   bulkAttrsModal.value = false;
-
-  table.deselectRow(); // ❗ СБРОС В TABULATOR
+  table.deselectRow();
   selectedProducts.value = [];
-
   loadProducts();
 };
 
 const loadOptions = async (attributeId) => {
-  if (!attributeId) return;
-  if (attributeOptions.value[attributeId]) return;
-
+  if (!attributeId || attributeOptions.value[attributeId]) return;
   attributeOptions.value[attributeId] = await fetch(
     `/api/admin/attribute/get_options.php?attribute_id=${attributeId}`
   ).then((r) => r.json());
 };
 
+const openAttrs = (p) => {
+  attrsModal.value = { open: true, product: p };
+  attrsDraft.value = (p.attributes || []).map((a) => ({
+    attribute_id: a.attribute_id,
+    option_id: a.option_id,
+  }));
+
+  if (!attrsDraft.value.length) {
+    attrsDraft.value = [{ attribute_id: null, option_id: null }];
+  }
+
+  attrsDraft.value.forEach((r) => loadOptions(r.attribute_id));
+};
+
+const closeAttrs = () => {
+  attrsModal.value.open = false;
+};
+
+const onAttributeChange = (row) => {
+  row.option_id = null;
+  loadOptions(row.attribute_id);
+};
+
+const saveAttrs = async () => {
+  const clean = attrsDraft.value.filter((r) => r.attribute_id && r.option_id);
+
+  await fetch("/api/admin/attribute/save_attributes.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_id: attrsModal.value.product.id,
+      attributes: clean,
+    }),
+  });
+
+  closeAttrs();
+  loadProducts();
+};
+
+/* ===== PRODUCTS ===== */
 const loadProducts = async () => {
   const data = await fetch("/api/admin/product/get_products.php").then((r) =>
     r.json()
   );
 
   data.forEach((p) => {
-    p.__selected = false; // ← ВАЖНО
+    p.__selected = false;
     p.attributes = p.attributes || [];
     p.__has_attrs = p.attributes.length > 0;
     p.attributes_text = p.attributes
@@ -218,72 +422,31 @@ const loadProducts = async () => {
   table.setData(data);
 };
 
-/* ===== ATTRS ===== */
-const openAttrs = (p) => {
-  attrsModal.value = { open: true, product: p };
+function getCommonAttributes(products) {
+  if (!products.length) return [];
 
-  // p.attributes приходит уже с attribute_id, name, value (+ option_id если есть)
-  attrsDraft.value = (p.attributes || []).map((a) => ({
-    attribute_id: a.attribute_id || null,
-    option_id: a.option_id || null,
-  }));
+  // Берём атрибуты первого товара как основу
+  const baseAttrs = products[0].attributes || [];
+  const result = [];
 
-  // Если нет ни одной — создаём одну пустую строку
-  if (attrsDraft.value.length === 0) {
-    attrsDraft.value = [{ attribute_id: null, option_id: null }];
-  }
+  baseAttrs.forEach((base) => {
+    const sameForAll = products.every((p) =>
+      (p.attributes || []).some(
+        (a) =>
+          a.attribute_id === base.attribute_id && a.option_id === base.option_id
+      )
+    );
 
-  // Подгружаем варианты для уже выбранных
-  attrsDraft.value.forEach((r) => loadOptions(r.attribute_id));
-};
-
-const closeAttrs = () => {
-  attrsModal.value.open = false;
-};
-
-// При смене характеристики — сбрасываем выбранное значение
-const onAttributeChange = (row) => {
-  row.option_id = null;
-
-  if (!row.attribute_id) return;
-
-  loadOptions(row.attribute_id);
-};
-
-const saveAttrs = async () => {
-  const clean = attrsDraft.value.filter(
-    (r) => r.attribute_id && r.option_id
-  );
-
-  const hadAttrsBefore =
-    (attrsModal.value.product.attributes || []).length > 0;
-
-  // ❌ Нельзя сохранять пусто, если раньше тоже было пусто
-  if (clean.length === 0 && !hadAttrsBefore) {
-    Swal.fire({
-      icon: "warning",
-      title: "Нет характеристик",
-      text: "Выберите хотя бы одну характеристику",
-      timer: 3000,
-      showConfirmButton: false,
-    });
-    return;
-  }
-
-  // ✅ ВАЖНО: отправляем запрос ВСЕГДА
-  await fetch("/api/admin/attribute/save_attributes.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      product_id: attrsModal.value.product.id,
-      attributes: clean, // ← может быть []
-    }),
+    if (sameForAll) {
+      result.push({
+        attribute_id: base.attribute_id,
+        option_id: base.option_id,
+      });
+    }
   });
 
-  loadProducts();
-  closeAttrs();
-};
-
+  return result;
+}
 
 /* ===== INIT TABLE ===== */
 onMounted(async () => {
@@ -293,33 +456,56 @@ onMounted(async () => {
   table = new Tabulator(tableRef.value, {
     layout: "fitDataStretch",
     height: "70vh",
+    selectable: true,
+rowClick: (e, row) => {
+  if (
+    e.target.closest("button") ||
+    e.target.tagName === "INPUT" ||
+    e.target.tagName === "SELECT"
+  ) return;
+
+  row.toggleSelect();
+  row.reformat(); // ← ВОТ ЭТО РЕШАЕТ ПРОБЛЕМУ
+  selectedProducts.value = table.getSelectedData();
+},
+
+
     columns: [
-      {
-        title: "",
-        width: 50,
-        hozAlign: "center",
-        formatter: (cell) => {
-          const checked = cell.getRow().getData().__selected;
-          return `<input type="checkbox" ${checked ? "checked" : ""} />`;
-        },
-        cellClick: (e, cell) => {
-          const row = cell.getRow();
-          const data = row.getData();
+{
+  title: "",
+  width: 50,
+  hozAlign: "center",
+  formatter: (cell) => {
+    const row = cell.getRow();
+    const checked = row.isSelected();
 
-          data.__selected = !data.__selected;
-          row.update({ __selected: data.__selected });
+    return `
+      <input
+        type="checkbox"
+        class="checkbox"
+        ${checked ? "checked" : ""}
+      />
+    `;
+  },
+  cellClick: (e, cell) => {
+    const row = cell.getRow();
 
-          selectedProducts.value = table.getData().filter((p) => p.__selected);
-        },
-      },
+    // выбираем / снимаем строку
+    row.toggleSelect();
 
+    // ⬅️ ОБЯЗАТЕЛЬНО: перерисовать checkbox
+    cell.setValue(null);
+
+    // обновляем выбранные товары
+    selectedProducts.value = table.getSelectedData();
+  }
+},
       {
         title: "ID",
         field: "id",
         width: 70,
         formatter: (cell) => `<span class="t-id">#${cell.getValue()}</span>`,
       },
-
       {
         title: "Название",
         field: "name",
@@ -329,11 +515,11 @@ onMounted(async () => {
         formatter: (cell) => {
           const value = cell.getValue() || "";
           return `
-            <div class="name-edit">
-              <span class="name-text">${value}</span>
-              <button class="mini-btn edit-name">Изменить</button>
-            </div>
-          `;
+      <div class="name-edit">
+        <span class="name-text">${value}</span>
+        <button class="mini-btn edit-name">Изменить</button>
+      </div>
+    `;
         },
         cellClick: (e, cell) => {
           if (!e.target.classList.contains("edit-name")) return;
@@ -341,18 +527,17 @@ onMounted(async () => {
           const row = cell.getRow();
           const data = row.getData();
           const el = cell.getElement();
-
           const oldValue = data.name || "";
 
           el.innerHTML = `
-            <div class="name-edit">
-              <input class="input name-input" value="${oldValue}" />
-              <div class="button-save-canc">
-                <button class="mini-btn save-name">Сохранить</button>
-                <button class="mini-btn cancel-name">Отмена</button>
-              </div>
-            </div>
-          `;
+      <div class="name-edit">
+        <input class="input name-input" value="${oldValue}" />
+        <div class="button-save-canc">
+          <button class="mini-btn save-name">Сохранить</button>
+          <button class="mini-btn cancel-name">Отмена</button>
+        </div>
+      </div>
+    `;
 
           const input = el.querySelector(".name-input");
           const saveBtn = el.querySelector(".save-name");
@@ -364,7 +549,7 @@ onMounted(async () => {
             const newValue = input.value.trim();
 
             if (!newValue || newValue === oldValue) {
-              row.update({ name: oldValue });
+              cell.setValue(oldValue, true);
               return;
             }
 
@@ -398,130 +583,62 @@ onMounted(async () => {
         field: "attributes_text",
         formatter: (cell) => {
           const row = cell.getRow().getData();
-
-          if (!row.__has_attrs) {
-            return `<button class="mini-btn add-btn" type="button">Добавить</button>`;
-          }
-
-          return `<button class="mini-btn edit-btn" type="button">Изменить</button>`;
+          return row.__has_attrs
+            ? `<button class="mini-btn edit-btn">Изменить</button>`
+            : `<button class="mini-btn add-btn">Добавить</button>`;
         },
         cellClick: (e, cell) => {
           const row = cell.getRow().getData();
-
-          if (e.target.classList.contains("add-btn")) {
+          if (e.target.classList.contains("add-btn"))
             openAttrs({ ...row, attributes: [] });
-          }
-
-          if (e.target.classList.contains("edit-btn")) {
-            openAttrs(row);
-          }
+          if (e.target.classList.contains("edit-btn")) openAttrs(row);
         },
       },
       {
         title: "Цена",
         field: "price",
         hozAlign: "right",
-        formatter: (cell) => {
-          const v = cell.getValue();
-          if (v === null || v === undefined || v === "")
-            return `<span class="t-empty">—</span>`;
-          return `<span class="t-price">${v}</span>`;
-        },
+        headerFilter: "input",
+        formatter: (cell) =>
+          cell.getValue()
+            ? `<span class="t-price">${cell.getValue()}</span>`
+            : `<span class="t-empty">—</span>`,
       },
-
       {
         title: "Штрихкод",
         field: "barcode",
         headerFilter: "input",
-        formatter: (cell) => {
-          const v = cell.getValue();
-          return v
-            ? `<span class="t-barcode">${v}</span>`
-            : `<span class="t-empty">—</span>`;
-        },
+        formatter: (cell) =>
+          cell.getValue()
+            ? `<span class="t-barcode">${cell.getValue()}</span>`
+            : `<span class="t-empty">—</span>`,
       },
-
       {
         title: "Категория",
-        field: "category_id",
-        minWidth: 470,
-        widthGrow: 4,
         formatter: (cell) => {
-          const id = cell.getValue();
-          const cat = categories.value.find((c) => c.id == id);
-
+          const p = cell.getRow().getData();
           return `
             <div class="cat-edit">
-              <span class="cat-text">${cat ? cat.full_name : "—"}</span>
+              <span class="cat-text">${
+                p.category_path || "— Без категории —"
+              }</span>
               <button class="mini-btn edit-cat">Изменить</button>
             </div>
           `;
         },
         cellClick: (e, cell) => {
-          if (!e.target.classList.contains("edit-cat")) return;
-
-          const row = cell.getRow();
-          const data = row.getData();
-          const el = cell.getElement();
-          const oldCatId = data.category_id;
-
-          el.innerHTML = `
-            <div class="cat-edit">
-              <select class="select cat-select">
-                <option value="">— Без категории —</option>
-                ${categories.value
-              .map(
-                (c) =>
-                  `<option value="${c.id}" ${c.id == data.category_id ? "selected" : ""
-                  }>${c.full_name}</option>`
-              )
-              .join("")}
-              </select>
-
-              <div class="button-save-canc">
-                <button class="mini-btn save-cat">Сохранить</button>
-                <button class="mini-btn cancel-cat">Отмена</button>
-              </div>
-            </div>
-          `;
-
-          const select = el.querySelector(".cat-select");
-          const saveBtn = el.querySelector(".save-cat");
-          const cancelBtn = el.querySelector(".cancel-cat");
-
-          saveBtn.onclick = async () => {
-            const newCatId = select.value ? Number(select.value) : null;
-
-            if (newCatId === oldCatId) {
-              cell.setValue(oldCatId, true);
-              return;
-            }
-
-            await fetch("/api/admin/product/update_product_basic.php", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: data.id,
-                category_id: newCatId,
-              }),
-            });
-
-            cell.setValue(newCatId, true);
-          };
-
-          cancelBtn.onclick = () => {
-            cell.setValue(oldCatId, true);
-          };
+          if (e.target.classList.contains("edit-cat")) {
+            openCategory(cell.getRow().getData());
+          }
         },
       },
-            {
+      {
         title: "Тип",
         field: "type",
         headerFilter: "input",
         formatter: (cell) =>
           `<span class="t-type">${cell.getValue() || "—"}</span>`,
       },
-
     ],
   });
 
@@ -533,6 +650,15 @@ onMounted(async () => {
 /* ================================================= */
 /* ================= PAGE =========================== */
 /* ================================================= */
+.cat-tree-row {
+  padding: 6px 0;
+}
+.cat-radio {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
 .admin-page {
   min-height: 100vh;
   padding: 28px 36px;
@@ -557,6 +683,34 @@ onMounted(async () => {
 /* ================================================= */
 /* ================= INPUTS ========================= */
 /* ================================================= */
+:deep(.checkbox) {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #4f6cff;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+:deep(.checkbox:checked) {
+  background: #4f6cff;
+}
+
+:deep(.checkbox:checked::after) {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+
 .input,
 .select,
 .textarea {
@@ -583,6 +737,11 @@ onMounted(async () => {
 /* ================================================= */
 /* ================= BUTTONS ======================== */
 /* ================================================= */
+.head-actions {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
 .save-btn {
   background: #4f6cff;
   border: none;
@@ -708,7 +867,8 @@ onMounted(async () => {
   background: #4f6cff;
 }
 
-:deep(.edit-name) {
+:deep(.edit-name),
+:deep(.edit-cat) {
   position: absolute;
   right: 10px;
 }
@@ -757,6 +917,7 @@ onMounted(async () => {
   gap: 10px;
   flex-direction: row;
 }
+
 
 :deep(.name-text) {
   display: block;
@@ -868,13 +1029,27 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.tabulator-row.tabulator-selected {
-  background-color: rgba(0, 150, 255, 0.25) !important;
+/* ================= ВЫБРАННАЯ СТРОКА ================= */
+:deep(.tabulator-row.tabulator-selected) {
+    background: rgba(94, 255, 9, 0.35) !important;
+    box-shadow: inset 0px 0 5px 1px #000000;
 }
 
-.tabulator-row.tabulator-selected:hover {
-  background-color: rgba(0, 150, 255, 0.35) !important;
+/* hover по выбранной */
+:deep(.tabulator-row.tabulator-selected:hover) {
+background: rgb(255 1 1 / 25%) !important;
 }
+
+:deep(.tabulator-row.tabulator-selected .name-text),
+:deep(.tabulator-row.tabulator-selected .t-brand),
+:deep(.tabulator-row.tabulator-selected .t-price),
+:deep(.tabulator-row.tabulator-selected .t-barcode),
+:deep(.tabulator-row.tabulator-selected .cat-text),
+:deep(.tabulator-row.tabulator-selected .t-type) {
+  color: #000 !important;
+  font-weight: 700;
+}
+
 
 @media (max-width: 768px) {
   .attr-row {
