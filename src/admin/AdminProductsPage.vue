@@ -5,11 +5,7 @@
       <h3 class="block-title">Товары</h3>
 
       <div class="head-actions">
-        <button
-          v-if="selectedProducts.length > 0"
-          class="save-btn"
-          @click="openBulkAttrs"
-        >
+        <button v-if="selectedProducts.length > 0" class="save-btn" @click="openBulkAttrs">
           Характеристики ({{ selectedProducts.length }})
         </button>
 
@@ -38,28 +34,16 @@
         <div class="modal-body">
           <!-- === НОВАЯ СИСТЕМА: SELECT + SELECT === -->
           <div v-for="(row, i) in attrsDraft" :key="i" class="attr-row">
-            <select
-              v-model="row.attribute_id"
-              class="select"
-              @change="onAttributeChange(row)"
-            >
+            <select v-model="row.attribute_id" class="select" @change="onAttributeChange(row)">
               <option value="">— Характеристика —</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
             </select>
 
-            <select
-              v-model="row.option_id"
-              class="select"
-              :disabled="!row.attribute_id"
-            >
+            <select v-model="row.option_id" class="select" :disabled="!row.attribute_id">
               <option value="">— Значение —</option>
-              <option
-                v-for="o in attributeOptions[row.attribute_id] || []"
-                :key="o.id"
-                :value="o.id"
-              >
+              <option v-for="o in attributeOptions[row.attribute_id] || []" :key="o.id" :value="o.id">
                 {{ o.value }}
               </option>
             </select>
@@ -69,10 +53,7 @@
             </button>
           </div>
 
-          <button
-            class="ghost-btn"
-            @click="attrsDraft.push({ attribute_id: null, option_id: null })"
-          >
+          <button class="ghost-btn" @click="attrsDraft.push({ attribute_id: null, option_id: null })">
             + Добавить
           </button>
         </div>
@@ -84,11 +65,7 @@
       </div>
     </div>
     <!-- ================== BULK ATTR MODAL ================== -->
-    <div
-      v-if="bulkAttrsModal"
-      class="modal-backdrop"
-      @click.self="bulkAttrsModal = false"
-    >
+    <div v-if="bulkAttrsModal" class="modal-backdrop" @click.self="bulkAttrsModal = false">
       <div class="modal">
         <div class="modal-head">
           <div>
@@ -101,28 +78,16 @@
 
         <div class="modal-body">
           <div v-for="(row, i) in bulkAttrsDraft" :key="i" class="attr-row">
-            <select
-              v-model="row.attribute_id"
-              class="select"
-              @change="onAttributeChange(row)"
-            >
+            <select v-model="row.attribute_id" class="select" @change="onAttributeChange(row)">
               <option value="">— Характеристика —</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
             </select>
 
-            <select
-              v-model="row.option_id"
-              class="select"
-              :disabled="!row.attribute_id"
-            >
+            <select v-model="row.option_id" class="select" :disabled="!row.attribute_id">
               <option value="">— Значение —</option>
-              <option
-                v-for="o in attributeOptions[row.attribute_id] || []"
-                :key="o.id"
-                :value="o.id"
-              >
+              <option v-for="o in attributeOptions[row.attribute_id] || []" :key="o.id" :value="o.id">
                 {{ o.value }}
               </option>
             </select>
@@ -132,12 +97,9 @@
             </button>
           </div>
 
-          <button
-            class="ghost-btn"
-            @click="
-              bulkAttrsDraft.push({ attribute_id: null, option_id: null })
-            "
-          >
+          <button class="ghost-btn" @click="
+            bulkAttrsDraft.push({ attribute_id: null, option_id: null })
+            ">
             + Добавить
           </button>
         </div>
@@ -424,15 +386,30 @@ onMounted(async () => {
         formatter: (cell) =>
           `<span class="t-brand">${cell.getValue() || "—"}</span>`,
       },
-
       {
-        title: "Тип",
-        field: "type",
-        headerFilter: "input",
-        formatter: (cell) =>
-          `<span class="t-type">${cell.getValue() || "—"}</span>`,
-      },
+        title: "Характеристики",
+        field: "attributes_text",
+        formatter: (cell) => {
+          const row = cell.getRow().getData();
 
+          if (!row.__has_attrs) {
+            return `<button class="mini-btn add-btn" type="button">Добавить</button>`;
+          }
+
+          return `<button class="mini-btn edit-btn" type="button">Изменить</button>`;
+        },
+        cellClick: (e, cell) => {
+          const row = cell.getRow().getData();
+
+          if (e.target.classList.contains("add-btn")) {
+            openAttrs({ ...row, attributes: [] });
+          }
+
+          if (e.target.classList.contains("edit-btn")) {
+            openAttrs(row);
+          }
+        },
+      },
       {
         title: "Цена",
         field: "price",
@@ -486,13 +463,12 @@ onMounted(async () => {
               <select class="select cat-select">
                 <option value="">— Без категории —</option>
                 ${categories.value
-                  .map(
-                    (c) =>
-                      `<option value="${c.id}" ${
-                        c.id == data.category_id ? "selected" : ""
-                      }>${c.full_name}</option>`
-                  )
-                  .join("")}
+              .map(
+                (c) =>
+                  `<option value="${c.id}" ${c.id == data.category_id ? "selected" : ""
+                  }>${c.full_name}</option>`
+              )
+              .join("")}
               </select>
 
               <div class="button-save-canc">
@@ -531,31 +507,14 @@ onMounted(async () => {
           };
         },
       },
-
-      {
-        title: "Характеристики",
-        field: "attributes_text",
-        formatter: (cell) => {
-          const row = cell.getRow().getData();
-
-          if (!row.__has_attrs) {
-            return `<button class="mini-btn add-btn" type="button">Добавить</button>`;
-          }
-
-          return `<button class="mini-btn edit-btn" type="button">Изменить</button>`;
-        },
-        cellClick: (e, cell) => {
-          const row = cell.getRow().getData();
-
-          if (e.target.classList.contains("add-btn")) {
-            openAttrs({ ...row, attributes: [] });
-          }
-
-          if (e.target.classList.contains("edit-btn")) {
-            openAttrs(row);
-          }
-        },
+            {
+        title: "Тип",
+        field: "type",
+        headerFilter: "input",
+        formatter: (cell) =>
+          `<span class="t-type">${cell.getValue() || "—"}</span>`,
       },
+
     ],
   });
 
@@ -703,19 +662,23 @@ onMounted(async () => {
   color: #4fc3f7;
   font-weight: 700;
 }
+
 :deep(.t-type) {
   color: #ce93d8;
   font-weight: 700;
 }
+
 :deep(.t-price) {
   color: #81c784;
   font-weight: 800;
 }
+
 :deep(.t-barcode) {
   color: #90caf9;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
+
 :deep(.t-empty) {
   color: rgba(233, 236, 244, 0.4);
 }
@@ -732,12 +695,14 @@ onMounted(async () => {
   font-weight: 800;
   cursor: pointer;
 }
+
 :deep(.mini-btn:hover) {
   background: #4f6cff;
 }
 
 :deep(.edit-name) {
   position: absolute;
+  right: 10px;
 }
 
 :deep(.button-save-canc) {
@@ -751,6 +716,7 @@ onMounted(async () => {
   border: none;
   transition: 0.5s;
 }
+
 :deep(.save-name:hover),
 :deep(.save-cat:hover) {
   background-color: rgb(117, 255, 117);
@@ -763,6 +729,7 @@ onMounted(async () => {
   border: none;
   transition: 0.5s;
 }
+
 :deep(.cancel-name:hover),
 :deep(.cancel-cat:hover) {
   background-color: rgb(255, 158, 158);
@@ -905,10 +872,12 @@ onMounted(async () => {
   .attr-row {
     gap: 5px;
   }
+
   .input {
     padding: 8px 5px;
     width: 40%;
   }
+
   .danger-btn {
     display: flex;
     align-items: center;
