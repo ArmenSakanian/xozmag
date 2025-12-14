@@ -20,15 +20,7 @@ const routes = [
 },
 {
   path: "/admin/categories",
-  component: () => import("@/admin/CategoriesPage.vue"),
-},
-{
-  path: "/admin/subcategories",
-  component: () => import("@/admin/SubcategoriesPage.vue"),
-},
-{
-  path: "/admin/tree",
-  component: () => import("@/admin/AdminTreePage.vue"),
+  component: () => import("@/admin/AdminCategoriesPage.vue"),
 },
 {
   path: "/admin/products",

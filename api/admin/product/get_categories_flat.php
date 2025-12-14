@@ -1,21 +1,19 @@
 <?php
 header("Content-Type: application/json; charset=utf-8");
-
-// Подключение к базе
 require_once __DIR__ . "/../../db.php";
 
 try {
-    // Загружаем все категории с полями, нужными для дерева
+
     $sql = "
-        SELECT 
+        SELECT
             id,
             name,
             parent_id,
             level,
-            level_code,
-            CONCAT(level_code, ' — ', name) AS full_name
+            code,
+            CONCAT(code, ' — ', name) AS full_name
         FROM categories
-        ORDER BY level_code ASC
+        ORDER BY code ASC
     ";
 
     $stmt = $pdo->query($sql);
@@ -30,5 +28,3 @@ try {
         "message" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
-
-?>

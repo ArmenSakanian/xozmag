@@ -251,9 +251,15 @@ const onAttributeChange = (row) => {
 };
 
 const saveAttrs = async () => {
-  const clean = attrsDraft.value.filter((r) => r.attribute_id && r.option_id);
+  const clean = attrsDraft.value.filter(
+    (r) => r.attribute_id && r.option_id
+  );
 
-  if (clean.length === 0) {
+  const hadAttrsBefore =
+    (attrsModal.value.product.attributes || []).length > 0;
+
+  // ❌ Нельзя сохранять пусто, если раньше тоже было пусто
+  if (clean.length === 0 && !hadAttrsBefore) {
     Swal.fire({
       icon: "warning",
       title: "Нет характеристик",
@@ -264,19 +270,20 @@ const saveAttrs = async () => {
     return;
   }
 
-  // ✅ ВАЖНО: новый endpoint и новые поля
-  await fetch("/api/admin/product/save_attributes.php", {
+  // ✅ ВАЖНО: отправляем запрос ВСЕГДА
+  await fetch("/api/admin/attribute/save_attributes.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       product_id: attrsModal.value.product.id,
-      attributes: clean,
+      attributes: clean, // ← может быть []
     }),
   });
 
   loadProducts();
   closeAttrs();
 };
+
 
 /* ===== INIT TABLE ===== */
 onMounted(async () => {
@@ -553,7 +560,7 @@ onMounted(async () => {
 .input,
 .select,
 .textarea {
-  background: #ffffff;
+  background: #121827;
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
   border-radius: 12px;
@@ -590,6 +597,7 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
+  margin-top: 15px;
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 700;

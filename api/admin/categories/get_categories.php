@@ -2,10 +2,26 @@
 header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
+/*
+  Отдаём все категории
+  Сортировка важна: сначала по level, потом по parent_id, потом по sort
+*/
+
 $stmt = $pdo->query("
-    SELECT id, name, parent_id, level, level_code, path
+    SELECT
+        id,
+        parent_id,
+        name,
+        sort,
+        level,
+        code
     FROM categories
-    ORDER BY level_code ASC
+    ORDER BY
+        level ASC,
+        parent_id ASC,
+        sort ASC
 ");
 
-echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo json_encode($rows, JSON_UNESCAPED_UNICODE);
