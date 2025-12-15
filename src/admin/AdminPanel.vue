@@ -7,6 +7,7 @@
       <router-link to="/admin/attributes" class="tile">Характеристики</router-link>
       <router-link to="/admin/products" class="tile">Товары</router-link>
       <router-link to="/admin/addproducts" class="tile">Добавить товары</router-link>
+      <router-link to="/admin/convert" class="tile">Конвертировать изображение</router-link>
     </div>
   </div>
 </template>

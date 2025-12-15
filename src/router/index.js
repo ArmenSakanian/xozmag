@@ -34,6 +34,10 @@ const routes = [
   path: "/admin/attributes",
   component: () => import("@/admin/AdminAttributes.vue"),
 },
+{
+  path: "/admin/convert",
+  component: () => import("@/admin/AdminConvertImages.vue"),
+},
 
 ];
 
