@@ -20,43 +20,74 @@ try {
         $pid = intval($pid);
         if ($pid <= 0) continue;
 
-        // ✅ ЕСЛИ attributes ПУСТО → УДАЛЯЕМ ВСЁ
+        /* ===============================
+           ЕСЛИ attributes ПУСТО
+           → удаляем ВСЁ
+        =============================== */
         if (empty($attributes)) {
-            $del = $pdo->prepare("
+            $pdo->prepare("
                 DELETE FROM product_attribute_values
                 WHERE product_id = ?
-            ");
-            $del->execute([$pid]);
+            ")->execute([$pid]);
             continue;
         }
 
-        // ✅ ИНАЧЕ — ОБНОВЛЯЕМ / ДОБАВЛЯЕМ
+        /* ===============================
+           Собираем attribute_id,
+           которые ДОЛЖНЫ ОСТАТЬСЯ
+        =============================== */
+        $keepAttrIds = [];
+
         foreach ($attributes as $row) {
-            $attrId = intval($row["attribute_id"]);
-            $optId  = intval($row["option_id"]);
+            $attrId = intval($row["attribute_id"] ?? 0);
+            if ($attrId > 0) {
+                $keepAttrIds[] = $attrId;
+            }
+        }
+
+        if (!empty($keepAttrIds)) {
+            $placeholders = implode(",", array_fill(0, count($keepAttrIds), "?"));
+
+            $sql = "
+                DELETE FROM product_attribute_values
+                WHERE product_id = ?
+                  AND attribute_id NOT IN ($placeholders)
+            ";
+
+            $pdo->prepare($sql)->execute(
+                array_merge([$pid], $keepAttrIds)
+            );
+        }
+
+        /* ===============================
+           UPDATE / INSERT переданных
+        =============================== */
+        foreach ($attributes as $row) {
+            $attrId = intval($row["attribute_id"] ?? 0);
+            $optId  = intval($row["option_id"] ?? 0);
 
             if ($attrId <= 0 || $optId <= 0) continue;
 
             $stmt = $pdo->prepare("
-                SELECT id FROM product_attribute_values
-                WHERE product_id = ? AND attribute_id = ?
+                SELECT id
+                FROM product_attribute_values
+                WHERE product_id = ?
+                  AND attribute_id = ?
             ");
             $stmt->execute([$pid, $attrId]);
 
             if ($stmt->fetch()) {
-                $upd = $pdo->prepare("
+                $pdo->prepare("
                     UPDATE product_attribute_values
                     SET option_id = ?, value = NULL
                     WHERE product_id = ? AND attribute_id = ?
-                ");
-                $upd->execute([$optId, $pid, $attrId]);
+                ")->execute([$optId, $pid, $attrId]);
             } else {
-                $ins = $pdo->prepare("
+                $pdo->prepare("
                     INSERT INTO product_attribute_values
                     (product_id, attribute_id, option_id, value)
                     VALUES (?, ?, ?, NULL)
-                ");
-                $ins->execute([$pid, $attrId, $optId]);
+                ")->execute([$pid, $attrId, $optId]);
             }
         }
     }

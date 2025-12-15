@@ -16,6 +16,7 @@
 .tiles { display: flex; gap: 20px; }
 .tile {
   padding: 25px;
+  margin-top: 30px;
   background: #26282c;
   border-radius: 12px;
   color: white;
@@ -25,5 +26,15 @@
   text-align: center;
   transition: .2s;
 }
-.tile:hover { background: #33363b; }
+.tile:hover { 
+  background: #33363b; 
+}
+
+@media (max-width: 768px) {
+  .tiles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
 </style>

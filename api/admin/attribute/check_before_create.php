@@ -2,78 +2,102 @@
 header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
+/* =========================
+   helpers
+========================= */
+function normalizeValue($value) {
+    $value = trim($value);
+    $value = str_replace(",", ".", $value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    return $value;
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 
-$nameRaw  = trim($data["name"] ?? "");
+$nameRaw   = trim($data["name"] ?? "");
 $valuesRaw = $data["values"] ?? [];
 
-/* === нормализация для проверок === */
 $nameCheck = mb_strtolower($nameRaw, 'UTF-8');
 
 $result = [
-  "attribute_exists" => false,
-  "attribute_id" => null,
-  "duplicate_values" => [],
-  "values_used_elsewhere" => []
+    "attribute_exists"      => false,
+    "attribute_id"          => null,
+    "duplicate_values"      => [], // ❌ дубли для этого заголовка
+    "values_used_elsewhere" => [], // ⚠️ warning
 ];
 
 /* ===============================
-   1️⃣ Проверяем заголовок (без регистра)
-   =============================== */
-$stmt = $pdo->prepare("
-  SELECT id
-  FROM product_attributes
-  WHERE LOWER(name) = ?
-");
-$stmt->execute([$nameCheck]);
-$attr = $stmt->fetch(PDO::FETCH_ASSOC);
+   1️⃣ Проверка заголовка по NAME
+=============================== */
+if ($nameCheck !== "") {
+    $stmt = $pdo->prepare("
+        SELECT id, name
+        FROM product_attributes
+        WHERE LOWER(name) = ?
+    ");
+    $stmt->execute([$nameCheck]);
+    $attr = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($attr) {
-  $result["attribute_exists"] = true;
-  $result["attribute_id"] = $attr["id"];
+    if ($attr) {
+        $result["attribute_exists"] = true;
+        $result["attribute_id"] = $attr["id"];
+    }
+} else {
+    $attr = null;
 }
 
 /* ===============================
-   2️⃣ Проверяем значения
-   =============================== */
+   2️⃣ Проверка значений
+=============================== */
+$seen = [];
+
 foreach ($valuesRaw as $vRaw) {
-  $vRaw = trim($vRaw);
-  if ($vRaw === "") continue;
+    if (!is_string($vRaw)) continue;
 
-  $vCheck = mb_strtolower($vRaw, 'UTF-8');
+    $valueSave = normalizeValue($vRaw);
+    if ($valueSave === "") continue;
 
-  /* --- есть ли такое значение у ЭТОГО заголовка --- */
-  if ($attr) {
-    $stmt = $pdo->prepare("
-      SELECT id
-      FROM product_attribute_options
-      WHERE attribute_id = ?
-        AND LOWER(value) = ?
-    ");
-    $stmt->execute([$attr["id"], $vCheck]);
+    $valueCheck = mb_strtolower($valueSave, 'UTF-8');
 
-    if ($stmt->fetch()) {
-      $result["duplicate_values"][] = $vRaw; // возвращаем КРАСИВО
-      continue;
+    /* ❌ дубль в одном запросе */
+    if (isset($seen[$valueCheck])) {
+        $result["duplicate_values"][] = $valueSave;
+        continue;
     }
-  }
+    $seen[$valueCheck] = true;
 
-  /* --- есть ли такое значение вообще (у другого заголовка) --- */
-  $stmt = $pdo->prepare("
-    SELECT pa.name
-    FROM product_attribute_options o
-    JOIN product_attributes pa ON pa.id = o.attribute_id
-    WHERE LOWER(o.value) = ?
-  ");
-  $stmt->execute([$vCheck]);
-  $used = $stmt->fetch(PDO::FETCH_ASSOC);
+    /* ❌ уже существует у ЭТОГО заголовка */
+    if ($attr) {
+        $stmt = $pdo->prepare("
+            SELECT id
+            FROM product_attribute_options
+            WHERE attribute_id = ?
+              AND LOWER(value) = ?
+        ");
+        $stmt->execute([$attr["id"], $valueCheck]);
 
-  if ($used) {
-    $result["values_used_elsewhere"][] = [
-      "value" => $vRaw,           // как ввели
-      "attribute" => $used["name"]
-    ];
-  }
+        if ($stmt->fetch()) {
+            $result["duplicate_values"][] = $valueSave;
+            continue;
+        }
+    }
+
+    /* ⚠️ используется у других заголовков */
+    $stmt = $pdo->prepare("
+        SELECT pa.name
+        FROM product_attribute_options o
+        JOIN product_attributes pa ON pa.id = o.attribute_id
+        WHERE LOWER(o.value) = ?
+    ");
+    $stmt->execute([$valueCheck]);
+    $used = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($used) {
+        $result["values_used_elsewhere"][] = [
+            "value" => $valueSave,
+            "attribute" => $used["name"]
+        ];
+    }
 }
 
 echo json_encode($result, JSON_UNESCAPED_UNICODE);

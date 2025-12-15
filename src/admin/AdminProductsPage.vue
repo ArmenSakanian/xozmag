@@ -1,5 +1,16 @@
 <template>
   <div class="admin-page">
+    <!-- ===== MOBILE ROTATE OVERLAY ===== -->
+    <div v-if="showRotateOverlay" class="rotate-overlay">
+      <div class="rotate-box">
+        <div class="rotate-icon">📱↔️</div>
+        <div class="rotate-title">Поверните телефон</div>
+        <div class="rotate-text">
+          Для удобной работы с таблицей используйте горизонтальный режим
+        </div>
+      </div>
+    </div>
+
     <!-- ================== TABLE HEADER ================== -->
     <div class="head-row">
       <h3 class="block-title">Товары</h3>
@@ -20,6 +31,13 @@
         >
           Характеристики ({{ selectedProducts.length }})
         </button>
+        <button
+          v-if="selectedProducts.length > 0"
+          class="save-btn danger-clear"
+          @click="clearSelection"
+        >
+          Снять выделение
+        </button>
 
         <button class="ghost-btn" @click="loadProducts">Обновить</button>
       </div>
@@ -29,7 +47,12 @@
     <div class="table-shell">
       <div ref="tableRef" class="product-table"></div>
     </div>
-
+    <div class="goods_counter">
+      <p>
+        Выбранные товары:
+        <span class="number">({{ selectedProducts.length }})</span>
+      </p>
+    </div>
     <!-- ================== CATEGORY MODAL ================== -->
     <div
       v-if="categoryModal.open"
@@ -147,7 +170,6 @@
         </div>
       </div>
     </div>
-
     <div
       v-if="bulkAttrsModal"
       class="modal-backdrop"
@@ -162,6 +184,7 @@
         </div>
 
         <div class="modal-body">
+          <!-- ⬇️ ТВОЙ СТАРЫЙ КОД (НЕ МЕНЯЕМ) -->
           <div v-for="(row, i) in bulkAttrsDraft" :key="i" class="attr-row">
             <select
               v-model="row.attribute_id"
@@ -202,6 +225,33 @@
           >
             + Добавить
           </button>
+          <!-- ✅ НОВЫЙ БЛОК: ИНФОРМАЦИЯ О ВЫБРАННЫХ ТОВАРАХ -->
+          <div class="bulk-info">
+            <div class="bulk-label">Выбранные товары:</div>
+            <div v-for="p in selectedProducts" :key="p.id" class="bulk-product">
+              <div class="bulk-title">#{{ p.id }} · {{ p.name }}</div>
+              <div
+                class="bulk-title-barcode"
+                @click="copyBarcode(p.barcode)"
+                title="Нажмите, чтобы скопировать"
+              >
+                Штрих-код {{ p.barcode }}
+              </div>
+
+              <div v-if="p.attributes?.length" class="bulk-attrs">
+                <div
+                  v-for="a in p.attributes"
+                  :key="a.attribute_id + '_' + a.option_id"
+                  class="bulk-attr-row"
+                >
+                  <span class="name_attributes_bulk">{{ a.name }}:</span>
+                  <span class="value_attributes_bulk">{{ a.value }}</span>
+                </div>
+              </div>
+
+              <div v-else class="bulk-empty">— нет характеристик —</div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-foot">
@@ -225,9 +275,25 @@ import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 
 const tableRef = ref(null);
 let table;
-
+let lastSelectedRow = null;
+let visibleRows = [];
 const categories = ref([]);
 const selectedProducts = ref([]);
+const isMobile = window.innerWidth <= 768;
+const showRotateOverlay = ref(false);
+
+const checkOrientation = () => {
+  const isMobile = window.innerWidth <= 768;
+  const isPortrait = window.innerHeight > window.innerWidth;
+
+  showRotateOverlay.value = isMobile && isPortrait;
+};
+
+onMounted(() => {
+  checkOrientation();
+  window.addEventListener("resize", checkOrientation);
+  window.addEventListener("orientationchange", checkOrientation);
+});
 
 /* ===== CATEGORY MODAL ===== */
 const categoryModal = ref({
@@ -282,10 +348,25 @@ const saveCategory = async () => {
     body: JSON.stringify(payload),
   });
 
+  const ids = categoryModal.value.bulk
+    ? selectedProducts.value.map((p) => p.id)
+    : [categoryModal.value.product.id];
+
   closeCategory();
   table.deselectRow();
   selectedProducts.value = [];
-  loadProducts();
+
+  await loadProducts();
+  highlightRows(ids);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Категория обновлена",
+    showConfirmButton: false,
+    timer: 1400,
+  });
 };
 
 const removeCategory = async () => {
@@ -340,6 +421,21 @@ const openBulkAttrs = () => {
   bulkAttrsModal.value = true;
 };
 
+const clearSelection = () => {
+  table.deselectRow();
+  selectedProducts.value = [];
+  lastSelectedRow = null;
+
+  const headerCb = tableRef.value?.querySelector(".checkbox-all");
+  if (headerCb) headerCb.checked = false;
+
+  // ✅ ТОЛЬКО ВИДИМЫЕ СТРОКИ
+  table.getRows(true).forEach((row) => {
+    const checkboxCell = row.getCells()[0];
+    checkboxCell.setValue(null);
+  });
+};
+
 const saveBulkAttrs = async () => {
   await fetch("/api/admin/attribute/save_attributes_bulk.php", {
     method: "POST",
@@ -352,10 +448,23 @@ const saveBulkAttrs = async () => {
     }),
   });
 
+  const ids = selectedProducts.value.map((p) => p.id);
+
   bulkAttrsModal.value = false;
   table.deselectRow();
   selectedProducts.value = [];
-  loadProducts();
+
+  await loadProducts();
+  highlightRows(ids);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Характеристики обновлены",
+    showConfirmButton: false,
+    timer: 1400,
+  });
 };
 
 const loadOptions = async (attributeId) => {
@@ -400,8 +509,20 @@ const saveAttrs = async () => {
     }),
   });
 
+  const id = attrsModal.value.product.id;
+
   closeAttrs();
-  loadProducts();
+  await loadProducts();
+  highlightRows([id]);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Характеристики сохранены",
+    showConfirmButton: false,
+    timer: 1400,
+  });
 };
 
 /* ===== PRODUCTS ===== */
@@ -420,6 +541,24 @@ const loadProducts = async () => {
   });
 
   table.setData(data);
+};
+
+const copyBarcode = async (code) => {
+  try {
+    await navigator.clipboard.writeText(code);
+
+    // опционально: визуальный фидбек
+    Swal.fire({
+      toast: true,
+      position: "bottom",
+      icon: "success",
+      title: "Штрихкод скопирован",
+      showConfirmButton: false,
+      timer: 1200,
+    });
+  } catch (e) {
+    console.error("Не удалось скопировать", e);
+  }
 };
 
 function getCommonAttributes(products) {
@@ -448,88 +587,127 @@ function getCommonAttributes(products) {
   return result;
 }
 
-/* ===== INIT TABLE ===== */
-onMounted(async () => {
-  await loadCategories();
-  await loadAllAttributes();
+const highlightRows = (ids) => {
+  setTimeout(() => {
+    ids.forEach((id) => {
+      const row = table.getRow(id);
+      if (!row) return;
 
-  table = new Tabulator(tableRef.value, {
-    layout: "fitDataStretch",
-    height: "70vh",
-    selectable: true,
-rowClick: (e, row) => {
-  if (
-    e.target.closest("button") ||
-    e.target.tagName === "INPUT" ||
-    e.target.tagName === "SELECT"
-  ) return;
+      const el = row.getElement();
+      el.classList.add("row-updated");
 
-  row.toggleSelect();
-  row.reformat(); // ← ВОТ ЭТО РЕШАЕТ ПРОБЛЕМУ
-  selectedProducts.value = table.getSelectedData();
-},
+      setTimeout(() => {
+        el.classList.remove("row-updated");
+      }, 1800);
+    });
+  }, 150); // ждём, пока table.setData отработает
+};
 
+const desktopColumns = [
+  {
+    title: "",
+    field: "__select",
+    width: 50,
+    headerSort: false,
+    hozAlign: "center",
 
-    columns: [
-{
-  title: "",
-  width: 50,
-  hozAlign: "center",
-  formatter: (cell) => {
-    const row = cell.getRow();
-    const checked = row.isSelected();
+    // ✅ чекбокс в заголовке
+    titleFormatter: () =>
+      `<input type="checkbox" class="checkbox checkbox-all" />`,
+    titleFormatterParams: {},
 
-    return `
-      <input
-        type="checkbox"
-        class="checkbox"
-        ${checked ? "checked" : ""}
-      />
-    `;
+    // ✅ клик по заголовку (по чекбоксу)
+    headerClick: (e) => {
+      const cb = e.target.closest(".checkbox-all");
+      if (!cb) return;
+
+      const rows = visibleRows;
+      const allSelected = rows.length > 0 && rows.every((r) => r.isSelected());
+
+      if (allSelected) {
+        rows.forEach((r) => r.deselect());
+        cb.checked = false;
+      } else {
+        rows.forEach((r) => r.select());
+        cb.checked = true;
+      }
+
+      rows.forEach((r) => r.getCells()[0].setValue(null));
+      selectedProducts.value = table.getSelectedData(true);
+
+      lastSelectedRow = null;
+    },
+
+    // ✅ чекбоксы в строках
+    formatter: (cell) => {
+      const checked = cell.getRow().isSelected();
+      return `<input type="checkbox" class="checkbox" ${
+        checked ? "checked" : ""
+      } />`;
+    },
+
+    cellClick: (e, cell) => {
+      const row = cell.getRow();
+      const rows = visibleRows;
+
+      if (e.shiftKey && lastSelectedRow) {
+        const start = rows.indexOf(lastSelectedRow);
+        const end = rows.indexOf(row);
+
+        if (start !== -1 && end !== -1) {
+          const [from, to] = start < end ? [start, end] : [end, start];
+
+          rows.slice(from, to + 1).forEach((r) => {
+            r.select();
+            r.getCells()[0].setValue(null);
+          });
+        }
+      } else {
+        row.toggleSelect();
+        cell.setValue(null);
+      }
+
+      lastSelectedRow = row;
+      selectedProducts.value = table.getSelectedData(true);
+      const headerCb = tableRef.value?.querySelector(".checkbox-all");
+      if (headerCb) {
+        headerCb.checked =
+          table.getRows(true).length > 0 &&
+          table.getRows(true).every((r) => r.isSelected());
+      }
+    },
   },
-  cellClick: (e, cell) => {
-    const row = cell.getRow();
 
-    // выбираем / снимаем строку
-    row.toggleSelect();
-
-    // ⬅️ ОБЯЗАТЕЛЬНО: перерисовать checkbox
-    cell.setValue(null);
-
-    // обновляем выбранные товары
-    selectedProducts.value = table.getSelectedData();
-  }
-},
-      {
-        title: "ID",
-        field: "id",
-        width: 70,
-        formatter: (cell) => `<span class="t-id">#${cell.getValue()}</span>`,
-      },
-      {
-        title: "Название",
-        field: "name",
-        minWidth: 650,
-        widthGrow: 4,
-        headerFilter: "input",
-        formatter: (cell) => {
-          const value = cell.getValue() || "";
-          return `
+  {
+    title: "ID",
+    field: "id",
+    width: 70,
+    formatter: (cell) => `<span class="t-id">#${cell.getValue()}</span>`,
+  },
+  {
+    title: "Название",
+    field: "name",
+    minWidth: 650,
+    widthGrow: 4,
+    headerFilter: "input",
+    formatter: (cell) => {
+      const value = cell.getValue() || "";
+      return `
       <div class="name-edit">
         <span class="name-text">${value}</span>
         <button class="mini-btn edit-name">Изменить</button>
       </div>
     `;
-        },
-        cellClick: (e, cell) => {
-          if (!e.target.classList.contains("edit-name")) return;
+    },
+    cellClick: (e, cell) => {
+      if (!e.target.classList.contains("edit-name")) return;
 
-          const row = cell.getRow();
-          const data = row.getData();
-          const el = cell.getElement();
-          const oldValue = data.name || "";
+      const row = cell.getRow();
+      const data = row.getData();
+      const el = cell.getElement();
+      const oldValue = data.name || "";
 
-          el.innerHTML = `
+      el.innerHTML = `
       <div class="name-edit">
         <input class="input name-input" value="${oldValue}" />
         <div class="button-save-canc">
@@ -539,85 +717,59 @@ rowClick: (e, row) => {
       </div>
     `;
 
-          const input = el.querySelector(".name-input");
-          const saveBtn = el.querySelector(".save-name");
-          const cancelBtn = el.querySelector(".cancel-name");
+      const input = el.querySelector(".name-input");
+      const saveBtn = el.querySelector(".save-name");
+      const cancelBtn = el.querySelector(".cancel-name");
 
-          input.focus();
+      input.focus();
 
-          saveBtn.onclick = async () => {
-            const newValue = input.value.trim();
+      saveBtn.onclick = async () => {
+        const newValue = input.value.trim();
 
-            if (!newValue || newValue === oldValue) {
-              cell.setValue(oldValue, true);
-              return;
-            }
+        if (!newValue || newValue === oldValue) {
+          cell.setValue(oldValue, true);
+          return;
+        }
 
-            await fetch("/api/admin/product/update_product_basic.php", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: data.id,
-                name: newValue,
-              }),
-            });
+        await fetch("/api/admin/product/update_product_basic.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: data.id,
+            name: newValue,
+          }),
+        });
 
-            row.update({ name: newValue });
-          };
+        row.update({ name: newValue });
+      };
 
-          cancelBtn.onclick = () => {
-            cell.setValue(oldValue, true);
-          };
-        },
-      },
-
-      {
-        title: "Бренд",
-        field: "brand",
-        headerFilter: "input",
-        formatter: (cell) =>
-          `<span class="t-brand">${cell.getValue() || "—"}</span>`,
-      },
-      {
-        title: "Характеристики",
-        field: "attributes_text",
-        formatter: (cell) => {
-          const row = cell.getRow().getData();
-          return row.__has_attrs
-            ? `<button class="mini-btn edit-btn">Изменить</button>`
-            : `<button class="mini-btn add-btn">Добавить</button>`;
-        },
-        cellClick: (e, cell) => {
-          const row = cell.getRow().getData();
-          if (e.target.classList.contains("add-btn"))
-            openAttrs({ ...row, attributes: [] });
-          if (e.target.classList.contains("edit-btn")) openAttrs(row);
-        },
-      },
-      {
-        title: "Цена",
-        field: "price",
-        hozAlign: "right",
-        headerFilter: "input",
-        formatter: (cell) =>
-          cell.getValue()
-            ? `<span class="t-price">${cell.getValue()}</span>`
-            : `<span class="t-empty">—</span>`,
-      },
-      {
-        title: "Штрихкод",
-        field: "barcode",
-        headerFilter: "input",
-        formatter: (cell) =>
-          cell.getValue()
-            ? `<span class="t-barcode">${cell.getValue()}</span>`
-            : `<span class="t-empty">—</span>`,
-      },
-      {
-        title: "Категория",
-        formatter: (cell) => {
-          const p = cell.getRow().getData();
-          return `
+      cancelBtn.onclick = () => {
+        cell.setValue(oldValue, true);
+      };
+    },
+  },
+  {
+    title: "Характеристики",
+    field: "attributes_text",
+    formatter: (cell) => {
+      const row = cell.getRow().getData();
+      return row.__has_attrs
+        ? `<button class="mini-btn edit-btn">Изменить</button>`
+        : `<button class="mini-btn add-btn">Добавить</button>`;
+    },
+    cellClick: (e, cell) => {
+      const row = cell.getRow().getData();
+      if (e.target.classList.contains("add-btn"))
+        openAttrs({ ...row, attributes: [] });
+      if (e.target.classList.contains("edit-btn")) openAttrs(row);
+    },
+  },
+  {
+    title: "Категория",
+    minWidth: 450,
+    formatter: (cell) => {
+      const p = cell.getRow().getData();
+      return `
             <div class="cat-edit">
               <span class="cat-text">${
                 p.category_path || "— Без категории —"
@@ -625,21 +777,140 @@ rowClick: (e, row) => {
               <button class="mini-btn edit-cat">Изменить</button>
             </div>
           `;
-        },
-        cellClick: (e, cell) => {
-          if (e.target.classList.contains("edit-cat")) {
-            openCategory(cell.getRow().getData());
-          }
-        },
-      },
-      {
-        title: "Тип",
-        field: "type",
-        headerFilter: "input",
-        formatter: (cell) =>
-          `<span class="t-type">${cell.getValue() || "—"}</span>`,
-      },
-    ],
+    },
+    cellClick: (e, cell) => {
+      if (e.target.classList.contains("edit-cat")) {
+        openCategory(cell.getRow().getData());
+      }
+    },
+  },
+  {
+    title: "Цена",
+    field: "price",
+    hozAlign: "right",
+    headerFilter: "input",
+    formatter: (cell) =>
+      cell.getValue()
+        ? `<span class="t-price">${cell.getValue()}</span>`
+        : `<span class="t-empty">—</span>`,
+  },
+  {
+    title: "Штрихкод",
+    field: "barcode",
+    headerFilter: "input",
+    formatter: (cell) =>
+      cell.getValue()
+        ? `<span class="t-barcode" title="Нажмите, чтобы скопировать">
+           ${cell.getValue()}
+         </span>`
+        : `<span class="t-empty">—</span>`,
+
+    cellClick: (e, cell) => {
+      const value = cell.getValue();
+      if (!value) return;
+
+      copyBarcode(value);
+    },
+  },
+  {
+    title: "Бренд",
+    field: "brand",
+    headerFilter: "input",
+    formatter: (cell) =>
+      `<span class="t-brand">${cell.getValue() || "—"}</span>`,
+  },
+  {
+    title: "Тип",
+    field: "type",
+    headerFilter: "input",
+    formatter: (cell) =>
+      `<span class="t-type">${cell.getValue() || "—"}</span>`,
+  },
+];
+const mobileColumns = [
+  {
+    title: "",
+    width: 50,
+    hozAlign: "center",
+    headerSort: false,
+
+    titleFormatter: desktopColumns[0].titleFormatter,
+    headerClick: desktopColumns[0].headerClick,
+
+    formatter: desktopColumns[0].formatter,
+    cellClick: desktopColumns[0].cellClick,
+  },
+
+  {
+    title: "Название",
+    field: "name",
+    minWidth: 260,
+    formatter: desktopColumns[2].formatter,
+    cellClick: desktopColumns[2].cellClick,
+  },
+  {
+    title: "Цена",
+    field: "price",
+  },
+  {
+    title: "Характеристики",
+    field: "attributes_text",
+  },
+  {
+    title: "Штрихкод",
+    field: "barcode",
+  },
+];
+
+/* ===== INIT TABLE ===== */
+onMounted(async () => {
+  await loadCategories();
+  await loadAllAttributes();
+
+  table = new Tabulator(tableRef.value, {
+    layout: "fitDataStretch",
+    height: "70vh",
+    selectable: true,
+
+    columns: isMobile ? mobileColumns : desktopColumns,
+
+    rowClick: (e, row) => {
+      if (
+        e.target.closest("button") ||
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "SELECT"
+      )
+        return;
+
+      const rows = visibleRows;
+
+      if (e.shiftKey && lastSelectedRow) {
+        const start = rows.indexOf(lastSelectedRow);
+        const end = rows.indexOf(row);
+
+        if (start !== -1 && end !== -1) {
+          const [from, to] = start < end ? [start, end] : [end, start];
+          rows.slice(from, to + 1).forEach((r) => r.select());
+        }
+      } else {
+        row.toggleSelect();
+      }
+
+      lastSelectedRow = row;
+      row.reformat();
+      selectedProducts.value = table.getSelectedData(true);
+    },
+  });
+
+  table.on("dataFiltered", (filters, rows) => {
+    visibleRows = rows; // 🔥 ВОТ ЧЕГО НЕ ХВАТАЛО
+
+    table.deselectRow();
+    selectedProducts.value = [];
+    lastSelectedRow = null;
+
+    const headerCb = tableRef.value?.querySelector(".checkbox-all");
+    if (headerCb) headerCb.checked = false;
   });
 
   loadProducts();
@@ -710,15 +981,16 @@ rowClick: (e, row) => {
   transform: rotate(45deg);
 }
 
-
 .input,
 .select,
 .textarea {
+  cursor: pointer;
   background: #121827;
-  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e9ecf4;
+  border: 1px solid #4f6cff;
   border-radius: 12px;
   padding: 11px 13px;
+  margin-top: 10px;
   font-size: 14px;
 }
 
@@ -752,9 +1024,17 @@ rowClick: (e, row) => {
   cursor: pointer;
 }
 
+.danger-clear {
+  background-color: var(--delete-color);
+}
+
+.danger-clear:hover {
+  background: rgba(255, 92, 92, 0.12);
+}
+
 .ghost-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--cancel-color);
+  border: none;
   color: #e9ecf4;
   margin-top: 15px;
   border-radius: 12px;
@@ -907,7 +1187,8 @@ rowClick: (e, row) => {
 :deep(.name-input) {
   padding: 10px;
   border-radius: 5px;
-  background-color: blanchedalmond;
+  border: 2px solid black;
+  background-color: var(--accent-color);
   width: 70%;
 }
 
@@ -917,7 +1198,6 @@ rowClick: (e, row) => {
   gap: 10px;
   flex-direction: row;
 }
-
 
 :deep(.name-text) {
   display: block;
@@ -950,6 +1230,15 @@ rowClick: (e, row) => {
   border-radius: 0px;
 }
 
+.goods_counter {
+  margin-top: 15px;
+}
+
+.number {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
 /* ================================================= */
 /* ================= MODAL ========================== */
 /* ================================================= */
@@ -960,7 +1249,6 @@ rowClick: (e, row) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
 }
 
 .modal {
@@ -970,6 +1258,7 @@ rowClick: (e, row) => {
   flex-direction: column;
   background: #121827;
   border-radius: 18px;
+  margin-top: 50px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -990,6 +1279,98 @@ rowClick: (e, row) => {
   margin-top: 4px;
   font-size: 12px;
   color: rgba(233, 236, 244, 0.5);
+}
+
+.bulk-info {
+  margin: 20px 0;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.bulk-product {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  margin: 10px 0;
+}
+
+.bulk-product:last-child {
+  margin-bottom: 0;
+}
+
+.bulk-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bulk-title::before {
+  content: "•";
+  color: var(--accent-color);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.bulk-title-barcode {
+  font-size: 12px;
+  color: var(--accent-color);
+  opacity: 0.9;
+  cursor: pointer;
+  user-select: none;
+  transition: 0.2s;
+}
+
+.bulk-title-barcode:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.bulk-title-barcode:active {
+  transform: scale(0.96);
+}
+
+.bulk-attrs {
+  margin-left: 14px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.bulk-attr-row {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 3px;
+}
+
+.bulk-attr-row:last-child {
+  margin-bottom: 0;
+}
+
+.bulk-attr-row::before {
+  content: "—";
+  margin-right: 6px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.bulk-empty {
+  margin-left: 14px;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.name_attributes_bulk {
+  color: #4fc3f7;
+}
+
+.value_attributes_bulk {
+  color: #ff9900;
 }
 
 .modal-body {
@@ -1031,13 +1412,13 @@ rowClick: (e, row) => {
 
 /* ================= ВЫБРАННАЯ СТРОКА ================= */
 :deep(.tabulator-row.tabulator-selected) {
-    background: rgba(94, 255, 9, 0.35) !important;
-    box-shadow: inset 0px 0 5px 1px #000000;
+  background: rgba(94, 255, 9, 0.35) !important;
+  box-shadow: inset 0px 0 5px 1px #000000;
 }
 
 /* hover по выбранной */
 :deep(.tabulator-row.tabulator-selected:hover) {
-background: rgb(255 1 1 / 25%) !important;
+  background: rgb(255 1 1 / 25%) !important;
 }
 
 :deep(.tabulator-row.tabulator-selected .name-text),
@@ -1050,6 +1431,50 @@ background: rgb(255 1 1 / 25%) !important;
   font-weight: 700;
 }
 
+:deep(.tabulator-row.row-updated) {
+  animation: rowFlash 1.6s ease;
+}
+
+@keyframes rowFlash {
+  0% {
+    box-shadow: inset 0 0 0 9999px rgba(0, 180, 90, 0.35);
+  }
+  100% {
+    box-shadow: inset 0 0 0 9999px rgba(0, 180, 90, 0);
+  }
+}
+
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0e0e0ef2;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rotate-box {
+  text-align: center;
+  color: #fff;
+  max-width: 300px;
+}
+
+.rotate-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.rotate-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.rotate-text {
+  font-size: 14px;
+  opacity: 0.85;
+}
 
 @media (max-width: 768px) {
   .attr-row {

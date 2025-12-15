@@ -3,14 +3,16 @@ header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
 /* === helpers === */
-function formatTitle($text) {
-    $text = trim($text);
-    if ($text === "") return $text;
+function normalizeValue($value) {
+    $value = trim($value);
 
-    $first = mb_strtoupper(mb_substr($text, 0, 1, 'UTF-8'), 'UTF-8');
-    $rest  = mb_substr($text, 1, null, 'UTF-8');
+    // заменить запятую на точку (для чисел)
+    $value = str_replace(",", ".", $value);
 
-    return $first . $rest;
+    // убрать двойные пробелы
+    $value = preg_replace('/\s+/', ' ', $value);
+
+    return $value;
 }
 
 $data = json_decode(file_get_contents("php://input"), true);
@@ -18,9 +20,9 @@ $data = json_decode(file_get_contents("php://input"), true);
 $attribute_id = intval($data["attribute_id"] ?? 0);
 $valueRaw     = $data["value"] ?? "";
 
-/* === normalize for checks === */
-$valueCheck = mb_strtolower(trim($valueRaw), 'UTF-8');
-$valueSave  = formatTitle($valueRaw);
+/* === normalize === */
+$valueSave  = normalizeValue($valueRaw);
+$valueCheck = mb_strtolower($valueSave, 'UTF-8');
 
 /* === validation === */
 if ($attribute_id <= 0 || $valueCheck === "") {
@@ -43,7 +45,7 @@ if ($attr["type"] !== "select") {
     exit;
 }
 
-/* === duplicate check (NO case sensitivity) === */
+/* === duplicate check (inside attribute only) === */
 $check = $pdo->prepare("
     SELECT id
     FROM product_attribute_options
@@ -53,7 +55,7 @@ $check = $pdo->prepare("
 $check->execute([$attribute_id, $valueCheck]);
 
 if ($check->fetch()) {
-    echo json_encode(["error" => "Такое значение уже существует"]);
+    echo json_encode(["error" => "Такое значение уже существует для этой характеристики"]);
     exit;
 }
 

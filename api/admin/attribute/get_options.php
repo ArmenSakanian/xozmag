@@ -9,12 +9,21 @@ if ($attribute_id <= 0) {
     exit;
 }
 
+/*
+  Возвращает ВСЕ значения характеристики
+  (ID — источник истины)
+*/
 $stmt = $pdo->prepare("
-    SELECT id, value
+    SELECT
+        id,
+        value
     FROM product_attribute_options
-    WHERE attribute_id = ? AND is_active = 1
-    ORDER BY sort, LOWER(value), value
+    WHERE attribute_id = ?
+    ORDER BY LOWER(value), value
 ");
 $stmt->execute([$attribute_id]);
 
-echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
+echo json_encode(
+    $stmt->fetchAll(PDO::FETCH_ASSOC),
+    JSON_UNESCAPED_UNICODE
+);
