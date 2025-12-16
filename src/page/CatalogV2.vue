@@ -8,8 +8,13 @@
 
       <nav class="sidebar-categories">
         <ul class="category-tree-root">
-          <CategoryNode v-for="node in categoryTree" :key="node.id" :node="node" :selectedCategories="selectedCategories"
-            @toggle-category="toggleCategory" />
+          <CategoryNode
+            v-for="node in categoryTree"
+            :key="node.id"
+            :node="node"
+            :selectedCategories="selectedCategories"
+            @toggle-category="toggleCategory"
+          />
         </ul>
       </nav>
     </aside>
@@ -34,44 +39,61 @@
         </div>
 
         <!-- ===== FILTERS BAR ===== -->
-        <div v-if="hasActiveCategory && !isMobile" class="filters-bar"> <!-- BRAND -->
-          <div class="filter-block filter-brand">
+        <div v-if="hasActiveCategory && !isMobile" class="filters-bar">
+          <!-- BRAND -->
+          <!-- PRICE -->
+          <div class="filter-block filter-price">
+            <div class="filter-label">Цена</div>
+            <div class="price-inputs">
+              <input
+                type="number"
+                placeholder="От"
+                v-model.number="priceFromModel"
+                @change="applyFilters"
+              />
+              <input
+                type="number"
+                placeholder="До"
+                v-model.number="priceToModel"
+                @change="applyFilters"
+              />
+            </div>
+          </div>
+
+          <!-- ATTRIBUTES -->
+          <div
+            class="filter-block filter-brand"
+            :class="{ open: openFilters.brand }">
             <div class="filter-label">Бренд</div>
             <div class="filter-dropdown">
               <!-- HEADER -->
               <div class="filter-dropdown-head" @click="toggleFilter('brand')">
                 <span>Бренд</span>
-                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.brand }"
+                  >▾</span
+                >
               </div>
 
               <!-- BODY -->
               <div v-show="openFilters.brand" class="filter-dropdown-body">
                 <label v-for="b in brands" :key="b" class="filter-checkbox">
-                  <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
+                  <input
+                    type="checkbox"
+                    :value="b"
+                    v-model="brandModel"
+                    @change="applyFilters"
+                  />
                   <span>{{ b }}</span>
                 </label>
               </div>
             </div>
           </div>
-
-          <!-- PRICE -->
-          <div class="filter-block filter-price">
-            <div class="filter-label">Цена</div>
-            <div class="price-inputs">
-              <input type="number" placeholder="От" v-model.number="priceFromModel" @change="applyFilters" />
-              <input type="number" placeholder="До" v-model.number="priceToModel" @change="applyFilters" />
-            </div>
-          </div>
-
-          <!-- ATTRIBUTES -->
-          
           <div
-  class="filter-block filter-attribute"
-  :class="{ open: openFilters[attr] }"
-  v-for="(vals, attr) in attributeFilters"
-  :key="attr"
->
-
+            class="filter-block filter-attribute"
+            :class="{ open: openFilters[attr] }"
+            v-for="(vals, attr) in attributeFilters"
+            :key="attr"
+          >
             <div class="filter-label">{{ attr }}</div>
 
             <div class="filter-dropdown">
@@ -80,45 +102,54 @@
                 <span class="filter-head-text">
                   {{ attributeHeadText(attr) }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
+                <span class="arrow" :class="{ open: openFilters[attr] }"
+                  >▾</span
+                >
               </div>
 
               <!-- BODY -->
-<div v-show="openFilters[attr]" class="filter-dropdown-body">
-  <!-- ВСЕ -->
-  <label class="filter-checkbox filter-all">
-    <input
-      type="checkbox"
-      :checked="isAttrAllSelected(attr)"
-      @change="selectAttrAll(attr)"
-    />
-    <span>Все</span>
-  </label>
+              <div v-show="openFilters[attr]" class="filter-dropdown-body">
+                <!-- ВСЕ -->
+                <label class="filter-checkbox filter-all">
+                  <input
+                    type="checkbox"
+                    :checked="isAttrAllSelected(attr)"
+                    @change="selectAttrAll(attr)"
+                  />
+                  <span>Все</span>
+                </label>
 
-  <!-- ЗНАЧЕНИЯ -->
-  <label
-    v-for="v in vals"
-    :key="v"
-    class="filter-checkbox"
-  >
-    <input
-      type="checkbox"
-      :value="v"
-      v-model="attributeModels[attr]"
-      @change="onAttrValueChange(attr)"
-    />
-    <span>{{ v }}</span>
-  </label>
-</div>
+                <!-- ЗНАЧЕНИЯ -->
+                <label v-for="v in vals" :key="v" class="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    :value="v"
+                    v-model="attributeModels[attr]"
+                    @change="onAttrValueChange(attr)"
+                  />
+                  <span>{{ v }}</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
       </div>
       <!-- ================= MOBILE FILTER BAR ================= -->
-      <div v-if="isMobile && hasActiveCategory" class="mobile-filter-bar"> <!-- PRICE ALWAYS VISIBLE -->
+      <div v-if="isMobile && hasActiveCategory" class="mobile-filter-bar">
+        <!-- PRICE ALWAYS VISIBLE -->
         <div class="mobile-price">
-          <input type="number" placeholder="От" v-model.number="priceFromModel" @change="applyFilters" />
-          <input type="number" placeholder="До" v-model.number="priceToModel" @change="applyFilters" />
+          <input
+            type="number"
+            placeholder="От"
+            v-model.number="priceFromModel"
+            @change="applyFilters"
+          />
+          <input
+            type="number"
+            placeholder="До"
+            v-model.number="priceToModel"
+            @change="applyFilters"
+          />
         </div>
 
         <button class="mobile-filter-btn" @click="showMobileFilters = true">
@@ -136,10 +167,17 @@
 
         <!-- GRID -->
         <div v-else class="products-grid">
-          <article v-for="p in filteredProducts" :key="p.id" class="product-card">
+          <article
+            v-for="p in filteredProducts"
+            :key="p.id"
+            class="product-card"
+          >
             <!-- IMAGE -->
             <div class="product-image">
-              <img :src="p.images.length ? p.images[0] : '/img/no-photo.png'" alt="" />
+              <img
+                :src="p.images.length ? p.images[0] : '/img/no-photo.png'"
+                alt=""
+              />
             </div>
 
             <!-- INFO -->
@@ -176,7 +214,11 @@
       <div class="mobile-filters-panel">
         <!-- HEADER -->
         <div class="mobile-filters-header">
-          <button v-if="mobileView !== 'root'" class="back-btn" @click="mobileView = 'root'">
+          <button
+            v-if="mobileView !== 'root'"
+            class="back-btn"
+            @click="mobileView = 'root'"
+          >
             <i class="fa-solid fa-arrow-left"></i>
           </button>
 
@@ -184,11 +226,14 @@
             {{ mobileView === "root" ? "Фильтры" : activeMobileAttr }}
           </div>
 
-          <button class="close-btn" @click="
-            showMobileFilters = false;
-          mobileView = 'root';
-          activeMobileAttr = null;
-          ">
+          <button
+            class="close-btn"
+            @click="
+              showMobileFilters = false;
+              mobileView = 'root';
+              activeMobileAttr = null;
+            "
+          >
             <i class="fa-solid fa-x"></i>
           </button>
         </div>
@@ -197,30 +242,57 @@
         <div v-if="mobileView === 'root'" class="mobile-filters-list">
           <div class="mobile-filter-item" @click="mobileView = 'brand'">
             Бренд
-            <i data-v-59dbf624="" class="fa-solid fa-chevron-right cat-arrow" aria-hidden="true"></i>
+            <i
+              data-v-59dbf624=""
+              class="fa-solid fa-chevron-right cat-arrow"
+              aria-hidden="true"
+            ></i>
           </div>
 
-          <div v-for="(vals, attr) in attributeFilters" :key="attr" class="mobile-filter-item" @click="
-            activeMobileAttr = attr;
-          mobileView = 'attr';
-          ">
+          <div
+            v-for="(vals, attr) in attributeFilters"
+            :key="attr"
+            class="mobile-filter-item"
+            @click="
+              activeMobileAttr = attr;
+              mobileView = 'attr';
+            "
+          >
             {{ attr }}
-            <i data-v-59dbf624="" class="fa-solid fa-chevron-right cat-arrow" aria-hidden="true"></i>
+            <i
+              data-v-59dbf624=""
+              class="fa-solid fa-chevron-right cat-arrow"
+              aria-hidden="true"
+            ></i>
           </div>
         </div>
 
         <!-- BRAND -->
         <div v-if="mobileView === 'brand'" class="mobile-filter-values">
           <label v-for="b in brands" :key="b" class="filter-checkbox">
-            <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
+            <input
+              type="checkbox"
+              :value="b"
+              v-model="brandModel"
+              @change="applyFilters"
+            />
             <span>{{ b }}</span>
           </label>
         </div>
 
         <!-- ATTRIBUTE -->
         <div v-if="mobileView === 'attr'" class="mobile-filter-values">
-          <label v-for="v in attributeFilters[activeMobileAttr]" :key="v" class="filter-checkbox">
-            <input type="checkbox" :value="v" v-model="attributeModels[activeMobileAttr]" @change="applyFilters" />
+          <label
+            v-for="v in attributeFilters[activeMobileAttr]"
+            :key="v"
+            class="filter-checkbox"
+          >
+            <input
+              type="checkbox"
+              :value="v"
+              v-model="attributeModels[activeMobileAttr]"
+              @change="applyFilters"
+            />
             <span>{{ v }}</span>
           </label>
         </div>
@@ -239,8 +311,13 @@
         </div>
 
         <ul class="category-tree-root">
-          <CategoryNode v-for="node in categoryTree" :key="node.id" :node="node" :selectedCategories="selectedCategories"
-            @toggle-category="toggleCategory" />
+          <CategoryNode
+            v-for="node in categoryTree"
+            :key="node.id"
+            :node="node"
+            :selectedCategories="selectedCategories"
+            @toggle-category="toggleCategory"
+          />
         </ul>
       </div>
     </div>
@@ -310,7 +387,7 @@ function attributeHeadText(attr) {
 }
 
 function isAttrAllSelected(attr) {
-  return !(attributeModels.value[attr]?.length);
+  return !attributeModels.value[attr]?.length;
 }
 
 function selectAttrAll(attr) {
@@ -425,10 +502,7 @@ function selectCategoryMobile(cat) {
 }
 
 const hasActiveCategory = computed(() => {
-  return (
-    !!currentCategory.value ||
-    selectedCategories.value.length > 0
-  );
+  return !!currentCategory.value || selectedCategories.value.length > 0;
 });
 
 const activeCategoryCodes = computed(() => {
@@ -449,7 +523,7 @@ const brands = computed(() => {
   products.value.forEach((p) => {
     if (
       typeof p.category_code === "string" &&
-      activeCategoryCodes.value.some(code =>
+      activeCategoryCodes.value.some((code) =>
         p.category_code.startsWith(code)
       ) &&
       p.brand
@@ -470,10 +544,11 @@ const attributeFilters = computed(() => {
   products.value.forEach((p) => {
     if (
       typeof p.category_code !== "string" ||
-      !activeCategoryCodes.value.some(code =>
+      !activeCategoryCodes.value.some((code) =>
         p.category_code.startsWith(code)
       )
-    ) return;
+    )
+      return;
 
     (p.attributes || []).forEach((a) => {
       if (!a?.value) return;
@@ -672,7 +747,6 @@ input[type="number"] {
   user-select: auto;
 }
 
-
 * {
   box-sizing: border-box;
 }
@@ -719,6 +793,7 @@ body {
 .sidebar-categories {
   flex: 1;
   overflow-y: auto;
+  overflow-x: visible; /* ОБЯЗАТЕЛЬНО */
   padding-right: 4px;
 }
 
@@ -787,12 +862,17 @@ body {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   padding: 18px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   box-shadow: var(--shadow-sm);
   animation: fadeSlideIn 0.35s ease;
 }
+
+.filter-price {
+  grid-column: span 2;
+}
+
 
 @keyframes fadeSlideIn {
   from {
@@ -821,14 +901,13 @@ body {
   border: 1px solid #e4e7ef;
 
   transition: box-shadow 0.25s ease, transform 0.25s ease;
-    position: relative;
+  position: relative;
   z-index: 1;
 }
 
 .filter-block:hover {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
-  
 }
 .filter-block.open {
   z-index: 200; /* ВАЖНО */
@@ -842,7 +921,6 @@ body {
   letter-spacing: 0.06em;
   padding-left: 6px;
 }
-
 
 .filter-head-text {
   font-size: 14px;
@@ -859,7 +937,6 @@ body {
   border-bottom: 1px dashed #e4e7ef;
 }
 
-
 .filter-select {
   appearance: none;
   padding: 11px 38px 11px 14px;
@@ -873,9 +950,11 @@ body {
   transition: border-color 0.25s ease, box-shadow 0.25s ease,
     background-color 0.25s ease;
 
-  background-image: linear-gradient(45deg,
+  background-image: linear-gradient(
+      45deg,
       transparent 50%,
-      var(--text-muted) 50%),
+      var(--text-muted) 50%
+    ),
     linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
   background-position: calc(100% - 20px) calc(50% - 2px),
     calc(100% - 14px) calc(50% - 2px);
@@ -903,10 +982,9 @@ body {
   padding: 11px 14px;
   border-radius: 12px;
   border: 1px solid #e4e7ef;
-
+  width: 50%;
   font-size: 14px;
   background: #fff;
-
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -915,7 +993,6 @@ body {
   border-color: #0400ff;
   box-shadow: 0 0 0 3px rgba(4, 0, 255, 0.15);
 }
-
 
 .price-inputs input:focus {
   outline: none;
@@ -1075,7 +1152,6 @@ body {
   border: 1px solid #e4e7ef;
 }
 
-
 .filter-dropdown-head {
   padding: 12px 14px;
   display: flex;
@@ -1096,14 +1172,13 @@ body {
   background: rgba(4, 0, 255, 0.05);
 }
 
-
 .filter-dropdown-body {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   right: 0;
 
-z-index: 210; 
+  z-index: 210;
 
   padding: 12px;
   display: flex;
@@ -1130,7 +1205,6 @@ z-index: 210;
   }
 }
 
-
 .filter-checkbox {
   display: flex;
   align-items: center;
@@ -1156,7 +1230,6 @@ z-index: 210;
   cursor: pointer;
 }
 
-
 .arrow {
   font-size: 12px;
   color: #0400ff;
@@ -1166,7 +1239,6 @@ z-index: 210;
 .arrow.open {
   transform: rotate(180deg);
 }
-
 
 @media (max-width: 1024px) {
   .catalog-sidebar {
@@ -1233,7 +1305,6 @@ z-index: 210;
     z-index: 310;
   }
 
-
   /* ===== CATEGORIES ===== */
   .mobile-cats-btn {
     position: fixed;
@@ -1299,7 +1370,6 @@ z-index: 210;
     overflow-y: auto;
     padding: 12px 14px;
   }
-
 
   .mobile-filters-header .title {
     font-size: 16px;
