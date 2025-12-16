@@ -1,21 +1,21 @@
 <template>
   <div class="convert-root">
     <div class="convert-box">
-      <h1 class="title">Image Converter</h1>
-      <p class="subtitle">photo_product_vitrina → WEBP</p>
+      <h1 class="title">Конвертер изображений</h1>
+      <p class="subtitle">.jpg, .png, .jpeg → WEBP</p>
 
       <button
         class="main-btn"
         :disabled="loading"
         @click="start"
       >
-        {{ loading ? "Processing…" : "START CONVERSION" }}
+        {{ loading ? "Обработка…" : "Начать преобразование" }}
       </button>
 
       <!-- CONVERT -->
       <div class="progress-section">
         <div class="progress-header">
-          <span>Conversion</span>
+          <span>Конверсия</span>
           <span>{{ convert.current }} / {{ convert.total }}</span>
         </div>
         <div class="progress-track">
@@ -29,7 +29,7 @@
       <!-- DELETE -->
       <div class="progress-section">
         <div class="progress-header">
-          <span>Cleanup</span>
+          <span>Очистка</span>
           <span>{{ remove.current }} / {{ remove.total }}</span>
         </div>
         <div class="progress-track">

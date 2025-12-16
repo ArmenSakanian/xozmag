@@ -6,6 +6,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 
 $product_ids = $data["product_ids"] ?? [];
 $attributes  = $data["attributes"] ?? [];
+$deleted     = $data["deleted"] ?? []; // 👈 если добавишь крестик в bulk
 
 if (empty($product_ids)) {
     echo json_encode(["error" => "Нет товаров"]);
@@ -20,48 +21,18 @@ try {
         $pid = intval($pid);
         if ($pid <= 0) continue;
 
-        /* ===============================
-           ЕСЛИ attributes ПУСТО
-           → удаляем ВСЁ
-        =============================== */
-        if (empty($attributes)) {
+        /* === ЯВНОЕ УДАЛЕНИЕ === */
+        if (!empty($deleted)) {
+            $placeholders = implode(",", array_fill(0, count($deleted), "?"));
+
             $pdo->prepare("
                 DELETE FROM product_attribute_values
                 WHERE product_id = ?
-            ")->execute([$pid]);
-            continue;
+                  AND attribute_id IN ($placeholders)
+            ")->execute(array_merge([$pid], $deleted));
         }
 
-        /* ===============================
-           Собираем attribute_id,
-           которые ДОЛЖНЫ ОСТАТЬСЯ
-        =============================== */
-        $keepAttrIds = [];
-
-        foreach ($attributes as $row) {
-            $attrId = intval($row["attribute_id"] ?? 0);
-            if ($attrId > 0) {
-                $keepAttrIds[] = $attrId;
-            }
-        }
-
-        if (!empty($keepAttrIds)) {
-            $placeholders = implode(",", array_fill(0, count($keepAttrIds), "?"));
-
-            $sql = "
-                DELETE FROM product_attribute_values
-                WHERE product_id = ?
-                  AND attribute_id NOT IN ($placeholders)
-            ";
-
-            $pdo->prepare($sql)->execute(
-                array_merge([$pid], $keepAttrIds)
-            );
-        }
-
-        /* ===============================
-           UPDATE / INSERT переданных
-        =============================== */
+        /* === INSERT / UPDATE === */
         foreach ($attributes as $row) {
             $attrId = intval($row["attribute_id"] ?? 0);
             $optId  = intval($row["option_id"] ?? 0);
@@ -71,8 +42,7 @@ try {
             $stmt = $pdo->prepare("
                 SELECT id
                 FROM product_attribute_values
-                WHERE product_id = ?
-                  AND attribute_id = ?
+                WHERE product_id = ? AND attribute_id = ?
             ");
             $stmt->execute([$pid, $attrId]);
 
@@ -98,4 +68,4 @@ try {
 } catch (Exception $e) {
     $pdo->rollBack();
     echo json_encode(["error" => $e->getMessage()]);
-}
+} 

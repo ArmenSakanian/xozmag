@@ -474,18 +474,29 @@ const loadOptions = async (attributeId) => {
   ).then((r) => r.json());
 };
 
-const openAttrs = (p) => {
+const openAttrs = async (p) => {
   attrsModal.value = { open: true, product: p };
-  attrsDraft.value = (p.attributes || []).map((a) => ({
-    attribute_id: a.attribute_id,
-    option_id: a.option_id,
-  }));
+  attrsDraft.value = [];
 
-  if (!attrsDraft.value.length) {
+  // 🔥 ВСЕГДА грузим с сервера
+  const attrs = await fetch(
+    `/api/admin/attribute/get_product_attributes.php?product_id=${p.id}`
+  ).then((r) => r.json());
+
+  if (attrs.length) {
+    attrsDraft.value = attrs.map((a) => ({
+      attribute_id: a.attribute_id,
+      option_id: a.option_id,
+    }));
+
+    // подгружаем options
+    attrsDraft.value.forEach((r) => {
+      if (r.attribute_id) loadOptions(r.attribute_id);
+    });
+  } else {
+    // если у товара вообще нет характеристик
     attrsDraft.value = [{ attribute_id: null, option_id: null }];
   }
-
-  attrsDraft.value.forEach((r) => loadOptions(r.attribute_id));
 };
 
 const closeAttrs = () => {
