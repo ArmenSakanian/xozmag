@@ -17,7 +17,3 @@
     box-sizing: border-box;
 }
 
-body {
-  background: var(--background);
-  color: white;
-}

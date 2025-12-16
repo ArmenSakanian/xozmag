@@ -1,71 +1,111 @@
 <template>
-  <li class="cat-item">
+<li class="cat-item">
+  <div
+    class="cat-row"
+    @click="node.children?.length && toggleOpen()"
+  >
+    <i
+      v-if="node.children?.length"
+      class="fa-solid fa-chevron-right cat-arrow"
+      :class="{ open }"
+    ></i>
 
-    <div class="cat-row">
+    <input
+      type="checkbox"
+      class="cat-checkbox"
+      :checked="isChecked"
+      @change.stop="toggleCheck"
+    />
 
-      <!-- Стрелка -->
-      <span
-        v-if="node.children && node.children.length"
-        class="arrow"
-        :class="{ open }"
-        @click.stop="toggleOpen"
-      ></span>
-
-      <!-- Чекбокс -->
-      <label class="cat-check">
-        <input
-          type="checkbox"
-          :value="node.code"
-          :checked="selected.includes(node.code)"
-          @change="toggleSelf"
-        />
-        <span class="cat-name">{{ node.name }}</span>
-      </label>
-
+    <div
+      class="cat-name"
+      :class="{ active: isChecked }"
+    >
+      {{ node.name }}
     </div>
+  </div>
 
-    <!-- Дочерние -->
-    <ul v-if="open && node.children && node.children.length" class="cat-children">
-      <CategoryNode
-        v-for="child in node.children"
-        :key="child.id"
-        :node="child"
-        :selected="selected"
-        :expanded="expanded"
-        @toggle="$emit('toggle', $event)"
-      />
-    </ul>
+  <!-- DESKTOP CHILDREN -->
+  <ul
+    v-if="open && node.children?.length && !isMobile"
+    class="cat-children"
+  >
+    <CategoryNode
+      v-for="child in node.children"
+      :key="child.id"
+      :node="child"
+      :selectedCategories="selectedCategories"
+      @toggle-category="$emit('toggle-category', $event)"
+    />
+  </ul>
+</li>
 
-  </li>
+  <!-- ================= MOBILE FULLSCREEN CHILDREN ================= -->
+  <div v-if="isMobile && showMobileChildren" class="mobile-cat-overlay">
+    <div class="mobile-cat-panel">
+      <!-- HEADER -->
+      <div class="mobile-cat-header">
+        <button class="back-btn" @click="showMobileChildren = false"><i class="fa-solid fa-arrow-left"></i></button>
+
+        <div class="title">
+          {{ node.name }}
+        </div>
+      </div>
+
+      <!-- CHILDREN -->
+      <ul class="category-tree-root">
+        <CategoryNode
+          v-for="child in node.children"
+          :key="child.id"
+          :node="child"
+          :selectedCategories="selectedCategories"
+          @toggle-category="$emit('toggle-category', $event)"
+        />
+      </ul>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 
-const props = defineProps({
-  node: { type: Object, required: true },
-  selected: { type: Array, required: true },
-  expanded: { type: Array, required: true }
+const isMobile = ref(window.innerWidth < 1024);
+
+window.addEventListener("resize", () => {
+  isMobile.value = window.innerWidth < 1024;
 });
 
-const emit = defineEmits(["toggle"]);
+const showMobileChildren = ref(false);
+
+const props = defineProps({
+  node: Object,
+  selectedCategories: Array,
+});
+
+const emit = defineEmits(["toggle-category"]);
 
 const open = ref(false);
 
-onMounted(() => {
-  // Если эта категория входит в путь — автоматически раскрываем
-  if (props.expanded.includes(props.node.code)) {
-    open.value = true;
-  }
-});
-
+const isChecked = computed(() =>
+  props.selectedCategories.includes(props.node.code)
+);
 function toggleOpen() {
-  open.value = !open.value;
+  if (isMobile.value) {
+    showMobileChildren.value = true;
+  } else {
+    open.value = !open.value;
+  }
 }
 
-function toggleSelf() {
-  emit("toggle", props.node);
+
+function toggleCheck() {
+  emit("toggle-category", props.node.code);
+  showMobileChildren.value = false;
 }
+
+watch(showMobileChildren, (v) => {
+  document.body.style.overflow = v ? "hidden" : "";
+});
 </script>
 
 <style scoped>
@@ -76,77 +116,81 @@ function toggleSelf() {
 .cat-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px;
+  gap: 8px;
+  padding: 6px 8px;
   border-radius: 6px;
-  cursor: pointer;
-  transition: background .2s;
 }
 
 .cat-row:hover {
-  background: rgba(255,255,255,0.05);
+  background: #f0f2f7;
 }
 
-.arrow {
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid var(--accent-color);
-  border-bottom: 2px solid var(--accent-color);
-  transform: rotate(45deg);
+.cat-arrow {
+  font-size: 13px;
+  color: #2563eb;
+  transition: transform 0.25s ease;
+}
+
+.cat-arrow.open {
+  transform: rotate(90deg);
+}
+
+.cat-checkbox input {
   cursor: pointer;
-  transition: .25s;
-}
-
-.arrow.open {
-  transform: rotate(-135deg);
-}
-
-.cat-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cat-check input {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #666;
-  background: #1a1b1f;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: .15s;
-}
-
-.cat-check input:hover {
-  border-color: var(--accent-color);
-}
-
-.cat-check input:checked {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-}
-
-.cat-check input:checked::after {
-  content: "✔";
-  display: block;
-  text-align: center;
-  color: #000;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 16px;
 }
 
 .cat-name {
-  color: white;
-  font-size: 15px;
-  user-select: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.cat-name.active {
+  font-weight: 700;
+  color: #2563eb;
 }
 
 .cat-children {
   list-style: none;
   padding-left: 18px;
   margin-top: 6px;
-  border-left: 1px solid #2c2f36;
+  border-left: 1px solid #e4e7ef;
+}
+
+@media (max-width: 1024px) {
+  .mobile-cat-overlay {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    z-index: 2000;
+  }
+
+  .mobile-cat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 90px 16px;
+    overflow-y: auto;
+  }
+
+  .mobile-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e4e7ef;
+    margin-bottom: 12px;
+  }
+
+  .mobile-cat-header .title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .mobile-cat-header .back-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+  }
 }
 </style>
