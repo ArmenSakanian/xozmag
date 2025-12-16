@@ -64,7 +64,14 @@
           </div>
 
           <!-- ATTRIBUTES -->
-          <div class="filter-block filter-attribute" v-for="(vals, attr) in attributeFilters" :key="attr">
+          
+          <div
+  class="filter-block filter-attribute"
+  :class="{ open: openFilters[attr] }"
+  v-for="(vals, attr) in attributeFilters"
+  :key="attr"
+>
+
             <div class="filter-label">{{ attr }}</div>
 
             <div class="filter-dropdown">
@@ -641,6 +648,31 @@ const filteredProducts = computed(() => {
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
+/* =========================
+   DISABLE TEXT SELECTION (FILTERS)
+========================= */
+
+.filters-bar,
+.filter-block,
+.filter-label,
+.filter-dropdown,
+.filter-dropdown-head,
+.filter-dropdown-body,
+.filter-checkbox,
+.filter-checkbox span,
+.filter-head-text,
+.arrow {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+input,
+input[type="checkbox"],
+input[type="number"] {
+  user-select: auto;
+}
+
+
 * {
   box-sizing: border-box;
 }
@@ -775,23 +807,42 @@ body {
 }
 
 .filter-block {
+  min-width: 180px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;
-  border: 1px solid #0400ff;
-border-bottom: none;
-padding: 5px;
-border-radius: 10px;
+
+  background: #ffffff;
+  border-radius: 14px;
+
+  padding: 10px 12px;
+
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e4e7ef;
+
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+    position: relative;
+  z-index: 1;
+}
+
+.filter-block:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  
+}
+.filter-block.open {
+  z-index: 200; /* ВАЖНО */
 }
 
 .filter-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  padding-left: 6px;
 }
+
 
 .filter-head-text {
   font-size: 14px;
@@ -801,11 +852,13 @@ border-radius: 10px;
   text-overflow: ellipsis;
 }
 .filter-all {
-  font-weight: 600;
-  border-bottom: 1px solid #e4e7ef;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
+  font-weight: 700;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+
+  border-bottom: 1px dashed #e4e7ef;
 }
+
 
 .filter-select {
   appearance: none;
@@ -848,11 +901,21 @@ border-radius: 10px;
 
 .price-inputs input {
   padding: 11px 14px;
-  border-radius: 999px;
-  border: 1px solid #797979;
+  border-radius: 12px;
+  border: 1px solid #e4e7ef;
+
   font-size: 14px;
+  background: #fff;
+
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
+
+.price-inputs input:focus {
+  outline: none;
+  border-color: #0400ff;
+  box-shadow: 0 0 0 3px rgba(4, 0, 255, 0.15);
+}
+
 
 .price-inputs input:focus {
   outline: none;
@@ -1007,66 +1070,103 @@ border-radius: 10px;
 
 .filter-dropdown {
   position: relative;
-  /* ⬅ якорь */
-  border: 1px solid var(--border-soft);
   border-radius: 12px;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff, #f9faff);
+  border: 1px solid #e4e7ef;
 }
 
+
 .filter-dropdown-head {
-  padding: 10px 14px;
+  padding: 12px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   cursor: pointer;
-  background: #fff;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+
+  color: #1b1e28;
+  background: transparent;
+
+  transition: background 0.2s ease;
 }
 
 .filter-dropdown-head:hover {
-  background: #f8faff;
+  background: rgba(4, 0, 255, 0.05);
 }
+
 
 .filter-dropdown-body {
   position: absolute;
-  /* ⬅ выпадает поверх */
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
 
-  z-index: 50;
+z-index: 210; 
 
-  padding: 10px 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 
-  background: #fff;
-  border: 1px solid var(--border-soft);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  background: #ffffff;
+  border-radius: 14px;
+
+  border: 1px solid #e4e7ef;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+
+  animation: dropdownFade 0.3s ease;
 }
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 .filter-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+
   font-size: 13px;
+  font-weight: 500;
+  color: #1b1e28;
+
+  padding: 6px 8px;
+  border-radius: 8px;
+
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.filter-checkbox:hover {
+  background: rgba(4, 0, 255, 0.06);
 }
 
 .filter-checkbox input {
+  accent-color: #0400ff;
   cursor: pointer;
 }
 
+
 .arrow {
+  font-size: 12px;
+  color: #0400ff;
   transition: transform 0.25s ease;
 }
 
 .arrow.open {
   transform: rotate(180deg);
 }
+
 
 @media (max-width: 1024px) {
   .catalog-sidebar {
