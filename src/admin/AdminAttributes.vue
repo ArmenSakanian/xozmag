@@ -18,17 +18,43 @@
         <label>Название характеристики</label>
         <input v-model="attrName" class="input" placeholder="Например: Длина" />
       </div>
+      <!-- UI RENDER -->
+      <div class="form-group">
+        <label>Отображение</label>
+        <select v-model="uiRender" class="input">
+          <option value="text">Текст</option>
+          <option value="color">Цвет (кружок)</option>
+        </select>
+      </div>
 
       <!-- VALUES -->
       <div class="form-group">
         <label>Значения</label>
 
         <div v-for="(item, i) in values" :key="item.key" class="value-row">
+          <!-- текст значения -->
           <input
             v-model="item.value"
             class="input"
             placeholder="Например: 1.5"
           />
+
+          <!-- COLOR META (вставляешь сюда) -->
+          <div v-if="uiRender === 'color'" class="color-meta">
+<input
+  v-model="item.color"
+  class="input"
+  placeholder="#RRGGBB или rgb(122, 88, 56)"
+  @blur="item.color = toHexForPicker(item.color) || item.color.trim()"
+/>
+<input
+  type="color"
+  :value="toHexForPicker(item.color) || '#000000'"
+  @input="item.color = $event.target.value"
+  title="Выбрать цвет"
+/>
+
+          </div>
 
           <!-- delete option -->
           <button
@@ -123,12 +149,50 @@ import Swal from "sweetalert2";
 const attributes = ref([]);
 const attrName = ref("");
 const editId = ref(null);
+const uiRender = ref("text");
+const clamp255 = (n) => Math.max(0, Math.min(255, n));
+
+const rgbToHex = (r, g, b) => {
+  const to2 = (x) => clamp255(x).toString(16).padStart(2, "0");
+  return `#${to2(r)}${to2(g)}${to2(b)}`;
+};
+
+const toHexForPicker = (input) => {
+  if (!input) return "";
+  const s = String(input).trim();
+
+  // hex: #fff или #ffffff
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
+    if (s.length === 4) {
+      // #abc -> #aabbcc
+      return "#" + s.slice(1).split("").map((c) => c + c).join("");
+    }
+    return s.toLowerCase();
+  }
+
+  // hex без решетки: fff / ffffff
+  if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
+    const h = s.length === 3 ? s.split("").map((c) => c + c).join("") : s;
+    return ("#" + h).toLowerCase();
+  }
+
+  // rgb(...) или rgba(...)
+  const m = s.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+  if (m) {
+    const r = parseInt(m[1], 10);
+    const g = parseInt(m[2], 10);
+    const b = parseInt(m[3], 10);
+    return rgbToHex(r, g, b);
+  }
+
+  return "";
+};
 
 /*
   values:
   { id?: number, value: string, key: string }
 */
-const values = ref([{ value: "", key: crypto.randomUUID() }]);
+const values = ref([{ value: "", color: "", key: crypto.randomUUID() }]);
 
 /* ===== LOAD ===== */
 const loadAttributes = async () => {
@@ -149,6 +213,7 @@ const loadAttributes = async () => {
 const addValue = () => {
   values.value.push({
     value: "",
+    color: "",
     key: crypto.randomUUID(),
   });
 };
@@ -160,7 +225,8 @@ const removeValue = (i) => {
 const cancelEdit = () => {
   editId.value = null;
   attrName.value = "";
-  values.value = [{ value: "", key: crypto.randomUUID() }];
+  uiRender.value = "text";
+values.value = [{ value: "", color: "", key: crypto.randomUUID() }];
 };
 
 /* ===== DELETE OPTION ===== */
@@ -238,16 +304,21 @@ const saveAttribute = async () => {
     const res = await fetch("/api/admin/attribute/edit_attribute.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-  attribute_id: editId.value,
-  name,
-  slug: name.toLowerCase().replace(/\s+/g, "_"),
-  type: "select",
-  values: values.value.map(v => ({
-    id: v.id ?? null,
-    value: v.value,
-  })),
-}),
+      body: JSON.stringify({
+        attribute_id: editId.value,
+        name,
+        slug: name.toLowerCase().replace(/\s+/g, "_"),
+        type: "select",
+        ui_render: uiRender.value,
+        values: values.value.map((v) => ({
+          id: v.id ?? null,
+          value: v.value,
+          meta:
+            uiRender.value === "color"
+              ? { color: (v.color || "").trim() }
+              : null,
+        })),
+      }),
     }).then((r) => r.json());
 
     if (res.error) {
@@ -266,74 +337,88 @@ body: JSON.stringify({
   }
 
   /* ===== CREATE ===== */
-/* ===== CHECK BEFORE CREATE ===== */
+  /* ===== CHECK BEFORE CREATE ===== */
 const check = await fetch("/api/admin/attribute/check_before_create.php", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    name,
-    values: cleanValues,
-  }),
-}).then(r => r.json());
+body: JSON.stringify({
+  name,
+  slug: name.toLowerCase().replace(/\s+/g, "_"),
+  type: "select",
+  ui_render: uiRender.value,
+}),
+}).then((r) => r.json());
 
-if (check.attribute_exists) {
-  Swal.fire("Ошибка", "Характеристика с таким названием уже существует", "error");
-  return;
-}
 
-if (check.duplicate_values.length > 0) {
-  Swal.fire(
-    "Ошибка",
-    `Дублирующиеся значения: ${check.duplicate_values.join(", ")}`,
-    "error"
-  );
-  return;
-}
+  if (check.attribute_exists) {
+    Swal.fire(
+      "Ошибка",
+      "Характеристика с таким названием уже существует",
+      "error"
+    );
+    return;
+  }
 
-if (check.values_used_elsewhere.length > 0) {
-  const text = check.values_used_elsewhere
-    .map(v => `${v.value} (у "${v.attribute}")`)
-    .join("\n");
+  if (check.duplicate_values.length > 0) {
+    Swal.fire(
+      "Ошибка",
+      `Дублирующиеся значения: ${check.duplicate_values.join(", ")}`,
+      "error"
+    );
+    return;
+  }
 
-  const confirm = await Swal.fire({
-    icon: "warning",
-    title: "Значения уже используются",
-    text,
-    showCancelButton: true,
-    confirmButtonText: "Продолжить",
-    cancelButtonText: "Отмена",
-  });
+  if (check.values_used_elsewhere.length > 0) {
+    const text = check.values_used_elsewhere
+      .map((v) => `${v.value} (у "${v.attribute}")`)
+      .join("\n");
 
-  if (!confirm.isConfirmed) return;
-}
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "Значения уже используются",
+      text,
+      showCancelButton: true,
+      confirmButtonText: "Продолжить",
+      cancelButtonText: "Отмена",
+    });
 
-/* ===== CREATE ATTRIBUTE ===== */
-const res = await fetch("/api/admin/attribute/create_attribute.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    name,
-    slug: name.toLowerCase().replace(/\s+/g, "_"),
-    type: "select",
-  }),
-}).then(r => r.json());
+    if (!confirm.isConfirmed) return;
+  }
 
-if (res.error) {
-  Swal.fire("Ошибка", res.error, "error");
-  return;
-}
-
-for (const v of cleanValues) {
-  await fetch("/api/admin/attribute/create_option.php", {
+  /* ===== CREATE ATTRIBUTE ===== */
+  const res = await fetch("/api/admin/attribute/create_attribute.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      attribute_id: res.id,
-      value: v,
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, "_"),
+      type: "select",
     }),
-  });
-}
+  }).then((r) => r.json());
 
+  if (res.error) {
+    Swal.fire("Ошибка", res.error, "error");
+    return;
+  }
+
+  const cleanRows = values.value
+    .map((v) => ({
+      value: (v.value || "").trim(),
+      color: (v.color || "").trim(),
+    }))
+    .filter((r) => r.value !== "");
+
+  for (const row of cleanRows) {
+    await fetch("/api/admin/attribute/create_option.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        attribute_id: res.id,
+        value: row.value,
+        meta: uiRender.value === "color" ? { color: row.color } : null,
+      }),
+    });
+  }
 
   Swal.fire({
     icon: "success",
@@ -348,9 +433,12 @@ for (const v of cleanValues) {
 const editAttribute = (attr) => {
   editId.value = attr.id;
   attrName.value = attr.name;
+  uiRender.value = attr.ui_render || "text";
+
   values.value = attr.values.map((v) => ({
     id: v.id,
     value: v.value,
+    color: v.meta?.color || "",
     key: crypto.randomUUID(),
   }));
 
@@ -483,8 +571,7 @@ onMounted(loadAttributes);
   cursor: pointer;
   font-weight: 800;
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
-  transition: transform 0.08s ease, box-shadow 0.15s ease,
-    filter 0.15s ease;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .save-btn:hover {

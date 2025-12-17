@@ -16,14 +16,27 @@ if ($attribute_id <= 0) {
 $stmt = $pdo->prepare("
     SELECT
         id,
-        value
+        value,
+        meta_json
     FROM product_attribute_options
     WHERE attribute_id = ?
     ORDER BY LOWER(value), value
 ");
 $stmt->execute([$attribute_id]);
 
-echo json_encode(
-    $stmt->fetchAll(PDO::FETCH_ASSOC),
-    JSON_UNESCAPED_UNICODE
-);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($rows as &$r) {
+    $meta = null;
+
+    if (!empty($r["meta_json"])) {
+        $tmp = json_decode($r["meta_json"], true);
+        if (is_array($tmp)) $meta = $tmp;
+    }
+
+    unset($r["meta_json"]);
+    $r["meta"] = $meta;
+}
+unset($r);
+
+echo json_encode($rows, JSON_UNESCAPED_UNICODE);

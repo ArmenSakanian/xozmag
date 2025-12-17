@@ -40,14 +40,17 @@ $products = $pdo->query("
   ORDER BY p.id DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-/* === 3. Характеристики === */
+/* === 3. Характеристики (с ui_render и meta) === */
 $attrs = $pdo->query("
   SELECT
     pav.product_id,
-    pa.id AS attribute_id,
-    pa.name,
+    pa.id   AS attribute_id,
+    pa.name AS attribute_name,
+    pa.ui_render,
     pav.option_id,
-    o.value
+    pav.value AS raw_value,
+    o.value AS option_value,
+    o.meta_json
   FROM product_attribute_values pav
   JOIN product_attributes pa ON pa.id = pav.attribute_id
   LEFT JOIN product_attribute_options o ON o.id = pav.option_id
@@ -55,11 +58,24 @@ $attrs = $pdo->query("
 
 $attrMap = [];
 foreach ($attrs as $a) {
+  $value = $a["option_value"];
+  if ($value === null || $value === "") {
+    $value = $a["raw_value"]; // для text/number
+  }
+
+  $meta = null;
+  if (!empty($a["meta_json"])) {
+    $tmp = json_decode($a["meta_json"], true);
+    if (is_array($tmp)) $meta = $tmp;
+  }
+
   $attrMap[$a["product_id"]][] = [
     "attribute_id" => (int)$a["attribute_id"],
     "option_id"    => $a["option_id"] ? (int)$a["option_id"] : null,
-    "name"         => $a["name"],
-    "value"        => $a["value"]
+    "name"         => $a["attribute_name"],
+    "ui_render"    => $a["ui_render"] ?? "text",
+    "value"        => $value,
+    "meta"         => $meta,
   ];
 }
 
@@ -75,5 +91,6 @@ foreach ($products as &$p) {
 
   $p["attributes"] = $attrMap[$p["id"]] ?? [];
 }
+unset($p);
 
 echo json_encode($products, JSON_UNESCAPED_UNICODE);

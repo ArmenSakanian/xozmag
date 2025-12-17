@@ -7,6 +7,11 @@ $data = json_decode(file_get_contents("php://input"), true);
 $category_id   = intval($data["id"] ?? 0);
 $new_parent_id = $data["parent_id"] ?? null;
 
+// нормализуем parent_id: пустая строка => NULL
+if ($new_parent_id === "" || $new_parent_id === false) {
+    $new_parent_id = null;
+}
+
 if ($category_id <= 0) {
     echo json_encode(["error" => "Неверный id категории"]);
     exit;
@@ -68,6 +73,19 @@ if ($new_parent_id !== null && in_array($new_parent_id, $descendants)) {
 $pdo->beginTransaction();
 
 try {
+
+    // ✅ Запрещаем дубликаты в рамках одного родителя (но разрешаем одинаковые имена в разных ветках)
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM categories
+        WHERE parent_id <=> ?
+          AND LOWER(name) = LOWER(?)
+          AND id <> ?
+    ");
+    $stmt->execute([$new_parent_id, $category["name"], $category_id]);
+    if ((int)$stmt->fetchColumn() > 0) {
+        throw new Exception("В выбранной группе уже есть категория с таким названием");
+    }
 
     // 5️⃣ Новый sort
     if ($new_parent_id === null) {

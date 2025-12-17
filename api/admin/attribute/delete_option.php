@@ -24,14 +24,30 @@ if (!$stmt->fetch()) {
     exit;
 }
 
-/* === удаляем === */
-$del = $pdo->prepare("
-    DELETE FROM product_attribute_options
-    WHERE id = ?
-");
-$del->execute([$option_id]);
+$pdo->beginTransaction();
 
-echo json_encode([
-    "success" => true,
-    "deleted_option_id" => $option_id
-], JSON_UNESCAPED_UNICODE);
+try {
+    /* удаляем привязки к товарам */
+    $pdo->prepare("
+        DELETE FROM product_attribute_values
+        WHERE option_id = ?
+    ")->execute([$option_id]);
+
+    /* удаляем вариант */
+    $del = $pdo->prepare("
+        DELETE FROM product_attribute_options
+        WHERE id = ?
+    ");
+    $del->execute([$option_id]);
+
+    $pdo->commit();
+
+    echo json_encode([
+        "success" => true,
+        "deleted_option_id" => $option_id
+    ], JSON_UNESCAPED_UNICODE);
+
+} catch (Exception $e) {
+    $pdo->rollBack();
+    echo json_encode(["error" => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+}

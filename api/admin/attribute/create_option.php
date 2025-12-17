@@ -20,6 +20,16 @@ $data = json_decode(file_get_contents("php://input"), true);
 $attribute_id = intval($data["attribute_id"] ?? 0);
 $valueRaw     = $data["value"] ?? "";
 
+$metaArr = null;
+if (isset($data["meta"]) && is_array($data["meta"])) {
+    $metaArr = $data["meta"];
+} elseif (isset($data["meta_json"]) && is_string($data["meta_json"])) {
+    $tmp = json_decode($data["meta_json"], true);
+    if (is_array($tmp)) $metaArr = $tmp;
+}
+
+$metaJson = $metaArr ? json_encode($metaArr, JSON_UNESCAPED_UNICODE) : null;
+
 /* === normalize === */
 $valueSave  = normalizeValue($valueRaw);
 $valueCheck = mb_strtolower($valueSave, 'UTF-8');
@@ -61,14 +71,15 @@ if ($check->fetch()) {
 
 /* === create === */
 $stmt = $pdo->prepare("
-    INSERT INTO product_attribute_options (attribute_id, value)
-    VALUES (?, ?)
+    INSERT INTO product_attribute_options (attribute_id, value, meta_json)
+    VALUES (?, ?, ?)
 ");
-$stmt->execute([$attribute_id, $valueSave]);
+$stmt->execute([$attribute_id, $valueSave, $metaJson]);
 
 echo json_encode([
     "success" => true,
     "id" => $pdo->lastInsertId(),
     "attribute_id" => $attribute_id,
-    "value" => $valueSave
+    "value" => $valueSave,
+    "meta" => $metaArr
 ], JSON_UNESCAPED_UNICODE);

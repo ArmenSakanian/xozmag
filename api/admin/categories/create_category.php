@@ -3,30 +3,44 @@ header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
 $data = json_decode(file_get_contents("php://input"), true);
+if (!is_array($data)) $data = [];
 
-$name = trim($data["name"] ?? "");
+$name = trim((string)($data["name"] ?? ""));
 $parent_id = $data["parent_id"] ?? null;
+
+// нормализуем parent_id
+if ($parent_id === "" || $parent_id === false) {
+    $parent_id = null;
+}
+if ($parent_id !== null) {
+    $parent_id = intval($parent_id);
+}
 
 if ($name === "") {
     echo json_encode(["error" => "Название категории обязательно"]);
     exit;
 }
 
-// === ПРОВЕРКА НА ДУБЛИКАТ НАЗВАНИЯ (ГЛОБАЛЬНО) ===
+/**
+ * ✅ Разрешаем одинаковые названия только в разных ветках:
+ * - НЕЛЬЗЯ: один и тот же parent_id + name
+ * - МОЖНО: одинаковый name, если parent_id разный
+ * null-safe сравнение parent_id делаем через <=> (работает и для NULL)
+ */
 $stmt = $pdo->prepare("
     SELECT COUNT(*)
     FROM categories
-    WHERE LOWER(name) = LOWER(?)
+    WHERE parent_id <=> ?
+      AND LOWER(name) = LOWER(?)
 ");
-$stmt->execute([$name]);
+$stmt->execute([$parent_id, $name]);
 
 if ((int)$stmt->fetchColumn() > 0) {
     echo json_encode([
-        "error" => "Категория с таким названием уже существует"
+        "error" => "В этой группе уже есть категория с таким названием"
     ]);
     exit;
 }
-
 
 // === ЕСЛИ parent_id НЕ УКАЗАН — КОРНЕВАЯ КАТЕГОРИЯ ===
 if ($parent_id === null) {
@@ -48,12 +62,11 @@ if ($parent_id === null) {
     ");
     $stmt->execute([$name, $nextSort, $level, $code]);
 
-    echo json_encode(["success" => true]);
+    echo json_encode(["success" => true, "id" => (int)$pdo->lastInsertId()]);
     exit;
 }
 
 // === ЕСЛИ parent_id УКАЗАН — ПОДКАТЕГОРИЯ ===
-$parent_id = (int)$parent_id;
 
 // получаем родителя
 $stmt = $pdo->prepare("
@@ -88,4 +101,4 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$parent_id, $name, $nextSort, $level, $code]);
 
-echo json_encode(["success" => true]);
+echo json_encode(["success" => true, "id" => (int)$pdo->lastInsertId()]);

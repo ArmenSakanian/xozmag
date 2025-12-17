@@ -14,6 +14,17 @@ function formatTitle($text) {
     return $first . $rest;
 }
 
+function normalizeUiRender($v) {
+    $v = trim((string)$v);
+    $allowed = ["text", "color"];
+    return in_array($v, $allowed, true) ? $v : "text";
+}
+
+function metaToJson($meta) {
+    if (!is_array($meta) || empty($meta)) return null;
+    return json_encode($meta, JSON_UNESCAPED_UNICODE);
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 
 /* =========================
@@ -23,6 +34,7 @@ $attributeId = intval($data["attribute_id"] ?? 0);
 $nameRaw     = $data["name"] ?? "";
 $slugRaw     = $data["slug"] ?? "";
 $type        = $data["type"] ?? "select";
+$uiRender    = normalizeUiRender($data["ui_render"] ?? "text");
 $valuesRaw   = $data["values"] ?? [];
 
 if ($attributeId <= 0) {
@@ -93,23 +105,26 @@ try {
     ========================= */
     $pdo->prepare("
         UPDATE product_attributes
-        SET name = ?, slug = ?, type = ?
+        SET name = ?, slug = ?, type = ?, ui_render = ?
         WHERE id = ?
-    ")->execute([$name, $slug, $type, $attributeId]);
+    ")->execute([$name, $slug, $type, $uiRender, $attributeId]);
 
     /* =========================
-       existing options (ID → value)
+       existing options (ID → value/meta)
     ========================= */
     $stmt = $pdo->prepare("
-        SELECT id, value
+        SELECT id, value, meta_json
         FROM product_attribute_options
         WHERE attribute_id = ?
     ");
     $stmt->execute([$attributeId]);
 
-    $existing = [];
+    $existing = []; // id => ['value'=>..., 'meta_json'=>...]
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $existing[$row["id"]] = $row["value"];
+        $existing[(int)$row["id"]] = [
+            "value" => (string)$row["value"],
+            "meta_json" => $row["meta_json"] ?? null
+        ];
     }
 
     /* =========================
@@ -119,12 +134,21 @@ try {
     $seenValues  = [];
 
     foreach ($valuesRaw as $row) {
+        if (!is_array($row)) continue;
+
         $optId    = isset($row["id"]) ? intval($row["id"]) : 0;
         $rawVal   = $row["value"] ?? "";
         $valSave  = formatTitle($rawVal);
         $valCheck = mb_strtolower($valSave, 'UTF-8');
 
         if ($valSave === "") continue;
+
+        // meta
+        $metaArr = null;
+        if (isset($row["meta"]) && is_array($row["meta"])) {
+            $metaArr = $row["meta"];
+        }
+        $newMetaJson = metaToJson($metaArr);
 
         // ❌ duplicate in same request
         if (isset($seenValues[$valCheck])) {
@@ -137,7 +161,11 @@ try {
         ========================= */
         if ($optId > 0 && isset($existing[$optId])) {
 
-            if (mb_strtolower($existing[$optId], 'UTF-8') !== $valCheck) {
+            $oldValCheck = mb_strtolower($existing[$optId]["value"], 'UTF-8');
+            $oldMetaJson = $existing[$optId]["meta_json"] ?? null;
+
+            // value changed?
+            if ($oldValCheck !== $valCheck) {
 
                 $dup = $pdo->prepare("
                     SELECT id FROM product_attribute_options
@@ -156,6 +184,15 @@ try {
                     SET value = ?
                     WHERE id = ? AND attribute_id = ?
                 ")->execute([$valSave, $optId, $attributeId]);
+            }
+
+            // meta changed?
+            if (($oldMetaJson ?? null) !== ($newMetaJson ?? null)) {
+                $pdo->prepare("
+                    UPDATE product_attribute_options
+                    SET meta_json = ?
+                    WHERE id = ? AND attribute_id = ?
+                ")->execute([$newMetaJson, $optId, $attributeId]);
             }
 
             $incomingIds[] = $optId;
@@ -177,29 +214,36 @@ try {
         }
 
         $pdo->prepare("
-            INSERT INTO product_attribute_options (attribute_id, value)
-            VALUES (?, ?)
-        ")->execute([$attributeId, $valSave]);
+            INSERT INTO product_attribute_options (attribute_id, value, meta_json)
+            VALUES (?, ?, ?)
+        ")->execute([$attributeId, $valSave, $newMetaJson]);
 
-        $incomingIds[] = $pdo->lastInsertId();
+        $incomingIds[] = (int)$pdo->lastInsertId();
     }
 
-    /* =========================
-       DELETE removed
-    ========================= */
-    if (!empty($incomingIds)) {
-        $in = implode(",", array_map("intval", $incomingIds));
+    $incomingIds = array_values(array_unique(array_map("intval", $incomingIds)));
 
+    /* =========================
+       DELETE removed (и чистим привязки товаров)
+    ========================= */
+    $existingIds = array_map("intval", array_keys($existing));
+    $toDelete = array_values(array_diff($existingIds, $incomingIds));
+
+    if (!empty($toDelete)) {
+        $in = implode(",", array_map("intval", $toDelete));
+
+        // чистим привязки у товаров (чтобы не было "битых" option_id)
+        $pdo->exec("
+            DELETE FROM product_attribute_values
+            WHERE option_id IN ({$in})
+        ");
+
+        // удаляем сами варианты
         $pdo->exec("
             DELETE FROM product_attribute_options
             WHERE attribute_id = {$attributeId}
-              AND id NOT IN ({$in})
+              AND id IN ({$in})
         ");
-    } else {
-        $pdo->prepare("
-            DELETE FROM product_attribute_options
-            WHERE attribute_id = ?
-        ")->execute([$attributeId]);
     }
 
     $pdo->commit();

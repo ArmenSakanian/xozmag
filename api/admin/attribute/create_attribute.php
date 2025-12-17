@@ -20,15 +20,17 @@ $data = json_decode(file_get_contents("php://input"), true);
 /* =========================
    input
 ========================= */
-$nameRaw = $data["name"] ?? "";
-$slugRaw = $data["slug"] ?? "";
-$type    = $data["type"] ?? "select";
+$nameRaw   = $data["name"] ?? "";
+$slugRaw   = $data["slug"] ?? "";
+$type      = $data["type"] ?? "select";
+$uiRender  = $data["ui_render"] ?? "text";
 
 /* =========================
    normalize
 ========================= */
 $name = formatTitle($nameRaw);
 $slug = trim($slugRaw);
+$uiRender = trim((string)$uiRender);
 
 /* =========================
    validation
@@ -41,6 +43,11 @@ if ($name === "" || $slug === "") {
 if (!in_array($type, ["select", "text", "number"], true)) {
     echo json_encode(["error" => "Неверный тип характеристики"]);
     exit;
+}
+
+$allowedUi = ["text", "color"];
+if (!in_array($uiRender, $allowedUi, true)) {
+    $uiRender = "text"; // мягко, чтобы не ломать старые клиенты
 }
 
 /* =========================
@@ -81,15 +88,16 @@ if ($stmt->fetch()) {
    create
 ========================= */
 $stmt = $pdo->prepare("
-    INSERT INTO product_attributes (name, slug, type)
-    VALUES (?, ?, ?)
+    INSERT INTO product_attributes (name, slug, type, ui_render)
+    VALUES (?, ?, ?, ?)
 ");
-$stmt->execute([$name, $slug, $type]);
+$stmt->execute([$name, $slug, $type, $uiRender]);
 
 echo json_encode([
     "success" => true,
-    "id"   => $pdo->lastInsertId(),
-    "name" => $name,
-    "slug" => $slug,
-    "type" => $type
+    "id"        => $pdo->lastInsertId(),
+    "name"      => $name,
+    "slug"      => $slug,
+    "type"      => $type,
+    "ui_render" => $uiRender
 ], JSON_UNESCAPED_UNICODE);

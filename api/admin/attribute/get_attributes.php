@@ -12,7 +12,8 @@ $stmt = $pdo->query("
         id,
         name,
         slug,
-        type
+        type,
+        ui_render
     FROM product_attributes
     ORDER BY name
 ");
