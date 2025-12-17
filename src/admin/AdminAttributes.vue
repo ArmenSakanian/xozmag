@@ -359,130 +359,203 @@ const editAttribute = (attr) => {
 
 onMounted(loadAttributes);
 </script>
-
 <style scoped>
+/* ===== Base ===== */
 .admin-page {
+  max-width: 980px;
+  margin: 0 auto;
   padding: 24px;
-  max-width: 900px;
+  min-height: 100vh;
+  background: #f6f7fb; /* body белый — делаем мягкий фон внутри страницы */
+  color: #111827;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .block-title {
+  margin: 0;
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
+/* ===== Cards ===== */
 .card {
-  background: #1f2228;
+  background: #ffffff;
+  border: 1px solid #e6e9f0;
   border-radius: 16px;
-  padding: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .form-card {
-  outline: 1px solid rgba(59, 130, 246, 0.35);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 34px rgba(59, 130, 246, 0.08);
 }
 
 .card-title {
-  margin-bottom: 16px;
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
+/* ===== Form ===== */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
 }
 
 .input {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #2f333c;
-  background: #14161a;
-  color: #fff;
+  border-radius: 12px;
+  border: 1px solid #d7dde7;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
+.input::placeholder {
+  color: #94a3b8;
+}
+
+/* пустой инпут (если есть placeholder) */
+.input:placeholder-shown {
+  background: #fbfcff;
+}
+
+/* заполненный инпут */
+.input:not(:placeholder-shown) {
+  border-color: #cbd5e1;
+}
+
+/* фокус */
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+/* ===== Values row ===== */
 .value-row {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
 
+.value-row .input {
+  flex: 1;
+}
+
+/* ===== Buttons ===== */
 .form-actions {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   margin-top: 12px;
 }
 
 .save-btn {
-  border: 1px solid #3b82f6;
-  background: transparent;
-  color: #fff;
-  padding: 10px 16px;
+  appearance: none;
+  border: 1px solid #2563eb;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  padding: 10px 14px;
   border-radius: 12px;
   cursor: pointer;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+  transition: transform 0.08s ease, box-shadow 0.15s ease,
+    filter 0.15s ease;
 }
 
 .save-btn:hover {
-  background: #3b82f6;
+  filter: brightness(1.03);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+}
+
+.save-btn:active {
+  transform: translateY(1px);
 }
 
 .ghost-btn {
-  border: 1px dashed #3b82f6;
-  background: transparent;
-  color: #3b82f6;
-  padding: 8px 12px;
-  border-radius: 10px;
+  appearance: none;
+  border: 1px dashed #93c5fd;
+  background: #ffffff;
+  color: #2563eb;
+  padding: 9px 12px;
+  border-radius: 12px;
   cursor: pointer;
+  font-weight: 800;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    transform 0.08s ease;
 }
 
+.ghost-btn:hover {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: #60a5fa;
+}
+
+.ghost-btn:active {
+  transform: translateY(1px);
+}
+
+.ghost-btn i,
+.save-btn i {
+  margin-right: 8px;
+}
+
+/* ===== Icon buttons ===== */
 .icon-btn {
-  border: none;
-  background: transparent;
-  color: #3b82f6;
+  appearance: none;
+  border: 1px solid transparent;
+  background: #f1f5f9;
+  color: #2563eb;
   cursor: pointer;
-  border-radius: 8px;
-  padding: 6px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  transition: background 0.15s ease, transform 0.08s ease,
+    border-color 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: #eaf1ff;
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.icon-btn:active {
+  transform: translateY(1px);
 }
 
 .icon-btn.danger {
-  color: #ef4444;
+  background: #fff1f2;
+  color: #e11d48;
 }
 
-.attr-item {
-  padding: 12px 0;
-  border-bottom: 1px solid #2a2e36;
+.icon-btn.danger:hover {
+  background: #ffe4e6;
+  border-color: rgba(225, 29, 72, 0.22);
 }
 
-.attr-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.attr-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.attr-values {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.value-chip {
-  background: #2a2e36;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-}
-
-.attr-item.disabled {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.empty {
-  opacity: 0.6;
-}
-
+/* ===== List ===== */
 .mt-8 {
   margin-top: 8px;
 }
@@ -490,9 +563,72 @@ onMounted(loadAttributes);
   margin-top: 24px;
 }
 
+.empty {
+  padding: 10px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.attr-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0f6;
+  transition: background 0.15s ease;
+}
+
+.attr-item:last-child {
+  border-bottom: none;
+}
+
+.attr-item:hover {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.attr-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.attr-name {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.attr-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.attr-values {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.value-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Disabled state while editing another attribute */
+.attr-item.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(0.15);
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
   .admin-page {
     padding: 12px;
+    border-radius: 0;
   }
 
   .block-title {
@@ -501,49 +637,39 @@ onMounted(loadAttributes);
 
   .card {
     padding: 14px;
-    border-radius: 12px;
-  }
-
-  .card-title {
-    font-size: 16px;
+    border-radius: 14px;
   }
 
   .form-actions {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .save-btn,
   .ghost-btn {
     width: 100%;
+    justify-content: center;
   }
 
   .value-row {
     flex-direction: column;
-    gap: 6px;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .icon-btn {
-    align-self: flex-end;
+    width: 100%;
   }
 
   .attr-head {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
   }
 
   .attr-actions {
     width: 100%;
     justify-content: flex-end;
-  }
-
-  .attr-values {
-    gap: 4px;
-  }
-
-  .value-chip {
-    font-size: 12px;
-    padding: 5px 8px;
   }
 }
 </style>

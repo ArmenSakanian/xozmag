@@ -275,8 +275,6 @@ import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 
 const tableRef = ref(null);
 let table;
-let lastSelectedRow = null;
-let visibleRows = [];
 const categories = ref([]);
 const selectedProducts = ref([]);
 const isMobile = window.innerWidth <= 768;
@@ -424,17 +422,8 @@ const openBulkAttrs = () => {
 const clearSelection = () => {
   table.deselectRow();
   selectedProducts.value = [];
-  lastSelectedRow = null;
-
-  const headerCb = tableRef.value?.querySelector(".checkbox-all");
-  if (headerCb) headerCb.checked = false;
-
-  // ✅ ТОЛЬКО ВИДИМЫЕ СТРОКИ
-  table.getRows(true).forEach((row) => {
-    const checkboxCell = row.getCells()[0];
-    checkboxCell.setValue(null);
-  });
 };
+
 
 const saveBulkAttrs = async () => {
   await fetch("/api/admin/attribute/save_attributes_bulk.php", {
@@ -616,77 +605,15 @@ const highlightRows = (ids) => {
 
 const desktopColumns = [
   {
-    title: "",
-    field: "__select",
-    width: 50,
+    formatter: "rowSelection",
+    titleFormatter: "rowSelection",
+    titleFormatterParams: { rowRange: "active" }, // выбирает только отфильтрованные строки
     headerSort: false,
     hozAlign: "center",
-
-    // ✅ чекбокс в заголовке
-    titleFormatter: () =>
-      `<input type="checkbox" class="checkbox checkbox-all" />`,
-    titleFormatterParams: {},
-
-    // ✅ клик по заголовку (по чекбоксу)
-    headerClick: (e) => {
-      const cb = e.target.closest(".checkbox-all");
-      if (!cb) return;
-
-      const rows = visibleRows;
-      const allSelected = rows.length > 0 && rows.every((r) => r.isSelected());
-
-      if (allSelected) {
-        rows.forEach((r) => r.deselect());
-        cb.checked = false;
-      } else {
-        rows.forEach((r) => r.select());
-        cb.checked = true;
-      }
-
-      rows.forEach((r) => r.getCells()[0].setValue(null));
-      selectedProducts.value = table.getSelectedData(true);
-
-      lastSelectedRow = null;
-    },
-
-    // ✅ чекбоксы в строках
-    formatter: (cell) => {
-      const checked = cell.getRow().isSelected();
-      return `<input type="checkbox" class="checkbox" ${
-        checked ? "checked" : ""
-      } />`;
-    },
-
-    cellClick: (e, cell) => {
-      const row = cell.getRow();
-      const rows = visibleRows;
-
-      if (e.shiftKey && lastSelectedRow) {
-        const start = rows.indexOf(lastSelectedRow);
-        const end = rows.indexOf(row);
-
-        if (start !== -1 && end !== -1) {
-          const [from, to] = start < end ? [start, end] : [end, start];
-
-          rows.slice(from, to + 1).forEach((r) => {
-            r.select();
-            r.getCells()[0].setValue(null);
-          });
-        }
-      } else {
-        row.toggleSelect();
-        cell.setValue(null);
-      }
-
-      lastSelectedRow = row;
-      selectedProducts.value = table.getSelectedData(true);
-      const headerCb = tableRef.value?.querySelector(".checkbox-all");
-      if (headerCb) {
-        headerCb.checked =
-          table.getRows(true).length > 0 &&
-          table.getRows(true).every((r) => r.isSelected());
-      }
-    },
+    headerHozAlign: "center",
+    width: 50,
+    resizable: false,
+    cellClick: (e) => e.stopPropagation(),
   },
 
   {
@@ -762,6 +689,7 @@ const desktopColumns = [
   {
     title: "Характеристики",
     field: "attributes_text",
+    headerFilter: "input",
     formatter: (cell) => {
       const row = cell.getRow().getData();
       return row.__has_attrs
@@ -777,6 +705,8 @@ const desktopColumns = [
   },
   {
     title: "Категория",
+    field: "category_path",
+    headerFilter: "input",
     minWidth: 450,
     formatter: (cell) => {
       const p = cell.getRow().getData();
@@ -881,7 +811,10 @@ onMounted(async () => {
   table = new Tabulator(tableRef.value, {
     layout: "fitDataStretch",
     height: "70vh",
-    selectable: true,
+    index: "id",
+    selectableRows: true,
+    selectableRowsRangeMode: "click",
+    selectableRowsPersistence: false,
 
     columns: isMobile ? mobileColumns : desktopColumns,
 
@@ -909,20 +842,11 @@ onMounted(async () => {
 
       lastSelectedRow = row;
       row.reformat();
-      selectedProducts.value = table.getSelectedData(true);
     },
   });
-
-  table.on("dataFiltered", (filters, rows) => {
-    visibleRows = rows; // 🔥 ВОТ ЧЕГО НЕ ХВАТАЛО
-
-    table.deselectRow();
-    selectedProducts.value = [];
-    lastSelectedRow = null;
-
-    const headerCb = tableRef.value?.querySelector(".checkbox-all");
-    if (headerCb) headerCb.checked = false;
-  });
+  table.on("rowSelectionChanged", (data) => {
+  selectedProducts.value = data;
+});
 
   loadProducts();
 });
