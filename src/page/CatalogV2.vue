@@ -69,7 +69,7 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('brand')">
                 <span class="filter-head-text">
-                  {{ brandModel.length ? (brandModel.length <= 2 ? brandModel.join(" · ") : `Выбрано: ${brandModel.length}`) : " Все" }} </span>
+                  {{ brandModel.length ? (brandModel.length <= 2 ? brandModel.join("· ") : `Выбрано: ${brandModel.length}`) : " Все" }} </span>
                     <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
               </div>
 
@@ -126,7 +126,7 @@
       </div>
 
       <!-- ================= MOBILE FILTER BAR ================= -->
-      <div v-if="isMobile && hasActiveCategory" class="mobile-filter-bar">
+      <div v-if="isMobile && hasActiveCategory" class="mobile-filter-bar">Цена
         <div class="mobile-price">
           <input type="number" placeholder="От" v-model.number="priceFromModel" @change="applyFilters" />
           <input type="number" placeholder="До" v-model.number="priceToModel" @change="applyFilters" />
@@ -180,29 +180,39 @@
     </section>
 
     <!-- ================= MOBILE FILTERS MODAL ================= -->
-    <div v-if="showMobileFilters" class="mobile-filters-overlay" @click.self="
+    <div v-if="showMobileFilters" class="mobile-filters-overlay moverlay-overlay" @click.self="
       showMobileFilters = false;
     mobileView = 'root';
     activeMobileAttr = null;
     ">
-      <div class="mobile-filters-panel">
-        <div class="mobile-filters-header">
-          <button v-if="mobileView !== 'root'" class="back-btn" @click="mobileView = 'root'" title="Назад">
-            <i class="fa-solid fa-arrow-left"></i>
-          </button>
+      <div class="mobile-filters-panel moverlay-panel">
+<div class="mobile-filters-header">
+  <button
+    class="back-btn"
+    :class="{ ghost: mobileView === 'root' }"
+    :disabled="mobileView === 'root'"
+    @click="mobileView = 'root'"
+    title="Назад"
+  >
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
 
-          <div class="title">
-            {{ mobileView === "root" ? "Фильтры" : activeMobileAttr || "Бренд" }}
-          </div>
+  <div class="title">
+    {{ mobileView === "root" ? "Фильтры" : activeMobileAttr || "Бренд" }}
+  </div>
 
-          <button class="close-btn" @click="
-            showMobileFilters = false;
-          mobileView = 'root';
-          activeMobileAttr = null;
-          " title="Закрыть">
-            <i class="fa-solid fa-x"></i>
-          </button>
-        </div>
+  <button
+    class="close-btn"
+    @click="
+      showMobileFilters = false;
+      mobileView = 'root';
+      activeMobileAttr = null;
+    "
+    title="Закрыть"
+  >
+    <i class="fa-solid fa-x"></i>
+  </button>
+</div>
 
         <div v-if="mobileView === 'root'" class="mobile-filters-list">
           <div class="mobile-filter-item" @click="mobileView = 'brand'">
@@ -248,110 +258,82 @@
           </label>
         </div>
         <!-- ✅ FOOTER (как у категорий) -->
-<div class="mfil-footer">
-  <button
-    class="mfil-done"
-    @click="
-      showMobileFilters = false;
-      mobileView = 'root';
-      activeMobileAttr = null;
-    "
-  >
-    Готово
-  </button>
+        <div class="mfil-footer">
+          <button class="mfil-done" @click="
+            showMobileFilters = false;
+          mobileView = 'root';
+          activeMobileAttr = null;
+          ">
+            Готово
+          </button>
 
-  <button
-    class="mfil-clear"
-    @click="resetAllFilters"
-    title="Сбросить все фильтры"
-  >
-    Сбросить
-  </button>
-</div>
+          <button class="mfil-clear" @click="resetAllFilters" title="Сбросить все фильтры">
+            Сбросить
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- ================= MOBILE CATEGORIES ================= -->
-<!-- ================= MOBILE CATEGORIES (DRILLDOWN) ================= -->
-<div v-if="isMobile" class="mobile-cats-btn" @click="openMobileCats">
-  ☰
-</div>
-
-<div
-  v-if="showMobileCats"
-  class="mobile-cats-overlay"
-  @click.self="closeMobileCats"
->
-  <div class="mobile-cats-panel">
-    <div class="mobile-cats-header">
-<button
-  class="mcat-back"
-  :class="{ ghost: !mobileCatsStack.length }"
-  :disabled="!mobileCatsStack.length"
-  @click="mobileCatsStack.length && backMobileCat()"
-  title="Назад"
->
-  <i class="fa-solid fa-arrow-left"></i>
-</button>
-
-      <span class="mcat-title">{{ mobileCatsTitle }}</span>
-
-      <button class="mcat-close" @click="closeMobileCats" title="Закрыть">
-        ✕
-      </button>
+    <!-- ================= MOBILE CATEGORIES (DRILLDOWN) ================= -->
+    <div v-if="isMobile" class="mobile-cats-btn" @click="openMobileCats">
+      <i class="fa-solid fa-bars-staggered"></i> Категории
     </div>
 
-    <div class="mcat-list">
-      <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
-        <!-- выбор категории -->
-        <button
-          class="mcat-check"
-          :class="{ on: selectedCategories.includes(c.code) }"
-          @click.stop="toggleCategory(c.code)"
-          :title="selectedCategories.includes(c.code) ? 'Снять выбор' : 'Выбрать'"
-        >
-          <i v-if="selectedCategories.includes(c.code)" class="fa-solid fa-check"></i>
-        </button>
+    <div v-if="showMobileCats" class="mobile-cats-overlay moverlay-overlay" @click.self="closeMobileCats">
+      <div class="mobile-cats-panel moverlay-panel">
+        <div class="mobile-cats-header moverlay-header">
+          <button class="mcat-back moverlay-btn moverlay-back" :class="{ ghost: !mobileCatsStack.length }"
+            :disabled="!mobileCatsStack.length" @click="mobileCatsStack.length && backMobileCat()" title="Назад">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
 
-        <!-- название (тоже выбирает) -->
-        <div class="mcat-name" @click="toggleCategory(c.code)">
-          {{ c.name }}
+          <span class="mcat-title moverlay-title">{{ mobileCatsTitle }}</span>
+
+          <button class="mcat-close moverlay-btn moverlay-close" @click="closeMobileCats" title="Закрыть">
+            ✕
+          </button>
         </div>
 
-        <!-- открыть подкатегории -->
-        <button
-          v-if="hasChildren(c)"
-          class="mcat-next"
-          @click.stop="openMobileCat(c)"
-          title="Подкатегории"
-        >
-          <i class="fa-solid fa-chevron-right"></i>
-        </button>
-      </div>
+        <div class="mcat-list">
+          <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
+            <!-- выбор категории -->
+            <button class="mcat-check" :class="{ on: selectedCategories.includes(c.code) }"
+              @click.stop="toggleCategory(c.code)"
+              :title="selectedCategories.includes(c.code) ? 'Снять выбор' : 'Выбрать'">
+              <i v-if="selectedCategories.includes(c.code)" class="fa-solid fa-check"></i>
+            </button>
 
-      <div v-if="!mobileCatsList.length" class="mcat-empty">
-        Нет подкатегорий
+            <!-- название (тоже выбирает) -->
+            <div class="mcat-name" @click="toggleCategory(c.code)">
+              {{ c.name }}
+            </div>
+
+            <!-- открыть подкатегории -->
+            <button v-if="hasChildren(c)" class="mcat-next" @click.stop="openMobileCat(c)" title="Подкатегории">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <div v-if="!mobileCatsList.length" class="mcat-empty">
+            Нет подкатегорий
+          </div>
+        </div>
+
+        <div class="mcat-footer">
+          <button class="mcat-done" @click="closeMobileCats">
+            Готово
+            <span v-if="selectedCategories.length" class="mcat-count">
+              {{ selectedCategories.length }}
+            </span>
+          </button>
+
+          <button v-if="selectedCategories.length" class="mcat-clear" @click="selectedCategories = []">
+            Сбросить
+          </button>
+        </div>
       </div>
     </div>
-
-    <div class="mcat-footer">
-      <button class="mcat-done" @click="closeMobileCats">
-        Готово
-        <span v-if="selectedCategories.length" class="mcat-count">
-          {{ selectedCategories.length }}
-        </span>
-      </button>
-
-      <button
-        v-if="selectedCategories.length"
-        class="mcat-clear"
-        @click="selectedCategories = []"
-      >
-        Сбросить
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </template>
 
@@ -482,7 +464,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize);
-  unlockBody(); 
+  unlockBody();
 });
 
 /* ================= filters ui ================= */
@@ -850,26 +832,33 @@ function loadMore() {
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-:global(body) { background: var(--bg-main); }
-* { box-sizing: border-box; }
+:global(body) {
+  background: var(--bg-main);
+}
+
+* {
+  box-sizing: border-box;
+}
 
 /* =========================
    PAGE
 ========================= */
-.catalog-page{
-  display:flex; min-height:100vh;
-  background:var(--bg-main); color:var(--text-main);
+.catalog-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-main);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* =========================
    SIDEBAR DESKTOP
 ========================= */
-.catalog-sidebar{
+.catalog-sidebar {
   width: 320px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   border-right: 1px solid var(--border-soft);
-  box-shadow: 18px 0 55px rgba(0,0,0,0.06);
+  box-shadow: 18px 0 55px rgba(0, 0, 0, 0.06);
 
   padding: 18px 14px 16px;
   display: flex;
@@ -881,7 +870,7 @@ function loadMore() {
   height: 100vh;
 }
 
-.sidebar-header{
+.sidebar-header {
   padding: 12px 12px;
   border: 1px solid var(--border-soft);
   border-radius: 16px;
@@ -889,13 +878,13 @@ function loadMore() {
   box-shadow: var(--shadow-sm);
 }
 
-.sidebar-title{
+.sidebar-title {
   font-size: 18px;
-  font-weight: 950;
+  font-weight: 900;
   color: var(--text-main);
 }
 
-.sidebar-categories{
+.sidebar-categories {
   flex: 1;
   overflow-y: auto;
   padding: 6px 6px 10px;
@@ -906,766 +895,892 @@ function loadMore() {
 }
 
 /* красивый скролл (Chrome/Edge) */
-.sidebar-categories::-webkit-scrollbar { width: 10px; }
+.sidebar-categories::-webkit-scrollbar {
+  width: 10px;
+}
+
 .sidebar-categories::-webkit-scrollbar-thumb {
-  background: rgba(17,24,39,0.18);
+  background: rgba(17, 24, 39, 0.18);
   border-radius: 999px;
   border: 3px solid #fff;
 }
-.sidebar-categories::-webkit-scrollbar-track { background: transparent; }
-.category-tree-root{ list-style:none; padding:0; margin:0; }
+
+.sidebar-categories::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.category-tree-root {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
 /* =========================
    MAIN
 ========================= */
-.catalog-content{
-  flex:1;
-  padding:26px 30px;
-  display:flex; flex-direction:column; gap:18px;
+.catalog-content {
+  flex: 1;
+  padding: 26px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
-.catalog-top{ display:flex; flex-direction:column; gap:14px; }
-.catalog-heading{ display:flex; flex-direction:column; gap:6px; }
-.breadcrumbs{ font-size:13px; color:var(--text-muted); }
-.breadcrumb-separator{ margin:0 6px; }
-.breadcrumb-current{ color:var(--text-main); font-weight:600; }
-.catalog-title{ font-size:28px; font-weight:900; color:var(--text-main); }
+
+.catalog-top {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catalog-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.breadcrumbs {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.breadcrumb-separator {
+  margin: 0 6px;
+}
+
+.breadcrumb-current {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.catalog-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text-main);
+}
 
 /* =========================
    SEARCH
 ========================= */
-.catalog-search{
-  display:flex; flex-direction:column; align-items:center;
-  gap:8px; margin-top:2px;
+.catalog-search {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
 }
-.search-box{
-  width:min(760px, 100%);
-  display:flex; align-items:center; gap:10px;
-  padding:12px 14px;
-  border-radius:999px;
-  background:var(--bg-panel);
-  border:1px solid var(--border-soft);
-  box-shadow:var(--shadow-sm);
+
+.search-box {
+  width: min(760px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
 }
-.search-icon{ color:var(--text-muted); font-size:14px; }
-.search-input{
-  flex:1; border:none; outline:none; background:transparent;
-  font-size:15px; color:var(--text-main);
+
+.search-icon {
+  color: var(--text-muted);
+  font-size: 14px;
 }
-.search-clear{
-  width:34px; height:34px;
-  border-radius:999px;
-  border:1px solid var(--border-soft);
-  background:#fff;
-  cursor:pointer;
-  display:inline-flex; align-items:center; justify-content:center;
-  transition:transform .15s ease, box-shadow .15s ease;
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--text-main);
 }
-.search-clear:hover{ transform:translateY(-1px); box-shadow:var(--shadow-sm); }
-.search-meta{ font-size:12px; color:var(--text-muted); }
+
+.search-clear {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.search-clear:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
 
 /* =========================
    FILTERS DESKTOP
 ========================= */
-.filters-bar{
-  background:var(--bg-panel);
-  border:1px solid var(--border-soft);
-  border-radius:var(--radius-lg);
-  padding:18px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
-  gap:16px;
-  box-shadow:var(--shadow-sm);
-}
-.filter-price{ grid-column:span 2; }
-
-.filter-block{
-  min-width:180px;
-  display:flex; flex-direction:column; gap:6px;
-  background:#fff;
-  border-radius:14px;
-  padding:10px 12px;
-  border:1px solid #e4e7ef;
-  box-shadow:0 6px 20px rgba(0,0,0,0.06);
-  transition:box-shadow .2s ease, transform .2s ease;
-  position:relative; z-index:1;
-}
-.filter-block:hover{ box-shadow:0 10px 26px rgba(0,0,0,0.10); transform:translateY(-1px); }
-.filter-block.open{ z-index:200; }
-
-.filter-label{
-  font-size:11px; font-weight:800; color:#6b7280;
-  text-transform:uppercase; letter-spacing:.06em;
-  padding-left:6px;
-}
-.filter-head-text{
-  font-size:14px; color:#1b1e28;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.filters-bar {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
-.price-inputs{ display:flex; gap:8px; }
-.price-inputs input{
-  padding:11px 14px;
-  border-radius:12px;
-  border:1px solid #e4e7ef;
-  width:50%;
-  font-size:14px;
-  background:#fff;
-  transition:border-color .2s ease, box-shadow .2s ease;
-}
-.price-inputs input:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(4,0,255,0.14);
+.filter-price {
+  grid-column: span 2;
 }
 
-.filter-dropdown{
-  position:relative;
-  border-radius:12px;
-  background:linear-gradient(180deg, #fff, #f9faff);
-  border:1px solid #e4e7ef;
+.filter-block {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid #e4e7ef;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  transition: box-shadow .2s ease, transform .2s ease;
+  position: relative;
+  z-index: 1;
 }
-.filter-dropdown-head{
-  padding:12px 14px;
-  display:flex; justify-content:space-between; align-items:center;
-  cursor:pointer;
-  font-size:14px; font-weight:700; color:#1b1e28;
-  transition:background .2s ease;
+
+.filter-block:hover {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.10);
+  transform: translateY(-1px);
 }
-.filter-dropdown-head:hover{ background:rgba(4,0,255,0.05); }
-.filter-dropdown-body{
-  position:absolute;
-  top:calc(100% + 8px);
-  left:0; right:0;
-  z-index:210;
-  padding:12px;
-  display:flex; flex-direction:column; gap:8px;
-  background:#fff;
-  border-radius:14px;
-  border:1px solid #e4e7ef;
-  box-shadow:0 18px 40px rgba(0,0,0,0.14);
+
+.filter-block.open {
+  z-index: 200;
 }
-.filter-dropdown-body.scrollable{
-  max-height:min(260px, 50vh);
-  overflow-y:auto;
-  padding-right:6px;
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-left: 6px;
 }
-.filter-checkbox{
-  display:flex; align-items:flex-start; gap:10px;
-  font-size:13px; font-weight:600; color:#1b1e28;
-  padding:6px 8px;
-  border-radius:8px;
-  cursor:pointer;
-  transition:background .2s ease;
+
+.filter-head-text {
+  font-size: 14px;
+  color: #1b1e28;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.filter-checkbox:hover{ background:rgba(4,0,255,0.06); }
-.filter-checkbox input{ accent-color:var(--accent); cursor:pointer; margin-top:2px; }
-.filter-all{
-  font-weight:800;
-  padding-bottom:8px; margin-bottom:8px;
-  border-bottom:1px dashed #e4e7ef;
+
+.price-inputs {
+  display: flex;
+  gap: 8px;
 }
-.arrow{ font-size:12px; color:var(--accent); transition:transform .25s ease; }
-.arrow.open{ transform:rotate(180deg); }
+
+.price-inputs input {
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid #e4e7ef;
+  width: 50%;
+  font-size: 14px;
+  background: #fff;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.price-inputs input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(4, 0, 255, 0.14);
+}
+
+.filter-dropdown {
+  position: relative;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff, #f9faff);
+  border: 1px solid #e4e7ef;
+}
+
+.filter-dropdown-head {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  color: #1b1e28;
+  transition: background .2s ease;
+}
+
+.filter-dropdown-head:hover {
+  background: rgba(4, 0, 255, 0.05);
+}
+
+.filter-dropdown-body {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 210;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e4e7ef;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+}
+
+.filter-dropdown-body.scrollable {
+  max-height: min(260px, 50vh);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b1e28;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.filter-checkbox:hover {
+  background: rgba(4, 0, 255, 0.06);
+}
+
+.filter-checkbox input {
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.filter-all {
+  font-weight: 800;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed #e4e7ef;
+}
+
+.arrow {
+  font-size: 12px;
+  color: var(--accent);
+  transition: transform .25s ease;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
 
 /* =========================
    PRODUCTS
 ========================= */
-.catalog-products{ flex:1; display:flex; flex-direction:column; }
-.products-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
-  gap:18px;
+.catalog-products {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
-.product-card{
-  min-width:0;
-  background:var(--bg-panel);
-  border-radius:16px;
-  border:1px solid var(--border-soft);
-  box-shadow:var(--shadow-sm);
-  padding:12px;
-  display:flex; flex-direction:column; gap:10px;
-  cursor:pointer;
-  transition:transform .18s ease, box-shadow .18s ease;
-}
-.product-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); }
 
-.product-image{
-  border-radius:14px;
-  overflow:hidden;
-  border:1px solid var(--border-soft);
-  background:#fff;
-  aspect-ratio:1 / 1;
-  display:flex; min-width:0;
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
 }
+
+.product-card {
+  min-width: 0;
+  background: var(--bg-panel);
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.product-image {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: #fff;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  min-width: 0;
+}
+
 .product-image :deep(.pg),
-.product-image :deep(.pcg){ width:100%; height:100%; }
+.product-image :deep(.pcg) {
+  width: 100%;
+  height: 100%;
+}
 
 .product-card :deep(.swiper-button-next),
-.product-card :deep(.swiper-button-prev){
-  opacity:0; pointer-events:none;
-  transition:opacity .18s ease, transform .18s ease;
-}
-.product-card:hover :deep(.swiper-button-next),
-.product-card:hover :deep(.swiper-button-prev){
-  opacity:1; pointer-events:auto;
+.product-card :deep(.swiper-button-prev) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
 }
 
-.product-info{ display:flex; flex-direction:column; gap:8px; }
-.product-name{
-  font-size:14px; line-height:1.35; font-weight:700;
-  color:var(--text-main);
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-  min-height:2.7em;
+.product-card:hover :deep(.swiper-button-next),
+.product-card:hover :deep(.swiper-button-prev) {
+  opacity: 1;
+  pointer-events: auto;
 }
-.product-row{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:10px;
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.product-price{
-  font-size:18px; font-weight:900;
-  color:var(--accent);
-  letter-spacing:-0.01em;
+
+.product-name {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 650;
+  color: var(--text-main);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
 }
-.product-brand{
-  font-size:12px; font-weight:800;
-  color:#111827;
-  background:rgba(4,0,255,0.08);
-  border:1px solid rgba(4,0,255,0.16);
-  padding:6px 10px;
-  border-radius:999px;
-  white-space:nowrap;
-  max-width:45%;
-  overflow:hidden;
-  text-overflow:ellipsis;
+
+.product-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
-.product-meta{ display:flex; gap:8px; align-items:center; }
-.product-barcode{
-  font-size:12px; color:var(--text-muted);
-  background:#f3f4f6;
-  border:1px solid #e5e7eb;
-  padding:6px 10px;
-  border-radius:999px;
+
+.product-price {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+
+.product-brand {
+  font-size: 12px;
+  font-weight: 750;
+  color: #111827;
+  background: rgba(4, 0, 255, 0.08);
+  border: 1px solid rgba(4, 0, 255, 0.16);
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.product-barcode {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 999px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* =========================
    EMPTY / LOADER / LOADMORE
 ========================= */
-.products-empty{
-  grid-column:1 / -1;
-  background:var(--bg-panel);
-  border:1px dashed #cbd5e1;
-  border-radius:var(--radius-lg);
-  padding:40px;
-  text-align:center;
+.products-empty {
+  grid-column: 1 / -1;
+  background: var(--bg-panel);
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
 }
-.empty-title{ font-size:18px; font-weight:800; margin-bottom:6px; }
-.empty-text{ font-size:14px; color:var(--text-muted); }
 
-.catalog-loader{
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  height:50vh; gap:14px;
+.empty-title {
+  font-size: 18px;
+  font-weight: 850;
+  margin-bottom: 6px;
 }
-.loader-spinner{
-  width:48px; height:48px;
-  border:4px solid #dbe0ec;
-  border-top-color:var(--accent);
-  border-radius:50%;
+
+.empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.catalog-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: 14px;
+}
+
+.loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #dbe0ec;
+  border-top-color: var(--accent);
+  border-radius: 50%;
   animation: spin .9s linear infinite;
 }
-.loader-text{ font-size:14px; color:var(--text-muted); }
-@keyframes spin { to { transform: rotate(360deg); } }
 
-.load-more{
-  margin-top:18px;
-  display:flex; justify-content:center;
-}
-.load-more-btn{
-  border:1px solid var(--border-soft);
-  background:var(--bg-panel);
-  box-shadow:var(--shadow-sm);
-  padding:12px 16px;
-  border-radius:999px;
-  cursor:pointer;
-  font-weight:900;
-  transition:transform .15s ease, box-shadow .15s ease;
-}
-.load-more-btn:hover{
-  transform:translateY(-1px);
-  box-shadow:var(--shadow-md);
+.loader-text {
+  font-size: 14px;
+  color: var(--text-muted);
 }
 
-/* =========================
-   MOBILE
-========================= */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.load-more {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
+.load-more-btn {
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 900;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.load-more-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ======================================================
+   ✅ SHARED MOBILE OVERLAY UI (filters + cats)
+   (подходит под твой новый template с moverlay-*)
+   ====================================================== */
 @media (max-width: 1024px) {
-  .products-grid{
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-    gap:14px;
+
+  /* price bar */
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
   }
 
-  .mobile-filter-bar{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  .mobile-price{ display:flex; gap:8px; }
-  .mobile-price input{
-    flex:1;
-    padding:10px 12px;
-    border-radius:14px;
-    border:1px solid var(--border-soft);
-    background:var(--bg-panel);
-    box-shadow:var(--shadow-sm);
+  .mobile-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .mobile-filter-btn{
-    border-radius:14px;
-    border:1px solid rgba(4,0,255,0.22);
-    background:rgba(4,0,255,0.10);
-    box-shadow:var(--shadow-sm);
-    padding:12px 14px;
-    font-weight:950;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    cursor:pointer;
+  .mobile-price {
+    display: flex;
+    gap: 8px;
+  }
 
+  .mobile-price input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-filter-btn {
+    border-radius: 14px;
+    border: 1px solid rgba(4, 0, 255, 0.22);
+    background: rgba(4, 0, 255, 0.10);
+    box-shadow: var(--shadow-sm);
+    padding: 12px 14px;
+    font-weight: 850;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
 
-  /* ✅ одинаковое поведение отступа от fixed header */
-  .mobile-filters-overlay{
-    position:fixed;
-    left:0; right:0; bottom:0;
+  /* overlay */
+  .mobile-filters-overlay,
+  .mobile-cats-overlay,
+  .moverlay-overlay {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     top: calc(var(--site-header-h) + env(safe-area-inset-top));
-    background:rgba(0,0,0,0.42);
-    z-index:3000;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 6000;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
 
-  .mobile-filters-panel{
-    position:fixed;
-    left:0; right:0; bottom:0;
+  /* panel */
+  .mobile-filters-panel,
+  .mobile-cats-panel,
+  .moverlay-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     top: calc(var(--site-header-h) + env(safe-area-inset-top));
-    background:#fff;
-    z-index:3100;
-
-    display:flex;
-    flex-direction:column;
-
-    border-radius:18px 18px 0 0;
-    box-shadow:0 -18px 55px rgba(0,0,0,0.22);
-
-    overflow:hidden;
+    background: #fff;
+    z-index: 4100;
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -18px 55px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
     overscroll-behavior: contain;
-
-    animation: filtersSlideUp .22s ease;
-
     -webkit-tap-highlight-color: transparent;
   }
 
-  @keyframes filtersSlideUp {
-    from { transform: translateY(14px); opacity: 0.7; }
-    to   { transform: translateY(0); opacity: 1; }
-  }
-
-  .mobile-filters-header{
-    position:sticky;
-    top:0;
-    display:grid;
-    grid-template-columns:44px 1fr 44px;
-    align-items:center;
-    gap:8px;
-
-    padding:12px 10px;
-
-    background:rgba(255,255,255,0.92);
+  /* header */
+  .mobile-filters-header,
+  .mobile-cats-header,
+  .moverlay-header {
+    position: sticky;
+    top: 0;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-
-    border-bottom:1px solid var(--border-soft);
-    z-index:10;
+    border-bottom: 1px solid var(--border-soft);
+    z-index: 10;
   }
 
-  .mobile-filters-header .title{
-    font-size:16px;
-    font-weight:950;
-    text-align:center;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+  .mobile-filters-header .title,
+  .mcat-title,
+  .moverlay-title {
+    font-size: 16px;
+    font-weight: 850;
+    /* ⬅ меньше “жира” */
+    color: var(--text-main);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
+  /* header buttons */
   .back-btn,
-  .close-btn{
-    width:40px;
-    height:40px;
-    border-radius:12px;
-    border:1px solid var(--border-soft);
-    background:#fff;
-    box-shadow:var(--shadow-sm);
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-
+  .close-btn,
+  .mcat-back,
+  .mcat-close,
+  .moverlay-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    transition: transform .12s ease, background .12s ease;
   }
 
   .back-btn:active,
-  .close-btn:active{ transform:scale(0.98); }
-
-  .mobile-filters-list{
-    flex:1;
-    overflow-y:auto;
-    padding:10px 12px 12px;
-    -webkit-overflow-scrolling: touch;
+  .close-btn:active,
+  .mcat-back:active,
+  .mcat-close:active {
+    transform: scale(0.98);
   }
 
-  .mobile-filter-item{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-
-    padding:12px 12px;
-    border:1px solid var(--border-soft);
-    border-radius:14px;
-    background:#fff;
-    box-shadow:0 8px 18px rgba(0,0,0,0.06);
-
-    font-size:14px;
-    font-weight:900;
-    color:var(--text-main);
-
-    margin-bottom:10px;
-
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+  .back-btn:hover,
+  .close-btn:hover,
+  .mcat-back:hover,
+  .mcat-close:hover {
+    background: rgba(0, 0, 0, 0.03);
   }
 
-  .mobile-filter-item .cat-arrow{
-    opacity:0.85;
-    color:#111827;
-  }
-
-  .mobile-filter-values{
-    flex:1;
-    overflow-y:auto;
-    padding:10px 12px 12px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .mobile-filter-values .filter-checkbox{
-    padding:12px 12px;
-    border:1px solid var(--border-soft);
-    border-radius:14px;
-    background:#fff;
-    box-shadow:0 8px 18px rgba(0,0,0,0.06);
-  }
-  .mobile-filter-values .filter-checkbox:hover{ background:#fff; }
-
-  .mobile-filter-values .filter-all{
-    border-bottom:none;
-    margin-bottom:0;
-    padding-bottom:12px;
-    font-weight:950;
-  }
-
-  /* footer (если добавишь блок в template) */
-  .mfil-footer{
-    padding:12px;
-    border-top:1px solid var(--border-soft);
-
-    background:rgba(255,255,255,0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-
-    display:flex;
-    gap:10px;
-    justify-content:space-between;
-
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
-
-  .mfil-done{
-    flex:1;
-    border:1px solid rgba(4,0,255,0.22);
-    background:rgba(4,0,255,0.10);
-    color:#111827;
-    font-weight:950;
-    padding:12px 14px;
-    border-radius:14px;
-    cursor:pointer;
-
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  .mfil-clear{
-    border:1px solid var(--border-soft);
-    background:#fff;
-    color:#111827;
-    font-weight:900;
-    padding:12px 14px;
-    border-radius:14px;
-    cursor:pointer;
-
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  /* =========================
-     MOBILE CATS (DRILLDOWN)
-  ========================= */
-  .mobile-cats-btn{
-    position:fixed; bottom:16px; left:16px;
-    width:52px; height:52px;
-    background:#000; color:#fff;
-    border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:22px; font-weight:900;
-    z-index:6000;
-    box-shadow:0 14px 35px rgba(0,0,0,0.25);
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  .mobile-cats-overlay{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    top: calc(var(--site-header-h) + env(safe-area-inset-top));
-    background:rgba(0,0,0,0.42);
-    z-index:4000;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
-  .mobile-cats-panel{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    top: calc(var(--site-header-h) + env(safe-area-inset-top));
-    background:#fff;
-    z-index:4100;
-
-    display:flex; flex-direction:column;
-    border-radius:18px 18px 0 0;
-    box-shadow:0 -18px 55px rgba(0,0,0,0.22);
-    overflow:hidden;
-    animation: catsSlideUp .22s ease;
-    overscroll-behavior: contain;
-  }
-
-  @keyframes catsSlideUp {
-    from { transform: translateY(14px); opacity: 0.7; }
-    to   { transform: translateY(0); opacity: 1; }
-  }
-
+  /* ghost back: чтобы заголовок не прыгал */
   .mcat-back.ghost {
-  visibility: hidden;   /* ⬅ занимает место, но не видна */
+    visibility: hidden;
+    pointer-events: none;
+  }
+.back-btn.ghost{
+  visibility: hidden;   /* место сохраняется -> заголовок всегда по центру */
   pointer-events: none;
 }
-.mcat-back:disabled {
-  opacity: 1; /* чтобы не делало серым и не влияло */
+.back-btn:disabled{
+  opacity: 1; /* чтобы не серела */
 }
-  .mobile-cats-header{
-    position:sticky;
-    top:0;
-
-    display:grid;
-    grid-template-columns:44px 1fr 44px;
-    align-items:center;
-    gap:8px;
-
-    padding:12px 10px;
-
-    background:rgba(255,255,255,0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-
-    border-bottom:1px solid var(--border-soft);
-    z-index:10;
+  .mcat-back:disabled {
+    opacity: 1;
   }
 
-  .mcat-title{
-    font-size:16px;
-    font-weight:950;
-    color:var(--text-main);
-    text-align:center;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-
-  .mcat-back,
-  .mcat-close{
-    width:40px;
-    height:40px;
-    border-radius:12px;
-    border:1px solid var(--border-soft);
-    background:#fff;
-    box-shadow:var(--shadow-sm);
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    transition:transform .12s ease;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-  .mcat-back:active,
-  .mcat-close:active{ transform:scale(0.98); }
-
-  .mcat-list{
-    flex:1;
-    overflow-y:auto;
-    padding:10px 12px 12px;
+  /* lists */
+  .mobile-filters-list,
+  .mcat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 12px;
     -webkit-overflow-scrolling: touch;
   }
 
-  .mcat-item{
-    display:grid;
-    grid-template-columns:40px 1fr 40px;
-    align-items:center;
-    gap:10px;
-
-    padding:12px 10px;
-    border:1px solid var(--border-soft);
-    border-radius:14px;
-    background:#fff;
-    box-shadow:0 8px 18px rgba(0,0,0,0.06);
-
-    margin-bottom:10px;
+  .mobile-filter-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+    font-size: 14px;
+    font-weight: 800;
+    /* ⬅ меньше “жира” */
+    color: var(--text-main);
+    margin-bottom: 10px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
-  .mcat-check{
-    width:36px;
-    height:36px;
-    border-radius:12px;
-    border:1px solid var(--border-soft);
-    background:#fff;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    color:#111827;
+  .mobile-filter-item .cat-arrow {
+    opacity: 0.85;
+    color: #111827;
   }
-  .mcat-check.on{
-    border-color: rgba(4,0,255,0.35);
-    background: rgba(4,0,255,0.10);
+
+  .mobile-filter-values {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-filter-values .filter-checkbox {
+    padding: 12px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-filter-values .filter-checkbox:hover {
+    background: #fff;
+  }
+
+  .mobile-filter-values .filter-all {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 12px;
+    font-weight: 850;
+  }
+
+  /* cats button */
+  .mobile-cats-btn {
+position: fixed;
+        bottom: 10px;
+        left: 16px;
+        padding: 10px;
+        background: #000;
+        color: #fff;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        font-size: 20px;
+        font-weight: 100;
+        z-index: 6000;
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.25);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+  }
+
+  /* cats rows */
+  .mcat-item {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+    margin-bottom: 10px;
+  }
+
+  .mcat-check {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111827;
+  }
+
+  .mcat-check.on {
+    border-color: rgba(4, 0, 255, 0.35);
+    background: rgba(4, 0, 255, 0.10);
     color: var(--accent);
   }
 
-  .mcat-name{
-    font-size:14px;
-    font-weight:900;
-    color:var(--text-main);
-    line-height:1.25;
-    overflow-wrap:anywhere;
+  .mcat-name {
+    font-size: 14px;
+    font-weight: 750;
+    /* ⬅ меньше “жира” */
+    color: var(--text-main);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    min-width: 0;
   }
 
-  .mcat-next{
-    width:36px;
-    height:36px;
-    border-radius:12px;
-    border:1px solid var(--border-soft);
-    background:#fff;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    color:#111827;
+  .mcat-next {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111827;
   }
 
-  .mcat-empty{
-    padding:16px 12px;
-    text-align:center;
-    color:var(--text-muted);
-    font-weight:800;
+  .mcat-empty {
+    padding: 16px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 800;
   }
 
-  .mcat-footer{
-    padding:12px;
-    border-top:1px solid var(--border-soft);
-
-    background:rgba(255,255,255,0.92);
+  /* shared footer (filters + cats) */
+  .mfil-footer,
+  .mcat-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-
-    display:flex;
-    gap:10px;
-    justify-content:space-between;
-
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
-  .mcat-done{
-    flex:1;
-    border:1px solid rgba(4,0,255,0.22);
-    background: rgba(4,0,255,0.10);
-    color:#111827;
-    font-weight:950;
-    padding:12px 14px;
-    border-radius:14px;
-    cursor:pointer;
-
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-
+  .mfil-done,
+  .mcat-done {
+    flex: 1;
+    border: 1px solid rgba(4, 0, 255, 0.22);
+    background: rgba(4, 0, 255, 0.10);
+    color: #111827;
+    font-weight: 850;
+    /* ⬅ меньше “жира” */
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
 
-  .mcat-count{
-    min-width:26px;
-    height:26px;
-    padding:0 8px;
-    border-radius:999px;
-    background:var(--accent);
-    color:#fff;
-    font-weight:950;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    font-size:12px;
-  }
-
-  .mcat-clear{
-    border:1px solid var(--border-soft);
-    background:#fff;
-    color:#111827;
-    font-weight:900;
-    padding:12px 14px;
-    border-radius:14px;
-    cursor:pointer;
-
+  .mfil-clear,
+  .mcat-clear {
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    color: #111827;
+    font-weight: 800;
+    /* ⬅ меньше “жира” */
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  .mcat-count {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 768px) {
-  .catalog-page{ flex-direction:column; }
-  .catalog-sidebar{ display:none; }
-  .catalog-content{ padding:16px; padding-bottom:90px; }
-  .products-grid{ grid-template-columns:1fr; }
-  .catalog-title{ font-size:24px; }
-  .product-price{ font-size:17px; }
+  .catalog-page {
+    flex-direction: column;
+  }
+
+  .catalog-sidebar {
+    display: none;
+  }
+
+  .catalog-content {
+    padding: 16px;
+    padding-bottom: 90px;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-title {
+    font-size: 24px;
+  }
+
+  .product-price {
+    font-size: 17px;
+  }
 }
 
 /* disable selection только на элементах фильтра (desktop) */
@@ -1679,14 +1794,15 @@ function loadMore() {
 .filter-checkbox span,
 .filter-head-text,
 .arrow {
-  user-select:none;
-  -webkit-user-select:none;
-  -ms-user-select:none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
+
 input,
 input[type="checkbox"],
 input[type="number"],
 .search-input {
-  user-select:auto;
+  user-select: auto;
 }
 </style>
