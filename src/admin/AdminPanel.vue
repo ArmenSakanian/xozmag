@@ -8,6 +8,10 @@
       <router-link to="/admin/products" class="tile">Товары</router-link>
       <router-link to="/admin/addproducts" class="tile">Добавить товары</router-link>
       <router-link to="/admin/convert" class="tile">Конвертировать изображение</router-link>
+      <router-link to="/admin/order" class="tile">Заказ поставщику</router-link>
+      <router-link to="/admin/minstock" class="tile">Минимальный остаток</router-link>
+
+
     </div>
   </div>
 </template>

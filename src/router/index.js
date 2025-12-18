@@ -38,12 +38,32 @@ const routes = [
   path: "/admin/convert",
   component: () => import("@/admin/AdminConvertImages.vue"),
 },
+{
+  path: "/admin/order",
+  component: () => import("@/admin/AdminOrder.vue"),
+},
+{
+  path: "/admin/minstock",
+  component: () => import("@/admin/AdminMinStock.vue"),
+},
+{
+  path: "/product/:id",
+  name: "product",
+  component: () => import("@/page/ProductCartPage.vue"),
+  props: true,
+},
 
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+
+  // ✅ вот тут
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition; // назад/вперёд
+    return { top: 0 }; // обычный переход
+  },
 });
 
 // защита маршрутов
