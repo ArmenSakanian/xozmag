@@ -8,13 +8,8 @@
 
       <nav class="sidebar-categories">
         <ul class="category-tree-root">
-          <CategoryNode
-            v-for="node in categoryTree"
-            :key="node.id"
-            :node="node"
-            :selectedCategories="selectedCategories"
-            @toggle-category="toggleCategory"
-          />
+          <CategoryNode v-for="node in categoryTree" :key="node.id" :node="node" :selectedCategories="selectedCategories"
+            @toggle-category="toggleCategory" />
         </ul>
       </nav>
     </aside>
@@ -34,7 +29,8 @@
           </div>
 
           <h1 class="catalog-title">
-            {{ currentCategoryName || (selectedCategories.length ? `Выбрано категорий: ${selectedCategories.length}` : "Все товары") }}
+            {{ currentCategoryName || (selectedCategories.length ? `Выбрано категорий: ${selectedCategories.length}` :
+              "Все товары") }}
           </h1>
         </div>
 
@@ -42,21 +38,11 @@
         <div class="catalog-search">
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-              v-model="searchModel"
-              class="search-input"
-              type="text"
-              placeholder="Поиск по названию, бренду или штрихкоду…"
-              @input="onSearchInput"
-              @keydown.enter.prevent="applyFilters"
-            />
-            <button
-              v-if="searchModel"
-              class="search-clear"
-              @click="clearSearch"
-              aria-label="Очистить поиск"
-              title="Очистить"
-            >
+            <input v-model="searchModel" class="search-input" type="text"
+              placeholder="Поиск по названию, бренду или штрихкоду…" @input="onSearchInput"
+              @keydown.enter.prevent="applyFilters" />
+            <button v-if="searchModel" class="search-clear" @click="clearSearch" aria-label="Очистить поиск"
+              title="Очистить">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -72,56 +58,30 @@
           <div class="filter-block filter-price">
             <div class="filter-label">Цена</div>
             <div class="price-inputs">
-              <input
-                type="number"
-                placeholder="От"
-                v-model.number="priceFromModel"
-                @change="applyFilters"
-              />
-              <input
-                type="number"
-                placeholder="До"
-                v-model.number="priceToModel"
-                @change="applyFilters"
-              />
+              <input type="number" placeholder="От" v-model.number="priceFromModel" @change="applyFilters" />
+              <input type="number" placeholder="До" v-model.number="priceToModel" @change="applyFilters" />
             </div>
           </div>
 
           <!-- BRAND -->
-          <div
-            class="filter-block filter-brand"
-            :class="{ open: openFilters.brand }"
-          >
+          <div class="filter-block filter-brand" :class="{ open: openFilters.brand }">
             <div class="filter-label">Бренд</div>
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('brand')">
                 <span class="filter-head-text">
-                  {{ brandModel.length ? (brandModel.length <= 2 ? brandModel.join(" · ") : `Выбрано: ${brandModel.length}`) : "Все" }}
-                </span>
-                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
+                  {{ brandModel.length ? (brandModel.length <= 2 ? brandModel.join(" · ") : `Выбрано: ${brandModel.length}`) : " Все" }} </span>
+                    <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
               </div>
 
-              <div
-                v-show="openFilters.brand"
-                class="filter-dropdown-body"
-                :class="{ scrollable: !isMobile && brands.length > 6 }"
-              >
+              <div v-show="openFilters.brand" class="filter-dropdown-body"
+                :class="{ scrollable: !isMobile && brands.length > 6 }">
                 <label class="filter-checkbox filter-all">
-                  <input
-                    type="checkbox"
-                    :checked="!brandModel.length"
-                    @change="brandModel = []; applyFilters();"
-                  />
+                  <input type="checkbox" :checked="!brandModel.length" @change="brandModel = []; applyFilters();" />
                   <span>Все</span>
                 </label>
 
                 <label v-for="b in brands" :key="b" class="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    :value="b"
-                    v-model="brandModel"
-                    @change="applyFilters"
-                  />
+                  <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
                   <span>{{ b }}</span>
                 </label>
               </div>
@@ -129,12 +89,8 @@
           </div>
 
           <!-- ATTRIBUTES -->
-          <div
-            class="filter-block filter-attribute"
-            :class="{ open: openFilters[attr] }"
-            v-for="(block, attr) in attributeFilters"
-            :key="attr"
-          >
+          <div class="filter-block filter-attribute" :class="{ open: openFilters[attr] }"
+            v-for="(block, attr) in attributeFilters" :key="attr">
             <div class="filter-label">{{ attr }}</div>
 
             <div class="filter-dropdown">
@@ -145,39 +101,20 @@
                 <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
               </div>
 
-              <div
-                v-show="openFilters[attr]"
-                class="filter-dropdown-body"
-                :class="{ scrollable: !isMobile && (block.values?.length || 0) > 6 }"
-              >
+              <div v-show="openFilters[attr]" class="filter-dropdown-body"
+                :class="{ scrollable: !isMobile && (block.values?.length || 0) > 6 }">
                 <label class="filter-checkbox filter-all">
-                  <input
-                    type="checkbox"
-                    :checked="isAttrAllSelected(attr)"
-                    @change="selectAttrAll(attr)"
-                  />
+                  <input type="checkbox" :checked="isAttrAllSelected(attr)" @change="selectAttrAll(attr)" />
                   <span>Все</span>
                 </label>
 
-                <label
-                  v-for="v in block.values"
-                  :key="v.value"
-                  class="filter-checkbox"
-                >
-                  <input
-                    type="checkbox"
-                    :value="v.value"
-                    v-model="attributeModels[attr]"
-                    @change="onAttrValueChange(attr)"
-                  />
+                <label v-for="v in block.values" :key="v.value" class="filter-checkbox">
+                  <input type="checkbox" :value="v.value" v-model="attributeModels[attr]"
+                    @change="onAttrValueChange(attr)" />
 
                   <span class="filter-option">
-                    <span
-                      v-if="block.ui_render === 'color'"
-                      class="color-dot"
-                      :class="{ empty: !v.meta?.color }"
-                      :style="v.meta?.color ? { background: v.meta.color } : {}"
-                    ></span>
+                    <span v-if="block.ui_render === 'color'" class="color-dot" :class="{ empty: !v.meta?.color }"
+                      :style="v.meta?.color ? { background: v.meta.color } : {}"></span>
 
                     <span class="filter-option-text">{{ v.value }}</span>
                   </span>
@@ -191,18 +128,8 @@
       <!-- ================= MOBILE FILTER BAR ================= -->
       <div v-if="isMobile && hasActiveCategory" class="mobile-filter-bar">
         <div class="mobile-price">
-          <input
-            type="number"
-            placeholder="От"
-            v-model.number="priceFromModel"
-            @change="applyFilters"
-          />
-          <input
-            type="number"
-            placeholder="До"
-            v-model.number="priceToModel"
-            @change="applyFilters"
-          />
+          <input type="number" placeholder="От" v-model.number="priceFromModel" @change="applyFilters" />
+          <input type="number" placeholder="До" v-model.number="priceToModel" @change="applyFilters" />
         </div>
 
         <button class="mobile-filter-btn" @click="showMobileFilters = true">
@@ -253,23 +180,14 @@
     </section>
 
     <!-- ================= MOBILE FILTERS MODAL ================= -->
-    <div
-      v-if="showMobileFilters"
-      class="mobile-filters-overlay"
-      @click.self="
-        showMobileFilters = false;
-        mobileView = 'root';
-        activeMobileAttr = null;
-      "
-    >
+    <div v-if="showMobileFilters" class="mobile-filters-overlay" @click.self="
+      showMobileFilters = false;
+    mobileView = 'root';
+    activeMobileAttr = null;
+    ">
       <div class="mobile-filters-panel">
         <div class="mobile-filters-header">
-          <button
-            v-if="mobileView !== 'root'"
-            class="back-btn"
-            @click="mobileView = 'root'"
-            title="Назад"
-          >
+          <button v-if="mobileView !== 'root'" class="back-btn" @click="mobileView = 'root'" title="Назад">
             <i class="fa-solid fa-arrow-left"></i>
           </button>
 
@@ -277,15 +195,11 @@
             {{ mobileView === "root" ? "Фильтры" : activeMobileAttr || "Бренд" }}
           </div>
 
-          <button
-            class="close-btn"
-            @click="
-              showMobileFilters = false;
-              mobileView = 'root';
-              activeMobileAttr = null;
-            "
-            title="Закрыть"
-          >
+          <button class="close-btn" @click="
+            showMobileFilters = false;
+          mobileView = 'root';
+          activeMobileAttr = null;
+          " title="Закрыть">
             <i class="fa-solid fa-x"></i>
           </button>
         </div>
@@ -296,12 +210,8 @@
             <i class="fa-solid fa-chevron-right cat-arrow"></i>
           </div>
 
-          <div
-            v-for="(vals, attr) in attributeFilters"
-            :key="attr"
-            class="mobile-filter-item"
-            @click="activeMobileAttr = attr; mobileView = 'attr';"
-          >
+          <div v-for="(vals, attr) in attributeFilters" :key="attr" class="mobile-filter-item"
+            @click="activeMobileAttr = attr; mobileView = 'attr';">
             {{ attr }}
             <i class="fa-solid fa-chevron-right cat-arrow"></i>
           </div>
@@ -309,54 +219,29 @@
 
         <div v-if="mobileView === 'brand'" class="mobile-filter-values">
           <label class="filter-checkbox filter-all">
-            <input
-              type="checkbox"
-              :checked="!brandModel.length"
-              @change="brandModel = []; applyFilters();"
-            />
+            <input type="checkbox" :checked="!brandModel.length" @change="brandModel = []; applyFilters();" />
             <span>Все</span>
           </label>
 
           <label v-for="b in brands" :key="b" class="filter-checkbox">
-            <input
-              type="checkbox"
-              :value="b"
-              v-model="brandModel"
-              @change="applyFilters"
-            />
+            <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
             <span>{{ b }}</span>
           </label>
         </div>
 
         <div v-if="mobileView === 'attr'" class="mobile-filter-values">
           <label class="filter-checkbox filter-all">
-            <input
-              type="checkbox"
-              :checked="isAttrAllSelected(activeMobileAttr)"
-              @change="selectAttrAll(activeMobileAttr)"
-            />
+            <input type="checkbox" :checked="isAttrAllSelected(activeMobileAttr)"
+              @change="selectAttrAll(activeMobileAttr)" />
             <span>Все</span>
           </label>
 
-          <label
-            v-for="v in attributeFilters[activeMobileAttr]?.values || []"
-            :key="v.value"
-            class="filter-checkbox"
-          >
-            <input
-              type="checkbox"
-              :value="v.value"
-              v-model="attributeModels[activeMobileAttr]"
-              @change="applyFilters"
-            />
+          <label v-for="v in attributeFilters[activeMobileAttr]?.values || []" :key="v.value" class="filter-checkbox">
+            <input type="checkbox" :value="v.value" v-model="attributeModels[activeMobileAttr]" @change="applyFilters" />
 
             <span class="filter-option">
-              <span
-                v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
-                class="color-dot"
-                :class="{ empty: !v.meta?.color }"
-                :style="v.meta?.color ? { background: v.meta.color } : {}"
-              ></span>
+              <span v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'" class="color-dot"
+                :class="{ empty: !v.meta?.color }" :style="v.meta?.color ? { background: v.meta.color } : {}"></span>
 
               <span class="filter-option-text">{{ v.value }}</span>
             </span>
@@ -366,28 +251,85 @@
     </div>
 
     <!-- ================= MOBILE CATEGORIES ================= -->
-    <div v-if="isMobile" class="mobile-cats-btn" @click="showMobileCats = true">
-      ☰
+<!-- ================= MOBILE CATEGORIES (DRILLDOWN) ================= -->
+<div v-if="isMobile" class="mobile-cats-btn" @click="openMobileCats">
+  ☰
+</div>
+
+<div
+  v-if="showMobileCats"
+  class="mobile-cats-overlay"
+  @click.self="closeMobileCats"
+>
+  <div class="mobile-cats-panel">
+    <div class="mobile-cats-header">
+      <button
+        v-if="mobileCatsStack.length"
+        class="mcat-back"
+        @click="backMobileCat"
+        title="Назад"
+      >
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+
+      <span class="mcat-title">{{ mobileCatsTitle }}</span>
+
+      <button class="mcat-close" @click="closeMobileCats" title="Закрыть">
+        ✕
+      </button>
     </div>
 
-    <div v-if="showMobileCats" class="mobile-cats-overlay" @click.self="showMobileCats = false">
-      <div class="mobile-cats-panel">
-        <div class="mobile-cats-header">
-          <span>Категории</span>
-          <button @click="showMobileCats = false">✕</button>
+    <div class="mcat-list">
+      <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
+        <!-- выбор категории -->
+        <button
+          class="mcat-check"
+          :class="{ on: selectedCategories.includes(c.code) }"
+          @click.stop="toggleCategory(c.code)"
+          :title="selectedCategories.includes(c.code) ? 'Снять выбор' : 'Выбрать'"
+        >
+          <i v-if="selectedCategories.includes(c.code)" class="fa-solid fa-check"></i>
+        </button>
+
+        <!-- название (тоже выбирает) -->
+        <div class="mcat-name" @click="toggleCategory(c.code)">
+          {{ c.name }}
         </div>
 
-        <ul class="category-tree-root">
-          <CategoryNode
-            v-for="node in categoryTree"
-            :key="node.id"
-            :node="node"
-            :selectedCategories="selectedCategories"
-            @toggle-category="toggleCategory"
-          />
-        </ul>
+        <!-- открыть подкатегории -->
+        <button
+          v-if="hasChildren(c)"
+          class="mcat-next"
+          @click.stop="openMobileCat(c)"
+          title="Подкатегории"
+        >
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div v-if="!mobileCatsList.length" class="mcat-empty">
+        Нет подкатегорий
       </div>
     </div>
+
+    <div class="mcat-footer">
+      <button class="mcat-done" @click="closeMobileCats">
+        Готово
+        <span v-if="selectedCategories.length" class="mcat-count">
+          {{ selectedCategories.length }}
+        </span>
+      </button>
+
+      <button
+        v-if="selectedCategories.length"
+        class="mcat-clear"
+        @click="selectedCategories = []"
+      >
+        Сбросить
+      </button>
+    </div>
+  </div>
+</div>
   </div>
 </template>
 
@@ -423,6 +365,68 @@ const categories = ref([]);
 const selectedCategories = ref([]);
 const showMobileCats = ref(false);
 
+/* ================= MOBILE CATS (DRILLDOWN) ================= */
+const mobileCatsParent = ref(null);       // null = root
+const mobileCatsStack = ref([]);          // стек parentId (строки)
+
+const catsById = computed(() => {
+  const m = new Map();
+  categories.value.forEach((c) => m.set(String(c.id), c));
+  return m;
+});
+
+const childrenByParent = computed(() => {
+  const map = {}; // key: "root" | "<id>"
+  categories.value.forEach((c) => {
+    const parentKey = c.parent ? String(c.parent) : "root";
+    (map[parentKey] ||= []).push(c);
+  });
+
+  // сортировка внутри каждого уровня
+  Object.keys(map).forEach((k) => {
+    map[k].sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
+  });
+
+  return map;
+});
+
+const mobileCatsTitle = computed(() => {
+  if (!mobileCatsParent.value) return "Категории";
+  const node = catsById.value.get(String(mobileCatsParent.value));
+  return node?.name || "Категории";
+});
+
+const mobileCatsList = computed(() => {
+  const key = mobileCatsParent.value ? String(mobileCatsParent.value) : "root";
+  return childrenByParent.value[key] || [];
+});
+
+function hasChildren(cat) {
+  return (childrenByParent.value[String(cat.id)] || []).length > 0;
+}
+
+function openMobileCats() {
+  showMobileCats.value = true;
+  mobileCatsParent.value = null;
+  mobileCatsStack.value = [];
+}
+
+function closeMobileCats() {
+  showMobileCats.value = false;
+  mobileCatsParent.value = null;
+  mobileCatsStack.value = [];
+}
+
+function openMobileCat(cat) {
+  mobileCatsStack.value.push(mobileCatsParent.value);
+  mobileCatsParent.value = String(cat.id);
+}
+
+function backMobileCat() {
+  const prev = mobileCatsStack.value.pop();
+  mobileCatsParent.value = prev ?? null;
+}
+
 function toggleCategory(code) {
   if (selectedCategories.value.includes(code)) {
     selectedCategories.value = selectedCategories.value.filter((c) => c !== code);
@@ -430,7 +434,6 @@ function toggleCategory(code) {
     selectedCategories.value.push(code);
   }
 
-  if (isMobile.value) showMobileCats.value = false;
 }
 
 /* ================= mobile detect (clean) ================= */
@@ -640,21 +643,21 @@ const syncingFromRoute = ref(false);
 function applyFilters() {
   if (syncingFromRoute.value) return;
 
-const qRaw = String(searchModel.value || "").trim();
+  const qRaw = String(searchModel.value || "").trim();
 
-const query = {
-  cat: currentCategory.value || undefined,
-  q: qRaw || undefined,
-  brand: brandModel.value.length ? brandModel.value : undefined,
-  price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
-  price_to: priceToModel.value !== null ? priceToModel.value : undefined,
-};
+  const query = {
+    cat: currentCategory.value || undefined,
+    q: qRaw || undefined,
+    brand: brandModel.value.length ? brandModel.value : undefined,
+    price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
+    price_to: priceToModel.value !== null ? priceToModel.value : undefined,
+  };
 
-for (const [k, v] of Object.entries(attributeModels.value)) {
-  if (Array.isArray(v) && v.length) query[`attr_${k}`] = v;
-}
+  for (const [k, v] of Object.entries(attributeModels.value)) {
+    if (Array.isArray(v) && v.length) query[`attr_${k}`] = v;
+  }
 
-router.replace({ query });
+  router.replace({ query });
 
 }
 
@@ -700,19 +703,19 @@ const filteredProducts = computed(() => {
   let list = categoryProducts.value;
 
   // search
-const qRaw = String(searchModel.value || "");
-const tokens = normalize(qRaw)
-  .split(" ")
-  .filter(Boolean)
-  // можно игнорить 1-буквенные (но цифры оставить)
-  .filter((t) => t.length >= 2 || /^\d+$/.test(t));
+  const qRaw = String(searchModel.value || "");
+  const tokens = normalize(qRaw)
+    .split(" ")
+    .filter(Boolean)
+    // можно игнорить 1-буквенные (но цифры оставить)
+    .filter((t) => t.length >= 2 || /^\d+$/.test(t));
 
-if (tokens.length) {
-  list = list.filter((p) => {
-    const hay = p._search || "";
-    return tokens.every((t) => hay.includes(t));
-  });
-}
+  if (tokens.length) {
+    list = list.filter((p) => {
+      const hay = p._search || "";
+      return tokens.every((t) => hay.includes(t));
+    });
+  }
 
 
   // brand
@@ -755,6 +758,8 @@ function loadMore() {
 <style scoped>
 /* ✅ важно для scoped */
 :global(:root) {
+  --site-header-h: 40px;
+
   --bg-main: #f4f6fb;
   --bg-panel: #ffffff;
   --bg-soft: #f0f2f7;
@@ -1128,7 +1133,6 @@ function loadMore() {
   gap: 18px;
 }
 
-/* product card (быстрее + красивее) */
 .product-card {
   min-width: 0;
   background: var(--bg-panel);
@@ -1148,7 +1152,6 @@ function loadMore() {
   box-shadow: var(--shadow-md);
 }
 
-/* одинаковая высота фото */
 .product-image {
   border-radius: 14px;
   overflow: hidden;
@@ -1156,16 +1159,15 @@ function loadMore() {
   background: #fff;
   aspect-ratio: 1 / 1;
   display: flex;
-  min-width: 0; overflow: hidden;
+  min-width: 0;
 }
 
-/* галерея внутри должна занимать 100% */
-.product-image :deep(.pg) {
+.product-image :deep(.pg),
+.product-image :deep(.pcg) {
   width: 100%;
   height: 100%;
 }
 
-/* стрелки показываем только при hover карточки (и не мешают на мобилке) */
 .product-card :deep(.swiper-button-next),
 .product-card :deep(.swiper-button-prev) {
   opacity: 0;
@@ -1189,7 +1191,6 @@ function loadMore() {
   line-height: 1.35;
   font-weight: 700;
   color: var(--text-main);
-
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1294,7 +1295,6 @@ function loadMore() {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
-.load-more-count { color: var(--text-muted); font-weight: 800; }
 
 /* =========================
    MOBILE
@@ -1342,24 +1342,33 @@ function loadMore() {
     cursor: pointer;
   }
 
+  /* ✅ FIX: overlay начинается ниже fixed header */
   .mobile-filters-overlay {
     position: fixed;
-    inset: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--site-header-h);
     background: rgba(0, 0, 0, 0.45);
-    z-index: 300;
+    z-index: 3000;
   }
 
+  /* ✅ FIX: панель тоже ниже header */
   .mobile-filters-panel {
     position: fixed;
-    inset: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--site-header-h);
+
     width: 100%;
-    height: 100vh;
+    height: auto;
+
     background: #fff;
     display: flex;
     flex-direction: column;
     padding: 0;
-    padding-top: 70px;
-    z-index: 310;
+    z-index: 3100;
   }
 
   .mobile-filters-header {
@@ -1371,7 +1380,9 @@ function loadMore() {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border-soft);
-    background: #fff;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 5;
   }
 
@@ -1407,6 +1418,9 @@ function loadMore() {
     gap: 10px;
   }
 
+  /* =========================
+     MOBILE CATS (DRILLDOWN)
+  ========================= */
   .mobile-cats-btn {
     position: fixed;
     bottom: 16px;
@@ -1421,48 +1435,220 @@ function loadMore() {
     justify-content: center;
     font-size: 22px;
     font-weight: 900;
-    z-index: 1000;
+    z-index: 6000;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.25);
   }
 
   .mobile-cats-overlay {
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 500;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--site-header-h);
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 4000;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .mobile-cats-panel {
     position: fixed;
-    inset: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: var(--site-header-h);
+
     background: #fff;
-    padding: 70px 16px 16px;
-    overflow-y: auto;
-    z-index: 1100;
+    z-index: 4100;
+
+    display: flex;
+    flex-direction: column;
+
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -18px 55px rgba(0,0,0,0.22);
+
+    overflow: hidden;
+    animation: catsSlideUp 0.22s ease;
+  }
+
+  @keyframes catsSlideUp {
+    from { transform: translateY(14px); opacity: 0.7; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
   .mobile-cats-header {
     position: sticky;
     top: 0;
-    display: flex;
-    justify-content: space-between;
+
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
     align-items: center;
-    margin-bottom: 12px;
-    background: #fff;
+    gap: 8px;
+
+    padding: 12px 10px;
+
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    border-bottom: 1px solid var(--border-soft);
     z-index: 10;
-    padding: 10px 0;
   }
 
-  .mobile-cats-header span { font-size: 18px; font-weight: 900; }
-  .mobile-cats-header button { background: none; border: none; font-size: 22px; cursor: pointer; }
+  .mcat-title {
+    font-size: 16px;
+    font-weight: 950;
+    color: var(--text-main);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mcat-back,
+  .mcat-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+
+  .mcat-back:active,
+  .mcat-close:active { transform: scale(0.98); }
+
+  .mcat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px 12px;
+  }
+
+  .mcat-item {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+
+    margin-bottom: 10px;
+  }
+
+  .mcat-check {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111827;
+  }
+
+  .mcat-check.on {
+    border-color: rgba(4,0,255,0.35);
+    background: rgba(4,0,255,0.10);
+    color: var(--accent);
+  }
+
+  .mcat-name {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--text-main);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .mcat-next {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111827;
+  }
+
+  .mcat-empty {
+    padding: 16px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 800;
+  }
+
+  .mcat-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border-soft);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .mcat-done {
+    flex: 1;
+    border: 1px solid rgba(4,0,255,0.22);
+    background: rgba(4,0,255,0.10);
+    color: #111827;
+    font-weight: 950;
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .mcat-count {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 950;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .mcat-clear {
+    border: 1px solid var(--border-soft);
+    background: #fff;
+    color: #111827;
+    font-weight: 900;
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+  }
 }
 
 @media (max-width: 768px) {
   .catalog-page { flex-direction: column; }
   .catalog-sidebar { display: none; }
   .catalog-content { padding: 16px; padding-bottom: 90px; }
-
   .products-grid { grid-template-columns: 1fr; }
-
   .catalog-title { font-size: 24px; }
   .product-price { font-size: 17px; }
 }
