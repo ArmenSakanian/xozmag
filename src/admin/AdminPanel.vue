@@ -52,6 +52,14 @@
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
       </router-link>
+            <router-link to="/admin/barcode" class="tile">
+        <span class="ico"><i class="fa-solid fa-barcode"></i></span>
+        <span class="t">
+          <span class="t-title">Штрихкод</span>
+          <span class="t-desc">Создать/изменить размер штрихкода</span>
+        </span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </router-link>
     </section>
   </div>
 </template>

@@ -1,8 +1,9 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . "/../db.php";
 
 $search = $_GET['search'] ?? '';
+$search = trim($search);
 
 if ($search !== '') {
 
@@ -19,18 +20,33 @@ if ($search !== '') {
     ");
 
     $pattern = "%$search%";
-
-    $stmt->execute([
-        ":s" => $pattern
-    ]);
+    $stmt->execute([":s" => $pattern]);
 
 } else {
-
-    $stmt = $pdo->query("
-        SELECT * FROM barcodes
-        ORDER BY id DESC
-    ");
-
+    $stmt = $pdo->query("SELECT * FROM barcodes ORDER BY id DESC");
 }
 
-echo json_encode($stmt->fetchAll());
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+/**
+ * Авто-починка старых фото:
+ * раньше create мог сохранить файл в /api/photo_product_barcode/,
+ * но в базе стояло /photo_product_barcode/...
+ * Тогда отдаём URL /api/photo_product_barcode/... чтобы фото открылось.
+ */
+foreach ($rows as &$r) {
+    if (!empty($r["photo"])) {
+        $p = $r["photo"];
+
+        $rootPath = $_SERVER["DOCUMENT_ROOT"] . $p;
+        if (!file_exists($rootPath)) {
+            $altPath = $_SERVER["DOCUMENT_ROOT"] . "/api" . $p;
+            if (file_exists($altPath)) {
+                $r["photo"] = "/api" . $p;
+            }
+        }
+    }
+}
+unset($r);
+
+echo json_encode($rows);

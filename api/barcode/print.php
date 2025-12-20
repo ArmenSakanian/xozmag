@@ -2,130 +2,184 @@
 require_once __DIR__ . "/../db.php";
 require_once __DIR__ . "/../libs/tcpdf/tcpdf.php";
 
-/* === ПАРАМЕТРЫ === */
-$id        = intval($_GET['id'] ?? 0);
-$withName  = intval($_GET['withName'] ?? 0);
-$withPrice = intval($_GET['withPrice'] ?? 0);
-$size      = $_GET['size'] ?? "42x25";
+function ensureLabelSizesTable(PDO $pdo): void {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS barcode_label_sizes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            value VARCHAR(32) NOT NULL UNIQUE,
+            text VARCHAR(64) NOT NULL,
+            width_mm DECIMAL(6,2) NOT NULL,
+            height_mm DECIMAL(6,2) NOT NULL,
+            orientation CHAR(1) NOT NULL DEFAULT 'L'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
 
-/* === ПОЛУЧЕНИЕ ТОВАРА === */
-$stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
-$stmt->execute([$id]);
-$item = $stmt->fetch();
-
-if (!$item) die("Not found");
-
-/* === ПОДГОТОВКА ШТРИХКОДА === */
-$cleanCode = preg_replace('/\D/', '', $item["barcode"]);
-if (!$cleanCode) die("Invalid barcode");
-
-/* === ОПРЕДЕЛЕНИЕ ТИПА === */
-if (strlen($cleanCode) === 13) {
-    $barcodeType = 'EAN13';
-} else {
-    $barcodeType = 'C128';
+    // дефолты
+    $pdo->exec("
+        INSERT IGNORE INTO barcode_label_sizes (value, text, width_mm, height_mm, orientation) VALUES
+        ('42x25', '42 × 25 мм', 42, 25, 'L'),
+        ('30x20', '30 × 20 мм', 30, 20, 'L')
+    ");
 }
 
-/* === РАЗМЕРЫ === */
-switch ($size) {
+function getLabelSize(PDO $pdo, string $value): array {
+    ensureLabelSizesTable($pdo);
 
-    case "30x20":
-        $width = 30;
-        $height = 20;
-        $orientation = "L";
-        break;
+    $value = trim($value);
+    if ($value === "") $value = "42x25";
 
-    default: // 42x25
-        $width = 42;
-        $height = 25;
-        $orientation = "L";
+    $stmt = $pdo->prepare("SELECT value, text, width_mm, height_mm, orientation FROM barcode_label_sizes WHERE value = ? LIMIT 1");
+    $stmt->execute([$value]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row) {
+        return [
+            "value" => (string)$row["value"],
+            "text"  => (string)$row["text"],
+            "w"     => (float)$row["width_mm"],
+            "h"     => (float)$row["height_mm"],
+            "o"     => strtoupper((string)$row["orientation"] ?: "L"),
+        ];
+    }
+
+    // fallback: парсим "58x40"
+    if (preg_match('/^\s*(\d{2,3})\s*[xх]\s*(\d{2,3})\s*$/u', $value, $m)) {
+        $w = (float)$m[1];
+        $h = (float)$m[2];
+        return [
+            "value" => $m[1]."x".$m[2],
+            "text"  => $m[1]." × ".$m[2]." мм",
+            "w"     => $w,
+            "h"     => $h,
+            "o"     => "L",
+        ];
+    }
+
+    return ["value"=>"42x25","text"=>"42 × 25 мм","w"=>42.0,"h"=>25.0,"o"=>"L"];
 }
 
-/* === TCPDF === */
-$pdf = new TCPDF($orientation, "mm", [$width, $height], true, "UTF-8", false);
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-$pdf->SetMargins(1, 1, 1);
-$pdf->SetAutoPageBreak(false);
-$pdf->AddPage();
+function clamp(float $v, float $min, float $max): float {
+    return max($min, min($max, $v));
+}
 
-/* === ФУНКЦИЯ ПОДГОНА ТЕКСТА === */
-function fitOrWrap($pdf, $text, $widthMm, $maxFont = 8) {
+function estimateModules(string $type, string $code): int {
+    if ($type === "EAN13") return 95;
+    $len = mb_strlen($code, "UTF-8");
+    return max(80, 11 * $len + 35);
+}
+
+function fitOrWrap($pdf, string $text, float $widthMm, float $maxFont): array {
+    $text = trim($text);
+    if ($text === "") return ["lines"=>0];
 
     $font = $maxFont;
     while ($font > 5) {
         $pdf->SetFont('dejavusans', '', $font, '', true);
-        if ($pdf->GetStringWidth($text) <= $widthMm)
-            return ["lines" => 1, "font" => $font];
+        if ($pdf->GetStringWidth($text) <= $widthMm) {
+            return ["lines" => 1, "font" => $font, "l1" => $text, "l2" => ""];
+        }
         $font -= 0.4;
     }
 
-    $words = explode(" ", $text);
-    $l1 = ""; 
-    $l2 = "";
+    // 2 строки
+    $words = preg_split('/\s+/u', $text);
+    $l1 = ""; $l2 = "";
 
     foreach ($words as $w) {
-        if ($pdf->GetStringWidth($l1 . " " . $w) <= $widthMm) {
-            $l1 .= ($l1 ? " " : "") . $w;
+        $try = $l1 === "" ? $w : ($l1 . " " . $w);
+        if ($pdf->GetStringWidth($try) <= $widthMm) {
+            $l1 = $try;
         } else {
-            $l2 .= ($l2 ? " " : "") . $w;
+            $l2 = $l2 === "" ? $w : ($l2 . " " . $w);
         }
     }
 
-    return [
-        "lines" => 2,
-        "font"  => 6,
-        "l1"    => $l1,
-        "l2"    => $l2
-    ];
+    $pdf->SetFont('dejavusans', '', 6, '', true);
+    return ["lines" => 2, "font" => 6, "l1" => $l1, "l2" => $l2];
 }
+
+/* === ПАРАМЕТРЫ === */
+$id        = intval($_GET['id'] ?? 0);
+$withName  = intval($_GET['withName'] ?? 0);
+$withPrice = intval($_GET['withPrice'] ?? 0);
+$sizeVal   = (string)($_GET['size'] ?? "42x25");
+
+$stmt = $pdo->prepare("SELECT * FROM barcodes WHERE id = ?");
+$stmt->execute([$id]);
+$item = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$item) die("Not found");
+
+/* === ШТРИХКОД: тип + код === */
+$raw = trim((string)$item["barcode"]);
+$digits = preg_replace('/\D+/', '', $raw);
+
+if (strlen($digits) === 13) {
+    $barcodeType = "EAN13";
+    $code = $digits;
+} else {
+    $barcodeType = "C128B";
+    $code = preg_replace('/\s+/u', '', $raw);
+    if ($code === "") $code = $digits;
+    if ($code === "") die("Invalid barcode");
+}
+
+/* === РАЗМЕР === */
+$cfg = getLabelSize($pdo, $sizeVal);
+$w = $cfg["w"];
+$h = $cfg["h"];
+$o = $cfg["o"] === "P" ? "P" : "L";
+
+/* === PDF === */
+$pdf = new TCPDF($o, "mm", [$w, $h], true, "UTF-8", false);
+$pdf->setPrintHeader(false);
+$pdf->setPrintFooter(false);
+$pdf->SetAutoPageBreak(false);
+$pdf->SetMargins(0, 0, 0);
+$pdf->AddPage();
+
+$margin = 1.2;
+$maxW = $w - 2 * $margin;
+$y = $margin;
 
 /* === НАЗВАНИЕ === */
-$barcodeTop = 2;
-
 if ($withName && !empty($item["product_name"])) {
+    $maxFont = ($h <= 20) ? 7.2 : 8.8;
+    $fit = fitOrWrap($pdf, (string)$item["product_name"], $maxW, $maxFont);
 
-    $maxWidth = $width - 3;
-    $maxFont = ($size === "30x20") ? 7 : 8;
-
-    $fit = fitOrWrap($pdf, $item["product_name"], $maxWidth, $maxFont);
-    $pdf->SetFont('dejavusans', '', $fit["font"], '', true);
-
-    if ($fit["lines"] == 1) {
-        $pdf->SetXY(1.5, 1);
-        $pdf->Cell($maxWidth, 3.5, $item["product_name"], 0, 0, "C");
-        $barcodeTop = ($size === "30x20") ? 5 : 6;
-    } else {
-        $pdf->SetXY(1.5, 1);
-        $pdf->Cell($maxWidth, 3.2, $fit["l1"], 0, 0, "C");
-
-        $pdf->SetXY(1.5, 4);
-        $pdf->Cell($maxWidth, 3.2, $fit["l2"], 0, 0, "C");
-
-        $barcodeTop = ($size === "30x20") ? 7.5 : 9;
+    if (($fit["lines"] ?? 0) === 1) {
+        $pdf->SetFont('dejavusans', '', $fit["font"], '', true);
+        $pdf->SetXY($margin, $y);
+        $pdf->Cell($maxW, ($h <= 20 ? 3.2 : 4.0), $fit["l1"], 0, 0, "C");
+        $y += ($h <= 20 ? 3.8 : 4.6);
+    } elseif (($fit["lines"] ?? 0) === 2) {
+        $pdf->SetFont('dejavusans', '', $fit["font"], '', true);
+        $lineH = ($h <= 20) ? 3.0 : 3.6;
+        $pdf->SetXY($margin, $y);
+        $pdf->Cell($maxW, $lineH, $fit["l1"], 0, 0, "C");
+        $pdf->SetXY($margin, $y + $lineH);
+        $pdf->Cell($maxW, $lineH, $fit["l2"], 0, 0, "C");
+        $y += (2 * $lineH + 0.6);
     }
 }
 
-/* === ПАРАМЕТРЫ ШТРИХКОДА === */
-if ($size === "42x25") {
-
-    if ($barcodeType === 'EAN13') {
-        $barcodeHeight = 13;
-        $barcodeModule = 0.35;
-        $barcodeFont   = 8;
-    } else {
-        $barcodeHeight = 10;
-        $barcodeModule = 0.30;
-        $barcodeFont   = 7;
-    }
-
-} else { // 30x20
-    $barcodeHeight = 9;
-    $barcodeModule = 0.28;
-    $barcodeFont   = 7;
+/* === ЦЕНА: резервируем место снизу === */
+$priceH = 0.0;
+$priceText = "";
+if ($withPrice && !empty($item["price"])) {
+    $priceText = (string)$item["price"] . " руб";
+    $priceH = ($h <= 20) ? 3.4 : 4.8;
 }
 
-/* === РИСОВАНИЕ ШТРИХКОДА === */
+/* === ШТРИХКОД: авто-подбор модуля под длину === */
+$availableH = $h - $y - $priceH - $margin;
+$barcodeH = max(($h <= 20 ? 8.6 : 10.0), $availableH);
+
+$modules = estimateModules($barcodeType === "EAN13" ? "EAN13" : "C128", $code);
+$moduleW = clamp($maxW / $modules, 0.18, ($w <= 30 ? 0.30 : 0.40));
+
+$fontSize = ($h <= 20) ? 7 : 8;
+if ($barcodeType === "EAN13") $fontSize = ($h <= 20) ? 7 : 8;
+
 $style = [
     'border' => false,
     'padding' => 0,
@@ -133,34 +187,27 @@ $style = [
     'bgcolor' => false,
     'text' => true,
     'font' => 'dejavusans',
-    'fontsize' => $barcodeFont,
+    'fontsize' => $fontSize,
     'stretchtext' => false,
 ];
 
 $pdf->write1DBarcode(
-    $cleanCode,
+    $code,
     $barcodeType,
-    1.5,
-    $barcodeTop,
-    $width - 3,
-    $barcodeHeight,
-    $barcodeModule,
+    $margin,
+    $y,
+    $maxW,
+    $barcodeH,
+    $moduleW,
     $style,
-    'N'
+    'C'
 );
 
 /* === ЦЕНА === */
-if ($withPrice && !empty($item["price"])) {
-
-    if ($size === "30x20") {
-        $pdf->SetFont('dejavusans', '', 6.5, '', true);
-        $pdf->SetXY(1, $height - 4);
-        $pdf->Cell($width - 2, 3, $item["price"] . " руб", 0, 0, "C");
-    } else {
-        $pdf->SetFont('dejavusans', '', 7.5, '', true);
-        $pdf->SetXY(1, $height - 5);
-        $pdf->Cell($width - 2, 4, $item["price"] . " руб", 0, 0, "C");
-    }
+if ($priceH > 0) {
+    $pdf->SetFont('dejavusans', '', ($h <= 20 ? 6.8 : 7.8), '', true);
+    $pdf->SetXY($margin, $h - $margin - $priceH);
+    $pdf->Cell($maxW, $priceH, $priceText, 0, 0, "C");
 }
 
-$pdf->Output("barcode-$cleanCode.pdf", "I");
+$pdf->Output("barcode.pdf", "I");

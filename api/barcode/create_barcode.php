@@ -1,16 +1,19 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . "/../db.php";
 
-/* === ПОЛУЧАЕМ ДАННЫЕ === */
+/* === ДАННЫЕ === */
 $code       = trim($_POST['barcode'] ?? "");
 $name       = trim($_POST['product_name'] ?? "");
 $sku        = trim($_POST['sku'] ?? "");
 $contractor = trim($_POST['contractor'] ?? "");
 $price      = trim($_POST['price'] ?? "");
-$stock      = trim($_POST['stock'] ?? ""); // ← НОВОЕ ПОЛЕ
+$stock      = trim($_POST['stock'] ?? "");
 
-/* === ВАЛИДАЦИЯ ПОЛЕЙ === */
+/* === НОРМАЛИЗАЦИЯ БАРКОДА: только цифры === */
+$code = preg_replace('/\D+/', '', $code);
+
+/* === ВАЛИДАЦИЯ === */
 if (!$code) {
     echo json_encode(["status" => "error", "message" => "Введите штрихкод"]);
     exit;
@@ -24,24 +27,34 @@ if (mb_strlen($name) < 2 && mb_strlen($sku) < 2 && mb_strlen($contractor) < 2) {
     exit;
 }
 
-/* === ФОТО === */
+/* === ФОТО (в корень сайта /photo_product_barcode/) === */
 $photoPath = null;
 
 if (!empty($_FILES['photo']['tmp_name'])) {
 
-    $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-    $fileName = $code . "_" . time() . "." . $ext;
+    $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
+    $allowed = ["jpg","jpeg","png","webp"];
 
-    $uploadPath = __DIR__ . '/../photo_product_barcode/' . $fileName;
+    if (!in_array($ext, $allowed, true)) {
+        echo json_encode(["status" => "error", "message" => "Фото: разрешены JPG/JPEG/PNG/WEBP"]);
+        exit;
+    }
+
+    $dir = $_SERVER["DOCUMENT_ROOT"] . "/photo_product_barcode/";
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    $fileName = $code . "_" . time() . "." . $ext;
+    $uploadPath = $dir . $fileName;
 
     if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
-        $photoPath = '/photo_product_barcode/' . $fileName;
+        $photoPath = "/photo_product_barcode/" . $fileName;
     }
 }
 
-/* === ВСТАВКА В БАЗУ === */
+/* === ВСТАВКА === */
 try {
-
     $stmt = $pdo->prepare("
         INSERT INTO barcodes (barcode, product_name, sku, contractor, price, stock, photo, created_at)
         VALUES (:barcode, :name, :sku, :contractor, :price, :stock, :photo, NOW())
@@ -58,23 +71,15 @@ try {
     ]);
 
 } catch (PDOException $e) {
-
-    if ($e->errorInfo[1] == 1062) {
-        echo json_encode([
-            "status" => "error",
-            "message" => "Штрихкод уже существует!"
-        ]);
+    if (!empty($e->errorInfo[1]) && (int)$e->errorInfo[1] === 1062) {
+        echo json_encode(["status" => "error", "message" => "Штрихкод уже существует!"]);
         exit;
     }
 
-    echo json_encode([
-        "status" => "error",
-        "message" => "Ошибка базы данных"
-    ]);
+    echo json_encode(["status" => "error", "message" => "Ошибка базы данных"]);
     exit;
 }
 
-/* === УСПЕХ === */
 echo json_encode([
     "status" => "success",
     "id"     => $pdo->lastInsertId(),

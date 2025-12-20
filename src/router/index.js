@@ -37,6 +37,10 @@ const routes = [
   component: () => import("@/admin/AdminOrder.vue"),
 },
 {
+  path: "/admin/barcode",
+  component: () => import("@/admin/BarcodeLabelSizesPage.vue"),
+},
+{
   path: "/product/:id",
   name: "product",
   component: () => import("@/page/ProductCartPage.vue"),

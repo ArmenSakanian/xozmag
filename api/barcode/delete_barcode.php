@@ -1,5 +1,5 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . "/../db.php";
 
 $id = intval($_GET['id'] ?? 0);
@@ -9,8 +9,7 @@ if ($id <= 0) {
     exit;
 }
 
-// Найдём запись, чтобы удалить фото
-$stmt = $pdo->prepare("SELECT photo FROM barcodes WHERE id = ?");
+$stmt = $pdo->prepare("SELECT photo FROM barcodes WHERE id = ? LIMIT 1");
 $stmt->execute([$id]);
 $item = $stmt->fetch();
 
@@ -19,13 +18,18 @@ if (!$item) {
     exit;
 }
 
-// Удаляем фото с диска
 if (!empty($item["photo"])) {
-    $path = $_SERVER["DOCUMENT_ROOT"] . $item["photo"];
+    $photo = $item["photo"];
+
+    // нормальный путь (корень)
+    $path = $_SERVER["DOCUMENT_ROOT"] . $photo;
     if (file_exists($path)) unlink($path);
+
+    // fallback: если старый файл лежит в /api
+    $alt = $_SERVER["DOCUMENT_ROOT"] . "/api" . $photo;
+    if (file_exists($alt)) unlink($alt);
 }
 
-// Удаляем строку
 $stmt = $pdo->prepare("DELETE FROM barcodes WHERE id = ?");
 $stmt->execute([$id]);
 
