@@ -1223,18 +1223,9 @@ function openProduct(p) {
 /* ✅ важно для scoped */
 :global(:root) {
   --site-header-h: 70px;
-
-  --bg-main: #f4f6fb;
-  --bg-panel: #ffffff;
   --bg-soft: #f0f2f7;
-
-  --text-main: #1b1e28;
   --text-muted: #6b7280;
   --text-light: #9aa1b2;
-
-  --accent: #0400ff;
-  --accent-2: #16a34a;
-  --accent-danger: #dc2626;
 
   --border-soft: #e4e7ef;
 
@@ -1247,13 +1238,7 @@ function openProduct(p) {
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-:global(body) {
-  background: var(--bg-main);
-}
 
-* {
-  box-sizing: border-box;
-}
 .color-dot {
   width: 12px;
   height: 12px;

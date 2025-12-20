@@ -1,5 +1,4 @@
 <template>
-  <div id="app">
     <AppHeader />
 
     <main class="page-content">
@@ -7,7 +6,6 @@
     </main>
 
     <AppFooter />
-  </div>
 </template>
 
 <script setup>
@@ -33,9 +31,6 @@ import AppFooter from "@/components/AppFooter.vue";
   margin-top: 30px;
 }
 
-#app section > div {
-  padding: 0 10px;
-}
 
 /* Заголовок страницы */
 .page-title {

@@ -75,80 +75,130 @@
 </script>
 
 <style scoped>
-/* Обёртка, чтобы компонент не был на всю ширину */
-.info-wrapper {
+/* ===== Удобства магазина (под твой :root) ===== */
+
+.info-wrapper{
   max-width: 900px;
   margin: 0 auto;
+  padding: 18px 14px 30px;
+  color: var(--text-main);
 }
 
-.info-box {
-  background: var(--background-container);
-  padding: 30px;
-  border-radius: 18px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  color: #e7e7e7;
+.page-title{
+  margin: 6px 0 14px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
 }
 
-/* === ПК версия (как было) === */
-.info-grid {
+/* Основная карточка */
+.info-box{
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 22px 24px;
+}
+
+/* Сетка */
+.info-grid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 22px 26px;
+  gap: 14px;
 }
 
 /* Карточки */
-.item {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 16px 18px;
-  border-radius: 14px;
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+.item{
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 14px;
 }
 
-.label {
-  font-size: 14px;
-  color: #b8b8b8;
-  margin-bottom: 4px;
+/* Текст */
+.label{
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.value {
-  font-size: 18px;
-  font-weight: 600;
+.value{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text-main);
 }
 
-.value.yes {
-  color: var(--accent-color);
+/* Да/нет — без новых переменных, только через твои */
+.value.yes{
+  color: var(--accent-2);
 }
 
-.value.no {
-  color: #ff4e4e;
+.value.no{
+  color: var(--accent-danger);
 }
 
-/* === 🔥 Мобильная версия — 2 карточки в ряд === */
-@media (max-width: 600px) {
-  .info-box {
-    padding: 20px;
+/* Небольшой “бейдж” слева для yes/no */
+.value.yes::before,
+.value.no::before{
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  margin-right: 8px;
+  transform: translateY(-1px);
+}
+
+.value.yes::before{
+  background: var(--accent-2);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+}
+
+.value.no::before{
+  background: var(--accent-danger);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px){
+  .info-wrapper{
+    padding: 14px 12px 26px;
   }
 
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* две карточки в строке */
-    gap: 12px 12px;
+  .page-title{
+    font-size: 24px;
+    margin-bottom: 12px;
   }
 
-  .item {
-    padding: 12px 12px;      /* компактнее */
-    border-radius: 10px;
+  .info-box{
+    padding: 18px 16px;
   }
 
-  .label {
-    font-size: 13px;
-    margin-bottom: 2px;
+  /* 2 карточки в ряд */
+  .info-grid{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
-  .value {
-    font-size: 15px;
+  .item{
+    padding: 12px 12px;
+    border-radius: 12px;
+  }
+
+  .label{
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .value{
+    font-size: 14.5px;
   }
 }
-
 </style>
+

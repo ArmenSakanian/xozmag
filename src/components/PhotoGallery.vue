@@ -80,91 +80,182 @@ function setMode(val) {
 </script>
 
 <style scoped>
-/* Контейнер */
-.photo-gallery {
+/* ===== Фотогалерея (под твой :root) ===== */
+
+.photo-gallery{
   width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 18px 14px 30px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  color: var(--text-main);
 }
 
-
-/* Переключатели */
-.pg-switch {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 22px;
+.page-title{
+  margin: 6px 0 14px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
 }
 
-.pg-switch button {
-  padding: 10px 18px;
-  border: none;
-  background: var(--background-input);
-  color: white;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 15px;
-  transition: 0.2s;
-}
-
-.pg-switch button.active {
-  background: var(--accent-color);
-}
-
-/* Swiper */
-.pg-swiper {
-  max-width: 900px;
-  width: 100%;
-  margin: 0 auto;
-  position: relative;
-}
-
-/* Фото внутри слайдов */
-.pg-img {
-  width: 100%;
-  height: 230px;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-@media (max-width: 1024px) {
-  .pg-img {
-    height: 200px;
-  }
-}
-
-@media (max-width: 600px) {
-  .pg-img {
-    height: 200px;
-  }
-}
-
-/* --- СТРЕЛКИ SWIPER --- */
-
-/* Убираем дефолтный синий цвет */
-:root {
-  --swiper-navigation-color: white !important; /* Иконка — белая */
-  --swiper-theme-color: white !important;
-}
-
-/* Фон стрелки */
-.swiper-button-next,
-.swiper-button-prev {
-  background: var(--accent-color) !important; /* ФОН стрелок */
-  display: flex;
-  justify-content: center;
+/* ===== Переключатели ===== */
+.pg-switch{
+  display: inline-flex;
   align-items: center;
+  gap: 10px;
+
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+
+  margin: 6px 0 18px;
 }
 
-/* Иконка стрелки (белая) */
-.swiper-button-next:after,
-.swiper-button-prev:after {
-  font-size: 18px !important;
-  color: white !important;
+.pg-switch button{
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-main);
+
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+
+  transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-.swiper-button-disabled {
-  opacity: 0.4 !important;
+.pg-switch button:hover{
+  background: var(--bg-soft);
+  border-color: var(--border-soft);
+  transform: translateY(-1px);
+}
+
+.pg-switch button:active{
+  transform: translateY(0);
+}
+
+.pg-switch button.active{
+  background: var(--accent);
+  color: #fff;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 10px 22px rgba(4, 0, 231, 0.18);
+}
+
+/* ===== Swiper контейнер ===== */
+.pg-swiper{
+  width: 100%;
+  position: relative;
+
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+
+  padding: 14px 14px;
+}
+
+/* Внутренние отступы, чтобы стрелки не залезали на фото */
+:global(.pg-swiper .swiper){
+  padding: 0 6px;
+}
+
+/* Фото */
+.pg-img{
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ===== Стрелки Swiper ===== */
+:global(.pg-swiper .swiper-button-next),
+:global(.pg-swiper .swiper-button-prev){
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+
+  background: var(--accent);
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 12px 26px rgba(4, 0, 231, 0.18);
+
+  transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+}
+
+:global(.pg-swiper .swiper-button-next:hover),
+:global(.pg-swiper .swiper-button-prev:hover){
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+:global(.pg-swiper .swiper-button-next:active),
+:global(.pg-swiper .swiper-button-prev:active){
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+/* Иконка стрелки */
+:global(.pg-swiper .swiper-button-next::after),
+:global(.pg-swiper .swiper-button-prev::after){
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* Disabled */
+:global(.pg-swiper .swiper-button-disabled){
+  opacity: .35 !important;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px){
+  .pg-img{ height: 210px; }
+}
+
+@media (max-width: 600px){
+  .photo-gallery{
+    padding: 14px 12px 26px;
+  }
+
+  .page-title{
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .pg-switch{
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pg-switch button{
+    flex: 1;
+    text-align: center;
+  }
+
+  .pg-swiper{
+    padding: 12px;
+    border-radius: var(--radius-lg);
+  }
+
+  .pg-img{ height: 190px; }
+
+  :global(.pg-swiper .swiper-button-next),
+  :global(.pg-swiper .swiper-button-prev){
+    width: 38px;
+    height: 38px;
+  }
 }
 </style>
+

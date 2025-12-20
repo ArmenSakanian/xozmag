@@ -68,15 +68,6 @@ function toggleCheck() {
 }
 </script>
 <style scoped>
-/* Спокойное дерево: без карточек, без жирных блоков */
-:global(:root){
-  --cat-accent: #0400ff;
-  --cat-text: #1b1e28;
-  --cat-muted: #6b7280;
-  --cat-line: #d9dee8;
-  --cat-hover: rgba(4,0,255,0.06);
-}
-
 /* ===== item ===== */
 .cat-item{
   position: relative;
@@ -92,22 +83,22 @@ function toggleCheck() {
   gap: 8px;
 
   padding: 6px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 
   min-width: 0;
   user-select: none;
 }
 
 .cat-row:hover{
-  background: var(--cat-hover);
+  background: var(--bg-soft);
 }
 
-/* когда выбрано — только лёгкая подсветка текста (не контейнер) */
+/* когда выбрано — только лёгкая подсветка текста */
 .cat-item.checked > .cat-row{
   background: transparent;
 }
 .cat-item.checked .cat-name{
-  color: var(--cat-accent);
+  color: var(--accent);
   font-weight: 650;
 }
 
@@ -117,25 +108,25 @@ function toggleCheck() {
   height: 22px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
   cursor: pointer;
-  color: var(--cat-muted);
+  color: var(--text-muted); /* ✅ исправлено */
   padding: 0;
 }
 
 .cat-toggle:hover{
-  background: rgba(0,0,0,0.05);
+  background: var(--bg-soft);
 }
 
 .cat-toggle i{
   font-size: 12px;
   transition: transform .18s ease;
-  color: var(--cat-accent);
+  color: var(--accent);
   opacity: .85;
 }
 
@@ -170,38 +161,42 @@ function toggleCheck() {
   width: 16px;
   height: 16px;
   border-radius: 6px;
-  border: 1px solid #cfd6e4;
-  background: #fff;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color .15s ease, background .15s ease;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 
 .cat-checkbox:checked + .cat-check-ui{
-  border-color: rgba(4,0,255,0.35);
-  background: rgba(4,0,255,0.10);
+  border-color: var(--accent);
+  background: var(--bg-soft);
 }
 
 .cat-checkbox:checked + .cat-check-ui::after{
   content: "";
   width: 8px;
   height: 4px;
-  border-left: 2px solid var(--cat-accent);
-  border-bottom: 2px solid var(--cat-accent);
+  border-left: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
   transform: rotate(-45deg);
   margin-top: -1px;
+}
+
+/* фокус с клавиатуры (без новых переменных) */
+.cat-check:focus-within .cat-check-ui{
+  box-shadow: 0 0 0 3px rgba(4, 0, 255, 0.12);
 }
 
 /* ===== name ===== */
 .cat-name{
   min-width: 0;
-  color: var(--cat-text);
+  color: var(--text-main);
   font-size: 14px;
-  font-weight: 500;     /* спокойно */
+  font-weight: 500;
   line-height: 1.25;
 
-  /* важно: длинные названия НЕ режем, переносим */
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -222,7 +217,7 @@ function toggleCheck() {
   bottom: 8px;
   left: 8px;
   width: 1px;
-  background: var(--cat-line);
+  background: var(--border-soft);
 }
 
 /* горизонтальная ветка к каждому ребёнку */
@@ -233,7 +228,7 @@ function toggleCheck() {
   left: -10px;
   width: 18px;
   height: 1px;
-  background: var(--cat-line);
+  background: var(--border-soft);
 }
 
 /* ===== animation ===== */

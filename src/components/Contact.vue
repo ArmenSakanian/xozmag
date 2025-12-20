@@ -47,110 +47,155 @@
 </script>
 
 <style scoped>
-.contact-page {
+/* ===== CONTACTS (под твой :root) ===== */
+
+.contact-page{
   max-width: 1350px;
   margin: 0 auto;
-  color: #dcdcdc;
+  padding: 18px 14px 30px;
+  color: var(--text-main);
+}
+
+.page-title{
+  margin: 6px 0 14px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
 }
 
 /* Основная сетка */
-.contact-container {
+.contact-container{
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 40px;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 22px;
   align-items: start;
 }
 
 /* Блок контактов */
-.contact-info {
-  background: linear-gradient(145deg, #1f2227, #1a1c20);
-  padding: 35px;
-  border-radius: 18px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(6px);
+.contact-info{
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 22px 22px;
 }
 
-.block-title {
-  margin-bottom: 25px;
-  color: white;
-  font-size: 26px;
-  font-weight: 700;
+.block-title{
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
 }
 
-.info-block {
-  margin-bottom: 28px;
+.info-block{
+  padding: 14px 14px;
+  margin-bottom: 12px;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
-.info-block a {
-  text-decoration: none;
+.info-block:last-child{
+  margin-bottom: 0;
 }
 
-.label {
-  color: var(--accent-color);
+/* подписи */
+.label{
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 13px;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
 }
 
-.value-text:hover {
-  text-shadow: 0 0 10px rgba(77, 163, 255, 0.5);
+/* значения */
+.value-text{
+  margin: 0;
+  display: inline-block;
+  color: var(--text-main);
+  font-size: 16.5px;
+  line-height: 1.6;
+  text-decoration: none;
+  font-weight: 700;
+
+  transition: color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
-.value-text {
-  color: white;
-  font-size: 18px;
-  line-height: 1.55;
+/* ссылка выглядит как аккуратная кнопка-тег */
+a.value-text{
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
 }
 
-.contact-map {
-  height: 100%;
+a.value-text:hover{
+  color: var(--accent);
+  border-color: rgba(4, 0, 231, 0.18);
+  background: rgba(4, 0, 231, 0.06);
+  transform: translateY(-1px);
+}
+
+a.value-text:active{
+  transform: translateY(0);
+}
+
+/* Правая часть: карта */
+.contact-map{
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
 /* Карта */
-.contact-map iframe {
+.contact-map iframe{
   width: 100%;
-  height: 100%;
-  min-height: 100%;
-  border: none;
-  border-radius: 18px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
-  transition: 0.3s ease;
+  height: 420px;
+  display: block;
+  border: 0;
+  border-radius: 0; /* уже обрезается контейнером */
 }
 
-.contact-map iframe:hover {
-  transform: scale(1.01);
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.55);
-}
-
-/* Адаптив под планшеты */
-@media (max-width: 1024px) {
-  .contact-container {
+/* ===== Responsive ===== */
+@media (max-width: 1024px){
+  .contact-container{
     grid-template-columns: 1fr;
   }
 
-  .contact-map iframe {
-    min-height: 400px;
+  .contact-map iframe{
+    height: 380px;
   }
 }
 
-/* Адаптив под телефоны */
-@media (max-width: 600px) {
-  .page-title {
-    font-size: 30px;
+@media (max-width: 600px){
+  .contact-page{
+    padding: 14px 12px 26px;
   }
 
-  .contact-info {
-    padding: 25px;
+  .page-title{
+    font-size: 24px;
+    margin-bottom: 12px;
   }
 
-  .value-text {
+  .contact-info{
+    padding: 18px 16px;
+  }
+
+  .block-title{
+    font-size: 18px;
+  }
+
+  .value-text{
     font-size: 16px;
   }
 
-  .contact-map iframe {
-    min-height: 320px;
+  .contact-map iframe{
+    height: 320px;
   }
 }
 </style>
