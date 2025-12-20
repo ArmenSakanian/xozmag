@@ -4,14 +4,12 @@ import HomePage from "../page/HomePage.vue";
 import LoginPage from "../page/LoginPage.vue";
 import BarcodePage from "../page/BarcodePage.vue";
 import ProductPage from "../page/ProductPage.vue";
-import ButtonExport from "../page/ButtonExport.vue";
 import catalog from "../page/CatalogV2.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
   { path: "/product", name: "product", component: ProductPage },
   { path: "/login", name: "login", component: LoginPage },
-  { path: "/ButtonExport", name: "ButtonExport", component: ButtonExport },
   { path: "/catalogv2", name: "catalog", component: catalog },
   { path: "/barcode", name: "barcode", component: BarcodePage, meta: { requiresAuth: true } },
   {
@@ -27,24 +25,16 @@ const routes = [
   component: () => import("@/admin/AdminProductsPage.vue"),
 },
 {
-  path: "/admin/addproducts",
-  component: () => import("@/admin/AdminAddProductsPage.vue"),
-},
-{
   path: "/admin/attributes",
   component: () => import("@/admin/AdminAttributes.vue"),
 },
 {
-  path: "/admin/convert",
-  component: () => import("@/admin/AdminConvertImages.vue"),
+  path: "/admin/functions",
+  component: () => import("@/admin/AdminFunctions.vue"),
 },
 {
   path: "/admin/order",
   component: () => import("@/admin/AdminOrder.vue"),
-},
-{
-  path: "/admin/minstock",
-  component: () => import("@/admin/AdminMinStock.vue"),
 },
 {
   path: "/product/:id",

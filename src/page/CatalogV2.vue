@@ -291,13 +291,19 @@
   v-for="p in visibleProducts"
   :key="p.id"
   class="product-card"
-  @click="openProduct(p)"
 >
-  <div class="product-image">
+  <div
+    class="product-image"
+    @click.stop
+    @pointerdown.stop
+    @mousedown.stop
+    @touchstart.stop
+  >
     <ProductCardGallery :images="p.images" :alt="p.name" :compact="isMobile" />
   </div>
 
-  <div class="product-info">
+  <!-- ✅ А вот инфо-часть кликабельна -->
+  <div class="product-info" @click="openProduct(p)">
     <div class="product-name">{{ p.name }}</div>
 
     <div class="product-row">
@@ -646,18 +652,27 @@ const normalize = (s) =>
     .replace(/\s+/g, " ")
     .trim();
 
-function resetAllFilters() {
+function resetAllFilters({ keepSearch = false } = {}) {
+  // модели
   brandModel.value = [];
   priceFromModel.value = null;
   priceToModel.value = null;
   photoModel.value = "all";
+
+  if (!keepSearch) searchModel.value = "";
 
   // сброс атрибутов
   const next = { ...attributeModels.value };
   Object.keys(next).forEach((k) => (next[k] = []));
   attributeModels.value = next;
 
-  applyFilters();
+  // закрыть UI
+  openFilters.value = {};
+  showMobileFilters.value = false;
+  mobileView.value = "root";
+  activeMobileAttr.value = null;
+
+  applyFilters(); // уберёт параметры из URL
 }
 
 const toArr = (v) =>
@@ -746,6 +761,13 @@ function toggleCategory(code) {
     selectedCategories.value.push(code);
   }
 }
+watch(
+  () => selectedCategories.value.join("|"),
+  () => {
+    resetAllFilters({ keepSearch: true }); // если поиск НЕ надо сбрасывать
+    // resetAllFilters(); // если надо сбрасывать и поиск тоже
+  }
+);
 
 /* ================= mobile detect (clean) ================= */
 const isMobile = ref(false);
@@ -848,6 +870,28 @@ async function loadData() {
     loading.value = false;
   }
 }
+
+function isHardReload() {
+  try {
+    const nav = performance.getEntriesByType?.("navigation")?.[0];
+    if (nav) return nav.type === "reload";
+  } catch (e) {}
+  // fallback для старых браузеров
+  // 1 = reload
+  return performance?.navigation?.type === 1;
+}
+
+onMounted(() => {
+  // если это именно F5/Reload — чистим фильтры из URL
+  if (isHardReload()) {
+    // если в URL есть что-то кроме cat — сбросим
+    const hasFilters = Object.keys(route.query).some(
+      (k) => k !== "cat" && k !== ""
+    );
+    if (hasFilters) resetAllFilters();
+  }
+});
+
 onMounted(loadData);
 
 /* ================= CATEGORY TREE ================= */
@@ -1026,13 +1070,13 @@ watch(
     syncingFromRoute.value = true;
 
     searchModel.value = q.q ? String(Array.isArray(q.q) ? q.q[0] : q.q) : "";
-
     brandModel.value = toArr(q.brand);
 
     priceFromModel.value =
       q.price_from != null && q.price_from !== ""
         ? Number(Array.isArray(q.price_from) ? q.price_from[0] : q.price_from)
         : null;
+
     priceToModel.value =
       q.price_to != null && q.price_to !== ""
         ? Number(Array.isArray(q.price_to) ? q.price_to[0] : q.price_to)
@@ -1045,12 +1089,14 @@ watch(
       nextAttrs[name] = toArr(q[key]);
     });
     attributeModels.value = nextAttrs;
+
     photoModel.value = q.photo
       ? String(Array.isArray(q.photo) ? q.photo[0] : q.photo)
       : "all";
+
     syncingFromRoute.value = false;
   },
-  { immediate: true, deep: true }
+  { immediate: true }
 );
 
 /* ================= MOBILE UX WATCHERS ================= */
@@ -1090,9 +1136,7 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
 });
 
 watch(currentCategory, () => {
-  showMobileFilters.value = false;
-  mobileView.value = "root";
-  activeMobileAttr.value = null;
+  resetAllFilters({ keepSearch: true });
 });
 
 /* ================= FINAL PRODUCTS ================= */
@@ -1150,12 +1194,11 @@ watch(
     isMobile.value,
     currentCategory.value,
     selectedCategories.value.join("|"),
-    route.query,
+    route.fullPath, // вместо route.query
   ],
   () => {
     displayLimit.value = step.value;
-  },
-  { deep: true }
+  }
 );
 
 const visibleProducts = computed(() =>
@@ -1174,8 +1217,6 @@ function loadMore() {
 function openProduct(p) {
   router.push({ name: "product", params: { id: p.id } });
 }
-
-
 </script>
 
 <style scoped>
@@ -1605,7 +1646,7 @@ function openProduct(p) {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  cursor: pointer;
+  cursor: default;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -1618,16 +1659,39 @@ function openProduct(p) {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border-soft);
-  background: #fff;
+  background: #fff; /* можно оставить свой цвет, но белый обычно лучше */
   aspect-ratio: 1 / 1;
   display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
 }
 
 .product-image :deep(.pg),
-.product-image :deep(.pcg) {
-  width: 100%;
-  height: 100%;
+.product-image :deep(.pcg),
+.product-image :deep(.swiper),
+.product-image :deep(.swiper-wrapper),
+.product-image :deep(.swiper-slide) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.product-image :deep(.swiper-slide) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.product-image :deep(img) {
+  width: 100% !important;
+  height: 100% !important;
+
+  max-width: 100% !important;
+  max-height: 100% !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+  display: block !important;
 }
 
 .product-card :deep(.swiper-button-next),
@@ -1647,6 +1711,7 @@ function openProduct(p) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+   cursor: pointer;
 }
 
 .product-name {
@@ -1655,7 +1720,7 @@ function openProduct(p) {
   font-weight: 650;
   color: var(--text-main);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 2.7em;
@@ -1837,7 +1902,7 @@ function openProduct(p) {
     bottom: 0;
     top: calc(var(--site-header-h) + env(safe-area-inset-top));
     background: rgba(0, 0, 0, 0.42);
-    z-index: 6000;
+    z-index: 6001;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }

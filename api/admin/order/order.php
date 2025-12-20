@@ -1,4 +1,5 @@
 <?php
+// /api/admin/order/order.php
 
 $mode = isset($_GET["mode"]) ? trim((string)$_GET["mode"]) : "list";
 
@@ -36,6 +37,36 @@ function safe_filename($name) {
     $name = preg_replace('/[^\p{L}\p{N}\-_]+/u', '_', $name);
     $name = preg_replace('/_+/u', '_', $name);
     return trim($name, "_");
+}
+
+/**
+ * Ищем миниатюру товара в /photo_product_vitrina/
+ * Файлы: <barcode>.webp, <barcode>_1.webp, <barcode>_2.webp ...
+ * Возвращаем массив url, отсортированный.
+ */
+function findProductImages($barcode) {
+    $barcode = trim((string)$barcode);
+    if ($barcode === "") return [];
+
+    $folder  = $_SERVER["DOCUMENT_ROOT"] . "/photo_product_vitrina/";
+    $urlBase = "/photo_product_vitrina/";
+    if (!is_dir($folder)) return [];
+
+    // быстрый путь: основной файл
+    $main = $folder . $barcode . ".webp";
+    if (is_file($main)) {
+        return [$urlBase . $barcode . ".webp"];
+    }
+
+    // иначе ищем все варианты
+    $mask  = $folder . $barcode . "*.webp";
+    $files = glob($mask);
+    if (!$files) return [];
+
+    $images = [];
+    foreach ($files as $path) $images[] = $urlBase . basename($path);
+    sort($images);
+    return $images;
 }
 
 function fetch_evotor_data($url, $token, $rawCacheFile, $cacheTtl, $noCache) {
@@ -191,12 +222,9 @@ function collect_descendants($startUuid, $childrenMap) {
 }
 
 function get_product_article($item) {
-    $candidates = ["articleNumber", "article", "article_number", "vendorCode", "sku", "code"];
-    foreach ($candidates as $k) {
-        if (isset($item[$k]) && is_string($item[$k]) && trim($item[$k]) !== "") return trim($item[$k]);
-    }
-    return "";
+    return isset($item["articleNumber"]) ? trim((string)$item["articleNumber"]) : "";
 }
+
 
 function get_product_quantity($item) {
     if (isset($item["quantity"]) && is_numeric($item["quantity"])) return $item["quantity"] + 0;
@@ -305,59 +333,10 @@ function output_xlsx($filenameBase, $rows) {
     exit;
 }
 
-// ------------------ main ------------------
-
-if ($mode === "list") {
-    if (!$noCache && file_exists($listCacheFile) && (time() - filemtime($listCacheFile) < $cacheTtl)) {
-        header("Content-Type: application/json; charset=utf-8");
-        header("X-From-Cache-List: 1");
-        readfile($listCacheFile);
-        exit;
-    }
-    header("X-From-Cache-List: 0");
-}
-
-$data = fetch_evotor_data($url, $token, $rawCacheFile, $cacheTtl, $noCache);
-$groups = build_groups_and_depth($data);
-[$categoriesList, $contragentsList, $contragentsMap] = build_categories_and_contragents($groups);
-
-if ($mode === "list") {
-    $out = json_encode([
-        "categories"  => $categoriesList,
-        "contragents" => $contragentsList,
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-    @file_put_contents($listCacheFile, $out);
-
-    header("Content-Type: application/json; charset=utf-8");
-    echo $out;
-    exit;
-}
-
-if ($mode === "export") {
-    require_once __DIR__ . "/../../db.php"; // $pdo
-
-    // min_stock map: barcode => min_stock
-    try {
-        $minMap = [];
-        $stmt = $pdo->query("SELECT barcode, min_stock FROM product_min_stock");
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $bc = isset($row["barcode"]) ? trim((string)$row["barcode"]) : "";
-            if ($bc === "") continue;
-            $minMap[$bc] = is_numeric($row["min_stock"]) ? ($row["min_stock"] + 0) : 0;
-        }
-    } catch (Throwable $e) {
-        json_out(["error" => "db error reading product_min_stock", "details" => $e->getMessage()], 500);
-    }
-
-    $key = isset($_GET["key"]) ? normalize_key($_GET["key"]) : "";
-    if ($key === "" || !isset($contragentsMap[$key])) {
-        json_out(["error" => "unknown contragent key", "key" => $key], 404);
-    }
-
-    $contr = $contragentsMap[$key];
-    $contrName = $contr["name"] ?? $key;
-
+/**
+ * Общая сборка rows (и для items и для export)
+ */
+function build_rows_for_contragent($data, $groups, $contr, $minMap) {
     $childrenMap = build_children_map($groups);
 
     // все группы контрагента: 2ур + все потомки
@@ -398,17 +377,126 @@ if ($mode === "export") {
         $qty = get_product_quantity($item);
         if ($qty > $minStock) continue; // только <= min_stock
 
+        $images = findProductImages($matchedBarcode);
+        $thumb  = $images[0] ?? "";
+
         $rows[] = [
-            "name"     => (string)($item["name"] ?? ""),
-            "article"  => (string)get_product_article($item),
-            "quantity" => $qty,
-            "barcode"  => (string)$matchedBarcode,
+            "uuid"      => (string)($uuid ?? ""),
+            "name"      => (string)($item["name"] ?? ""),
+            "article"   => (string)get_product_article($item),
+            "quantity"  => $qty,
+            "barcode"   => (string)$matchedBarcode,
+            "min_stock" => $minStock,
+            "image"     => $thumb, // ✅ миниатюра для сайта
         ];
     }
 
     usort($rows, fn($a,$b) => strnatcasecmp($a["name"], $b["name"]));
+    return $rows;
+}
 
-    output_xlsx("contragent_" . $contrName, $rows);
+// ------------------ main ------------------
+
+if ($mode === "list") {
+    if (!$noCache && file_exists($listCacheFile) && (time() - filemtime($listCacheFile) < $cacheTtl)) {
+        header("Content-Type: application/json; charset=utf-8");
+        header("X-From-Cache-List: 1");
+        readfile($listCacheFile);
+        exit;
+    }
+    header("X-From-Cache-List: 0");
+}
+
+$data = fetch_evotor_data($url, $token, $rawCacheFile, $cacheTtl, $noCache);
+$groups = build_groups_and_depth($data);
+[$categoriesList, $contragentsList, $contragentsMap] = build_categories_and_contragents($groups);
+
+if ($mode === "list") {
+    $out = json_encode([
+        "categories"  => $categoriesList,
+        "contragents" => $contragentsList,
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+    @file_put_contents($listCacheFile, $out);
+
+    header("Content-Type: application/json; charset=utf-8");
+    echo $out;
+    exit;
+}
+
+// ===== NEW MODE: items (JSON для сайта) =====
+if ($mode === "items") {
+    require_once __DIR__ . "/../../db.php"; // $pdo
+
+    // min_stock map: barcode => min_stock
+    try {
+        $minMap = [];
+        $stmt = $pdo->query("SELECT barcode, min_stock FROM product_min_stock");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $bc = isset($row["barcode"]) ? trim((string)$row["barcode"]) : "";
+            if ($bc === "") continue;
+            $minMap[$bc] = is_numeric($row["min_stock"]) ? ($row["min_stock"] + 0) : 0;
+        }
+    } catch (Throwable $e) {
+        json_out(["error" => "db error reading product_min_stock", "details" => $e->getMessage()], 500);
+    }
+
+    $key = isset($_GET["key"]) ? normalize_key($_GET["key"]) : "";
+    if ($key === "" || !isset($contragentsMap[$key])) {
+        json_out(["error" => "unknown contragent key", "key" => $key], 404);
+    }
+
+    $contr = $contragentsMap[$key];
+    $contrName = $contr["name"] ?? $key;
+
+    $rows = build_rows_for_contragent($data, $groups, $contr, $minMap);
+
+    json_out([
+        "contragent" => ["key" => $key, "name" => $contrName],
+        "count"      => count($rows),
+        "generatedAt"=> date("Y-m-d H:i:s"),
+        "items"      => $rows
+    ]);
+}
+
+// ===== EXPORT MODE (Excel) =====
+if ($mode === "export") {
+    require_once __DIR__ . "/../../db.php"; // $pdo
+
+    // min_stock map: barcode => min_stock
+    try {
+        $minMap = [];
+        $stmt = $pdo->query("SELECT barcode, min_stock FROM product_min_stock");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $bc = isset($row["barcode"]) ? trim((string)$row["barcode"]) : "";
+            if ($bc === "") continue;
+            $minMap[$bc] = is_numeric($row["min_stock"]) ? ($row["min_stock"] + 0) : 0;
+        }
+    } catch (Throwable $e) {
+        json_out(["error" => "db error reading product_min_stock", "details" => $e->getMessage()], 500);
+    }
+
+    $key = isset($_GET["key"]) ? normalize_key($_GET["key"]) : "";
+    if ($key === "" || !isset($contragentsMap[$key])) {
+        json_out(["error" => "unknown contragent key", "key" => $key], 404);
+    }
+
+    $contr = $contragentsMap[$key];
+    $contrName = $contr["name"] ?? $key;
+
+    $rows = build_rows_for_contragent($data, $groups, $contr, $minMap);
+
+    // Для excel: только нужные поля
+    $xlsxRows = array_map(function($r){
+        return [
+            "name"     => $r["name"],
+            "article"  => $r["article"],
+            "quantity" => $r["quantity"],
+            "barcode"  => $r["barcode"],
+        ];
+    }, $rows);
+
+    output_xlsx("contragent_" . $contrName, $xlsxRows);
 }
 
 json_out(["error" => "unknown mode", "mode" => $mode], 400);

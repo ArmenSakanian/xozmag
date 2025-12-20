@@ -1,0 +1,1258 @@
+<template>
+  <div class="convert-root">
+    <div class="convert-wrap">
+      <div class="panels">
+        <!-- ================= PANEL 1: CONVERTER ================= -->
+        <section class="panel">
+          <h1 class="title">Конвертер изображений</h1>
+          <p class="subtitle">.jpg, .png, .jpeg → WEBP</p>
+
+          <button
+            class="main-btn"
+            :disabled="loadingConvert || loadingSync || loadingMin"
+            @click="start"
+          >
+            {{ loadingConvert ? "Обработка…" : "Начать преобразование" }}
+          </button>
+
+          <!-- CONVERT -->
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Конверсия</span>
+              <span>{{ convert.current }} / {{ convert.total }}</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill convert" :style="{ width: convertPercent + '%' }"></div>
+            </div>
+          </div>
+
+          <!-- DELETE -->
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Очистка</span>
+              <span>{{ remove.current }} / {{ remove.total }}</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill remove" :style="{ width: removePercent + '%' }"></div>
+            </div>
+          </div>
+
+          <!-- LOG (convert) -->
+          <div class="log-box">
+            <div v-for="(l, i) in logs" :key="i" class="log-line">
+              {{ l }}
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PANEL 2: SYNC ================= -->
+        <section class="panel">
+          <h1 class="title">Синхронизация Evotor</h1>
+          <p class="subtitle">Запуск товаров из базы</p>
+
+          <button
+            class="sync-btn"
+            :disabled="loadingSync || loadingConvert || loadingMin"
+            @click="startSync"
+          >
+            {{ loadingSync ? "Синхронизация…" : "Запустить синхронизацию" }}
+          </button>
+
+          <div class="sync-status" v-if="sync.status">
+            <span class="pill" :class="sync.status">{{ sync.statusText }}</span>
+            <span class="muted" v-if="sync.finishedAt">• {{ sync.finishedAt }}</span>
+          </div>
+
+          <div class="stats-grid" v-if="sync.hasResult">
+            <div class="stat">
+              <div class="stat-label">Добавлено</div>
+              <div class="stat-val">{{ sync.inserted }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Обновлено</div>
+              <div class="stat-val">{{ sync.updated }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Удалено</div>
+              <div class="stat-val">{{ sync.deleted }}</div>
+            </div>
+          </div>
+
+          <!-- ===== CHANGES LISTS ===== -->
+          <div class="changes" v-if="sync.hasResult">
+            <div class="change-block" v-if="createdItems.length">
+              <div class="change-title add">Добавлено ({{ createdItems.length }})</div>
+              <div class="change-list">
+                <div class="change-line" v-for="(it, i) in createdItems" :key="'c'+i">
+                  <span class="bc">{{ it.barcode }}</span>
+                  <span class="nm">{{ it.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="change-block" v-if="updatedItems.length">
+              <div class="change-title upd">Обновлено ({{ updatedItems.length }})</div>
+              <div class="change-list">
+                <div class="change-line" v-for="(it, i) in updatedItems" :key="'u'+i">
+<span class="bc">{{ it.barcode }}</span>
+
+<span class="nm">
+  <span class="nm-title">{{ it.name }}</span>
+  <span class="nm-meta" v-if="it.fields?.length">
+    изменено: {{ it.fields.join(", ") }}
+  </span>
+</span>
+
+                </div>
+              </div>
+            </div>
+
+            <div class="change-block" v-if="deletedItems.length">
+              <div class="change-title del">Удалено ({{ deletedItems.length }})</div>
+              <div class="change-list">
+                <div class="change-line" v-for="(it, i) in deletedItems" :key="'d'+i">
+<span class="bc">{{ it.barcode }}</span>
+
+<span class="nm">
+  <span class="nm-title">{{ it.name }}</span>
+
+  <span class="nm-meta">
+    фото: удалено {{ it.photos_deleted_count ?? (it.photos_deleted?.length || 0) }},
+    не найдено {{ it.photos_missing_count ?? (it.photos_missing?.length || 0) }}
+  </span>
+</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hint" v-if="truncated">⚠ Показаны не все строки (ограничение).</div>
+          </div>
+
+          <!-- LOG (sync) -->
+          <div class="log-box sync-log">
+            <div v-for="(l, i) in syncLogs" :key="i" class="log-line">
+              {{ l }}
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PANEL 3: MIN STOCK IMPORT ================= -->
+        <section class="panel">
+          <h1 class="title">Импорт “Минимальный остаток”</h1>
+          <p class="subtitle">
+            Загрузи <b>XLSX</b> или <b>CSV</b>: <b>Штрихкод</b> + <b>Минимальный остаток</b>.
+            Повторный импорт по штрихкоду обновит значение.
+          </p>
+
+          <div class="min-toolbar">
+            <button class="min-btn ghost" :disabled="loadingMin || loadingConvert || loadingSync" @click="downloadMinTemplate">
+              <i class="fa-regular fa-file-lines"></i>
+              Скачать шаблон (CSV)
+            </button>
+          </div>
+
+          <div
+            class="min-drop"
+            :class="{ drag: minIsDrag }"
+            @dragenter.prevent="onMinDrag(true)"
+            @dragover.prevent
+            @dragleave.prevent="onMinDrag(false)"
+            @drop.prevent="onMinDrop"
+          >
+            <input
+              ref="minFileInput"
+              class="min-file"
+              type="file"
+              accept=".xlsx,.csv"
+              @change="onMinPick"
+            />
+
+            <div class="min-drop-inner">
+              <div class="min-icon">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+
+              <div class="min-txt">
+                <div class="min-t1">
+                  Перетащи файл сюда или
+                  <button class="min-link" :disabled="loadingMin || loadingConvert || loadingSync" @click="openMinPicker">
+                    выбери
+                  </button>
+                </div>
+                <div class="min-t2">.xlsx / .csv — максимум 15MB</div>
+              </div>
+
+              <div class="min-picked" v-if="minPickedName">
+                <div class="min-pname">
+                  <i class="fa-regular fa-file-excel"></i>
+                  {{ minPickedName }}
+                </div>
+                <div class="min-pactions">
+                  <button class="min-btn small ghost" @click="clearMinFile" :disabled="loadingMin || loadingConvert || loadingSync">
+                    <i class="fa-solid fa-xmark"></i> Убрать
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="min-actions">
+              <label class="min-check">
+                <input type="checkbox" v-model="minDryRun" :disabled="loadingMin || loadingConvert || loadingSync" />
+                Проверить без записи (dry-run)
+              </label>
+
+              <button
+                class="min-btn primary"
+                :disabled="!minFile || loadingMin || loadingConvert || loadingSync"
+                @click="uploadMin"
+              >
+                <i v-if="!loadingMin" class="fa-solid fa-upload"></i>
+                <i v-else class="fa-solid fa-circle-notch fa-spin"></i>
+                {{ minDryRun ? "Проверить" : "Импортировать" }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="minError" class="min-state error">
+            <div class="min-st-title">
+              <i class="fa-solid fa-triangle-exclamation"></i> Ошибка
+            </div>
+            <div class="min-st-text">{{ minError }}</div>
+          </div>
+
+          <div v-if="minResult" class="min-result">
+            <div class="min-r-top">
+              <div class="min-r-title">
+                <i class="fa-solid fa-circle-check"></i>
+                Готово
+                <span v-if="minResult.dry_run" class="min-badge">dry-run</span>
+              </div>
+              <div class="min-r-file">
+                {{ minResult.file }} <span class="muted">({{ minResult.ext }})</span>
+              </div>
+            </div>
+
+            <div class="min-stats">
+              <div class="min-stat">
+                <div class="k">Строк в файле</div>
+                <div class="v">{{ minResult.rows_total_in_file }}</div>
+              </div>
+              <div class="min-stat">
+                <div class="k">Распознано строк</div>
+                <div class="v">{{ minResult.rows_parsed }}</div>
+              </div>
+              <div class="min-stat">
+                <div class="k">Уникальных штрихкодов</div>
+                <div class="v">{{ minResult.unique_barcodes }}</div>
+              </div>
+              <div class="min-stat ok">
+                <div class="k">Добавлено</div>
+                <div class="v">{{ minResult.inserted }}</div>
+              </div>
+              <div class="min-stat warn">
+                <div class="k">Обновлено</div>
+                <div class="v">{{ minResult.updated }}</div>
+              </div>
+              <div class="min-stat">
+                <div class="k">Без изменений</div>
+                <div class="v">{{ minResult.unchanged }}</div>
+              </div>
+            </div>
+
+            <div class="min-split">
+              <div class="min-box">
+                <div class="min-box-title">Превью операций</div>
+                <div class="min-table">
+                  <div class="min-tr th">
+                    <div>Штрихкод</div>
+                    <div>Мин. остаток</div>
+                    <div>Действие</div>
+                  </div>
+                  <div class="min-tr" v-for="(r, i) in (minResult.preview || [])" :key="i">
+                    <div class="mono">{{ r.barcode }}</div>
+                    <div>{{ r.min_stock }}</div>
+                    <div><span class="min-pill" :class="r.action">{{ minActionLabel(r.action) }}</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="min-box" v-if="minResult.invalid_preview?.length">
+                <div class="min-box-title">Ошибки (первые)</div>
+                <div class="min-bad">
+                  <div class="min-bad-row" v-for="(b, i) in minResult.invalid_preview" :key="i">
+                    <div class="b1">Строка {{ b.row }}</div>
+                    <div class="b2">
+                      <span v-if="b.barcode" class="mono">{{ b.barcode }}</span>
+                      <span class="muted" v-else>—</span>
+                    </div>
+                    <div class="b3">{{ b.error }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="min-box" v-else>
+                <div class="min-box-title">Ошибки</div>
+                <div class="muted">Нет ошибок 🎉</div>
+              </div>
+            </div>
+
+            <div class="min-foot muted">
+              Подсказка: колонку “Штрихкод” в Excel ставь как <b>текст</b>.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div v-if="minToast" class="toast">
+      <i class="fa-solid fa-check"></i> {{ minToast }}
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import NProgress from "nprogress";
+import "nprogress/nprogress.css";
+
+NProgress.configure({
+  showSpinner: false,
+  trickleSpeed: 120,
+});
+
+/* =========================
+   COMMON
+========================= */
+const loadingConvert = ref(false);
+const loadingSync = ref(false);
+
+/* =========================
+   CONVERT
+========================= */
+const logs = ref([]);
+const convert = ref({ current: 0, total: 0 });
+const remove = ref({ current: 0, total: 0 });
+
+const convertPercent = computed(() =>
+  convert.value.total ? Math.round((convert.value.current / convert.value.total) * 100) : 0
+);
+const removePercent = computed(() =>
+  remove.value.total ? Math.round((remove.value.current / remove.value.total) * 100) : 0
+);
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const start = async () => {
+  loadingConvert.value = true;
+  logs.value = [];
+  convert.value = { current: 0, total: 0 };
+  remove.value = { current: 0, total: 0 };
+
+  NProgress.start();
+  let index = 0;
+
+  try {
+    while (true) {
+      const res = await fetch(`/api/admin/functions/convert_images_step.php?index=${index}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+
+      if (data.done) {
+        convert.value.total = data.total;
+        remove.value.total = data.total;
+        break;
+      }
+
+      convert.value.total = data.total;
+      convert.value.current = data.index;
+      remove.value.current = data.index;
+
+      index = data.index;
+
+      logs.value.unshift(
+        `${String(data.status || "").toUpperCase().padEnd(10)} | ${data.file}`
+      );
+      NProgress.set(convertPercent.value / 100);
+
+      await sleep(18);
+    }
+
+    logs.value.unshift("✔ ALL FILES PROCESSED");
+  } catch (e) {
+    logs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
+  } finally {
+    NProgress.done();
+    loadingConvert.value = false;
+  }
+};
+
+/* =========================
+   SYNC EVOTOR → DB
+========================= */
+const syncLogs = ref([]);
+const createdItems = ref([]);
+const updatedItems = ref([]);
+const deletedItems = ref([]);
+const truncated = ref(false);
+
+const sync = ref({
+  status: "",
+  statusText: "",
+  hasResult: false,
+  inserted: 0,
+  updated: 0,
+  deleted: 0,
+  finishedAt: "",
+});
+
+const startSync = async () => {
+  createdItems.value = [];
+  updatedItems.value = [];
+  deletedItems.value = [];
+  truncated.value = false;
+
+  loadingSync.value = true;
+  syncLogs.value = [];
+  sync.value = {
+    status: "run",
+    statusText: "Выполняется…",
+    hasResult: false,
+    inserted: 0,
+    updated: 0,
+    deleted: 0,
+    finishedAt: "",
+  };
+
+  NProgress.start();
+
+  try {
+    syncLogs.value.unshift("→ Запуск: /api/admin/functions/sync_evotor.php");
+
+    const res = await fetch("/api/admin/functions/sync_evotor.php", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const text = await res.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error("Ответ не JSON: " + text.slice(0, 200));
+    }
+
+    if (!res.ok || data?.error) {
+      throw new Error(data?.error || `HTTP ${res.status}`);
+    }
+
+    const inserted = Number(data.inserted ?? 0);
+    const updated = Number(data.updated ?? 0);
+    const deleted = Number(data.deleted ?? 0);
+
+    createdItems.value = Array.isArray(data.insertedItems) ? data.insertedItems : [];
+    updatedItems.value = Array.isArray(data.updatedItems) ? data.updatedItems : [];
+    deletedItems.value = Array.isArray(data.deletedItems) ? data.deletedItems : [];
+    truncated.value = !!data.truncated;
+
+    sync.value.hasResult = true;
+    sync.value.inserted = inserted;
+    sync.value.updated = updated;
+    sync.value.deleted = deleted;
+
+    sync.value.status = "ok";
+    sync.value.statusText = "Готово";
+    sync.value.finishedAt = new Date().toLocaleString();
+
+    syncLogs.value.unshift("✔ success: true");
+    syncLogs.value.unshift(`• inserted: ${inserted}`);
+    syncLogs.value.unshift(`• updated:  ${updated}`);
+    syncLogs.value.unshift(`• deleted:  ${deleted}`);
+  } catch (e) {
+    sync.value.status = "error";
+    sync.value.statusText = "Ошибка";
+    sync.value.finishedAt = new Date().toLocaleString();
+    syncLogs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
+  } finally {
+    NProgress.done();
+    loadingSync.value = false;
+  }
+};
+
+/* =========================
+   MIN STOCK IMPORT
+========================= */
+const API_MIN_URL = "/api/admin/functions/import_min_stock.php";
+
+const loadingMin = ref(false);
+const minFileInput = ref(null);
+const minFile = ref(null);
+const minPickedName = ref("");
+const minIsDrag = ref(false);
+
+const minDryRun = ref(false);
+const minError = ref("");
+const minResult = ref(null);
+
+const minToast = ref("");
+let minToastTimer = null;
+
+function showMinToast(msg) {
+  minToast.value = msg;
+  clearTimeout(minToastTimer);
+  minToastTimer = setTimeout(() => (minToast.value = ""), 1600);
+}
+
+function openMinPicker() {
+  minFileInput.value?.click();
+}
+
+function onMinPick(e) {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  setMinFile(f);
+}
+
+function onMinDrag(v) {
+  minIsDrag.value = v;
+}
+
+function onMinDrop(e) {
+  minIsDrag.value = false;
+  const f = e.dataTransfer?.files?.[0];
+  if (!f) return;
+  setMinFile(f);
+}
+
+function setMinFile(f) {
+  const ext = (f.name.split(".").pop() || "").toLowerCase();
+  if (!["xlsx", "csv"].includes(ext)) {
+    showMinToast("Нужен .xlsx или .csv");
+    return;
+  }
+  if (f.size > 15 * 1024 * 1024) {
+    showMinToast("Файл больше 15MB");
+    return;
+  }
+  minFile.value = f;
+  minPickedName.value = f.name;
+  minError.value = "";
+  minResult.value = null;
+}
+
+function clearMinFile() {
+  minFile.value = null;
+  minPickedName.value = "";
+  if (minFileInput.value) minFileInput.value.value = "";
+}
+
+function minActionLabel(a) {
+  if (a === "insert") return "добавлено";
+  if (a === "update") return "обновлено";
+  return "без изменений";
+}
+
+async function uploadMin() {
+  if (!minFile.value) return;
+
+  loadingMin.value = true;
+  minError.value = "";
+  minResult.value = null;
+
+  try {
+    const fd = new FormData();
+    fd.append("file", minFile.value);
+    fd.append("dry_run", minDryRun.value ? "1" : "0");
+
+    const res = await fetch(API_MIN_URL, {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data) throw new Error(data?.error || `HTTP ${res.status}`);
+    if (!data.success) throw new Error(data.error || "Неизвестная ошибка");
+
+    minResult.value = data;
+    showMinToast(minDryRun.value ? "Проверка выполнена" : "Импорт выполнен");
+  } catch (e) {
+    minError.value = e?.message || String(e);
+  } finally {
+    loadingMin.value = false;
+  }
+}
+
+function downloadMinTemplate() {
+  // пример 1 строки: штрихкод;минимальный_остаток
+  const csv = "\uFEFFШтрихкод;Минимальный остаток\n4607138899795;5\n";
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "min_stock_template.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showMinToast("Шаблон скачан");
+}
+</script>
+
+<style scoped>
+/* ===== ROOT ===== */
+.convert-root {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #111 0%, #050505 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #eaeaea;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ===== WRAP ===== */
+.convert-wrap {
+  width: 1320px;
+  max-width: 100%;
+}
+
+/* ===== PANELS GRID ===== */
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 18px;
+}
+
+/* ===== PANEL CARD ===== */
+.panel {
+  padding: 28px 28px;
+  background: linear-gradient(180deg, #0e0e0e, #090909);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 30px 80px rgba(0,0,0,0.8);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TITLES ===== */
+.title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  text-align: center;
+  opacity: 0.65;
+  margin: 0 0 18px;
+  font-size: 13px;
+}
+
+/* ===== BUTTONS ===== */
+.main-btn,
+.sync-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.main-btn {
+  background: linear-gradient(135deg, #00ffe1, #0077ff);
+  color: #000;
+  margin-bottom: 18px;
+}
+
+.main-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(0,170,255,0.35);
+}
+
+.sync-btn {
+  background: linear-gradient(135deg, #9b5cff, #ff3d00);
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.sync-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(255, 80, 0, 0.25);
+}
+
+.main-btn:disabled,
+.sync-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== PROGRESS ===== */
+.progress-section {
+  margin-bottom: 18px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.progress-track {
+  height: 14px;
+  background: #151515;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.18s ease;
+}
+
+.progress-fill.convert {
+  background: linear-gradient(90deg, #00ffd5, #00aaff);
+}
+
+.progress-fill.remove {
+  background: linear-gradient(90deg, #ff9800, #ff3d00);
+}
+
+/* ===== LOG ===== */
+.log-box {
+  margin-top: 12px;
+  background: #070707;
+  border-radius: 14px;
+  padding: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.panel .log-box {
+  margin-top: auto;
+}
+
+.log-line {
+  padding: 3px 0;
+  opacity: 0.85;
+}
+
+.sync-log {
+  max-height: 320px;
+}
+
+/* ===== SYNC UI ===== */
+.sync-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+}
+
+.pill.run {
+  background: rgba(0, 170, 255, 0.12);
+  border-color: rgba(0, 170, 255, 0.25);
+}
+.pill.ok {
+  background: rgba(0, 255, 190, 0.10);
+  border-color: rgba(0, 255, 190, 0.25);
+}
+.pill.error {
+  background: rgba(255, 61, 0, 0.12);
+  border-color: rgba(255, 61, 0, 0.30);
+}
+
+.muted {
+  opacity: 0.6;
+  font-size: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0 10px;
+}
+
+.stat {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 4px;
+  letter-spacing: 0.4px;
+}
+
+.stat-val {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* ===== CHANGES LISTS ===== */
+.changes {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.change-block {
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.change-title {
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+  opacity: 0.95;
+}
+
+.change-title.add { color: #7dffcf; }
+.change-title.upd { color: #8cc7ff; }
+.change-title.del { color: #ffb28c; }
+
+.change-list {
+  max-height: 200px;
+  overflow: auto;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.25);
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.change-line {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  padding: 4px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  opacity: 0.9;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.change-line:last-child { border-bottom: none; }
+.bc { opacity: 0.75; }
+.nm{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  opacity:0.95;
+}
+
+.nm-title{
+  opacity:0.95;
+}
+
+.nm-meta{
+  font-size:11px;
+  opacity:0.65;
+}
+
+
+.hint {
+  font-size: 12px;
+  opacity: 0.6;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* ===== MIN STOCK PANEL ===== */
+.min-toolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.min-btn {
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  padding: 0 14px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 900;
+  color: #eaeaea;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.min-btn.small {
+  height: 36px;
+  border-radius: 12px;
+  padding: 0 12px;
+}
+
+.min-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.min-btn.ghost {
+  background: rgba(255,255,255,0.03);
+}
+
+.min-btn.primary {
+  border-color: rgba(4,0,255,0.25);
+  background: linear-gradient(135deg, rgba(4,0,255,1), rgba(4,0,255,0.78));
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(4,0,255,0.18);
+}
+
+.min-drop {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.18);
+}
+
+.min-drop.drag {
+  border-color: rgba(4,0,255,0.35);
+  box-shadow: 0 0 0 5px rgba(4,0,255,0.10);
+}
+
+.min-file {
+  display: none;
+}
+
+.min-drop-inner {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+}
+
+.min-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(4,0,255,0.10);
+  border: 1px solid rgba(4,0,255,0.18);
+  color: rgba(180,200,255,1);
+  font-size: 20px;
+}
+
+.min-t1 {
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.min-t2 {
+  margin-top: 4px;
+  opacity: 0.65;
+  font-size: 12px;
+}
+
+.min-link {
+  border: 0;
+  background: transparent;
+  color: #7aa8ff;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0;
+}
+
+.min-picked {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.min-pname {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+}
+
+.min-actions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.min-check {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  opacity: 0.75;
+  font-size: 13px;
+  user-select: none;
+}
+
+.min-state {
+  margin-top: 12px;
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.min-state.error {
+  border-color: rgba(220, 38, 38, 0.30);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.min-st-title {
+  font-weight: 900;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.min-st-text {
+  opacity: 0.8;
+  font-size: 13px;
+}
+
+.min-result {
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+}
+
+.min-r-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.10);
+}
+
+.min-r-title {
+  font-weight: 900;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.min-badge {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(4,0,255,0.25);
+  background: rgba(4,0,255,0.10);
+}
+
+.min-r-file {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.min-stats {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.min-stat {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.18);
+}
+
+.min-stat .k {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.min-stat .v {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.min-stat.ok {
+  border-color: rgba(22,163,74,0.30);
+  background: rgba(22,163,74,0.10);
+}
+
+.min-stat.warn {
+  border-color: rgba(234,179,8,0.30);
+  background: rgba(234,179,8,0.10);
+}
+
+.min-split {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.min-box {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0,0,0,0.18);
+}
+
+.min-box-title {
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.min-table {
+  display: grid;
+  gap: 8px;
+}
+
+.min-tr {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 0.9fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+}
+
+.min-tr.th {
+  background: rgba(255,255,255,0.05);
+  font-weight: 900;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.min-pill {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.min-pill.insert {
+  border-color: rgba(22,163,74,0.30);
+  background: rgba(22,163,74,0.12);
+}
+.min-pill.update {
+  border-color: rgba(234,179,8,0.30);
+  background: rgba(234,179,8,0.12);
+}
+.min-pill.skip {
+  border-color: rgba(107,114,128,0.30);
+  background: rgba(107,114,128,0.12);
+}
+
+.min-bad {
+  display: grid;
+  gap: 8px;
+}
+
+.min-bad-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 1.6fr;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(220,38,38,0.28);
+  background: rgba(220,38,38,0.10);
+}
+
+.b1 { font-weight: 900; }
+.b2 { opacity: 0.9; }
+.b3 { opacity: 0.75; }
+
+.min-foot {
+  text-align: center;
+  font-size: 12px;
+  padding: 10px 0 2px;
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+  z-index: 9999;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 900px) {
+  .panel {
+    min-height: auto;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .min-drop-inner {
+    grid-template-columns: 1fr;
+  }
+  .min-picked {
+    justify-items: start;
+  }
+}
+</style>

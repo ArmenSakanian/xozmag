@@ -3,7 +3,7 @@ header("Content-Type: application/json; charset=utf-8");
 header("X-Cache-Test: start");
 // === НАСТРОЙКИ КЭША ===
 $cacheFile = __DIR__ . "/evotor_catalog_cache.json"; // лежит рядом с этим php
-$cacheTtl  = 300; // 5 минут = 300 секунд
+$cacheTtl  = 2; // 5 минут = 300 секунд
 
 // --- Если кэш свежий, отдаем его и выходим ---
 if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTtl)) {

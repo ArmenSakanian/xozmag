@@ -593,7 +593,7 @@ function takePhoto() {
 
 async function loadBarcodes() {
   const r = await fetch(
-    "/api/get_barcodes.php?search=" + encodeURIComponent(search.value)
+    "/api/barcode/get_barcodes.php?search=" + encodeURIComponent(search.value)
   );
   barcodes.value = (await r.json()).map((b) => ({
     ...b,
@@ -646,7 +646,7 @@ async function createBarcode() {
 
   if (photoFile.value) form.append("photo", photoFile.value);
 
-  const res = await fetch("/api/create_barcode.php", {
+  const res = await fetch("/api/barcode/create_barcode.php", {
     method: "POST",
     body: form,
   });
@@ -676,7 +676,7 @@ function genNumber9() {
 }
 
 async function checkExists(code) {
-  const r = await fetch("/api/check_barcode.php?barcode=" + code);
+  const r = await fetch("/api/barcode/check_barcode.php?barcode=" + code);
   return (await r.json()).exists;
 }
 
@@ -730,7 +730,7 @@ async function saveEdit() {
   if (photoFile.value) form.append("photo", photoFile.value);
   if (!photoPreview.value) form.append("remove_photo", "1");
 
-  const r = await fetch("/api/update_barcode.php", {
+  const r = await fetch("/api/barcode/update_barcode.php", {
     method: "POST",
     body: form,
   });
@@ -761,7 +761,7 @@ function resetForm() {
 async function deleteItem(id) {
   if (!confirm("Удалить штрихкод?")) return;
 
-  const r = await fetch("/api/delete_barcode.php?id=" + id);
+  const r = await fetch("/api/barcode/delete_barcode.php?id=" + id);
   const d = await r.json();
 
   if (d.status === "success") {
@@ -794,7 +794,7 @@ async function exportSelected() {
 
   // Скачать Excel
   window.open(
-    "/api/export_excel.php?ids=" + encodeURIComponent(payload),
+    "/api/barcode/export_excel.php?ids=" + encodeURIComponent(payload),
     "_blank"
   );
 }
@@ -804,7 +804,7 @@ function openPrint(item) {
   const withPrice = item._withPrice ? 1 : 0;
 
   window.open(
-    `/api/print.php?id=${item.id}&size=${item._size}&withName=${withName}&withPrice=${withPrice}`,
+    `/api/barcode/print.php?id=${item.id}&size=${item._size}&withName=${withName}&withPrice=${withPrice}`,
     "_blank"
   );
 }
@@ -823,7 +823,7 @@ function printSelected() {
   });
 
   const encoded = encodeURIComponent(JSON.stringify(payload));
-  window.open(`/api/print_bulk.php?data=${encoded}`, "_blank");
+  window.open(`/api/barcode/print_bulk.php?data=${encoded}`, "_blank");
 }
 
 function applyBulkSize() {

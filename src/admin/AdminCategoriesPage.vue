@@ -371,11 +371,31 @@ onMounted(loadCategories);
 
 <style scoped>
 .admin-page {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+  --stroke: rgba(15, 23, 42, 0.10);
+  --stroke2: rgba(15, 23, 42, 0.14);
+  --shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  --shadow2: 0 14px 34px rgba(15, 23, 42, 0.10);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --ok: #16a34a;
+  --ok-soft: rgba(22, 163, 74, 0.12);
+
   max-width: 1200px;
   margin: 0 auto;
-  padding: 22px;
+  padding: clamp(14px, 2.4vw, 24px);
+  color: var(--text);
 }
 
+/* ===== Header ===== */
 .page-head {
   display: flex;
   align-items: flex-start;
@@ -386,20 +406,21 @@ onMounted(loadCategories);
 
 .page-title {
   margin: 0;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: clamp(20px, 2.2vw, 28px);
+  font-weight: 900;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .page-subtitle {
   margin-top: 6px;
-  color: #64748b;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.35;
   max-width: 760px;
 }
 
+/* ===== Layout ===== */
 .grid {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -407,17 +428,18 @@ onMounted(loadCategories);
   align-items: start;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1020px) {
   .grid {
     grid-template-columns: 1fr;
   }
 }
 
+/* ===== Cards ===== */
 .card {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 14px;
 }
 
@@ -429,34 +451,11 @@ onMounted(loadCategories);
   margin-bottom: 12px;
 }
 
-.list-head {
-  align-items: flex-start;
-}
-
-.list-head-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.list-head-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
 .card-title {
   margin: 0;
   font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.muted {
-  font-size: 12px;
-  color: #94a3b8;
+  font-weight: 900;
+  color: var(--text);
 }
 
 .pill {
@@ -467,12 +466,38 @@ onMounted(loadCategories);
   height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--accent-soft);
   color: #1d4ed8;
-  font-weight: 700;
+  font-weight: 900;
   font-size: 12px;
 }
 
+/* ===== List head ===== */
+.list-head {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.list-head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.list-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ===== Form ===== */
 .form {
   display: grid;
   gap: 10px;
@@ -480,58 +505,65 @@ onMounted(loadCategories);
 
 .label {
   font-size: 12px;
-  color: #64748b;
-  font-weight: 700;
+  color: var(--muted);
+  font-weight: 900;
 }
 
 .input,
 .select {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke2);
   background: #fff;
-  color: #0f172a;
+  color: var(--text);
   outline: none;
-  transition: 0.15s;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.input::placeholder {
+  color: rgba(100, 116, 139, 0.9);
 }
 
 .input.small {
   padding: 9px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   width: 220px;
 }
 
 .select.small {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   min-width: 240px;
 }
 
 .input:focus,
 .select:focus {
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
+/* ===== Buttons ===== */
 .form-actions {
   display: flex;
   gap: 10px;
   margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .btn {
-  border: none;
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 13px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: 0.15s;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
   user-select: none;
+  white-space: nowrap;
 }
 
 .btn:disabled {
@@ -540,107 +572,115 @@ onMounted(loadCategories);
 }
 
 .btn.primary {
-  background: #2563eb;
+  background: var(--accent);
   color: #fff;
   box-shadow: 0 10px 18px rgba(37, 99, 235, 0.22);
 }
 
 .btn.primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.26);
+  box-shadow: 0 14px 22px rgba(37, 99, 235, 0.26);
 }
 
 .btn.soft {
-  background: rgba(15, 23, 42, 0.06);
-  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text);
+  border-color: rgba(15, 23, 42, 0.08);
 }
 
 .btn.soft:hover:not(:disabled),
 .btn.ghost:hover:not(:disabled) {
-  background: rgba(15, 23, 42, 0.09);
+  background: rgba(15, 23, 42, 0.08);
 }
 
 .btn.ghost {
   background: transparent;
-  color: #0f172a;
+  color: var(--text);
   border: 1px solid rgba(15, 23, 42, 0.14);
 }
 
 .btn.danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger-soft);
   color: #b91c1c;
-  border: 1px solid rgba(239, 68, 68, 0.22);
+  border: 1px solid rgba(220, 38, 38, 0.22);
 }
 
 .btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.14);
+  background: rgba(220, 38, 38, 0.16);
 }
 
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* ===== Notices ===== */
 .notice {
   margin-top: 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
-  font-weight: 700;
+  font-weight: 900;
   font-size: 13px;
 }
 
 .notice.error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.22);
+  background: rgba(220, 38, 38, 0.10);
+  border: 1px solid rgba(220, 38, 38, 0.20);
   color: #991b1b;
 }
 
 .notice.ok {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(22, 163, 74, 0.10);
+  border: 1px solid rgba(22, 163, 74, 0.18);
   color: #065f46;
 }
 
+/* ===== Empty ===== */
 .empty {
-  padding: 18px;
-  border-radius: 14px;
+  padding: 16px;
+  border-radius: var(--radius);
   background: rgba(15, 23, 42, 0.04);
-  color: #64748b;
-  font-weight: 700;
+  color: var(--muted);
+  font-weight: 900;
 }
-
+/* ===== Tree list ===== */
 .tree {
   display: grid;
   gap: 8px;
 }
 
+/* ✅ ДЕСКТОП: строка в линию (слева контент, справа действия) */
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 10px;
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: #fff;
-  transition: 0.15s;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
 .row:hover {
-  border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
 }
 
 .row.root {
-  background: linear-gradient(
-    90deg,
-    rgba(59, 130, 246, 0.08),
-    rgba(255, 255, 255, 0)
-  );
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.06), rgba(255, 255, 255, 0));
 }
 
+/* main */
 .row-main {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
+/* twisty */
 .twisty {
   width: 30px;
   height: 30px;
@@ -652,11 +692,12 @@ onMounted(loadCategories);
   justify-content: center;
   cursor: pointer;
   flex: 0 0 auto;
-  transition: 0.15s;
+  transition: background .15s ease, border-color .15s ease;
 }
 
 .twisty:hover {
   background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.16);
 }
 
 .twisty.placeholder {
@@ -665,8 +706,9 @@ onMounted(loadCategories);
 }
 
 .twisty i {
-  transition: 0.15s;
-  color: #0f172a;
+  transition: transform .15s ease;
+  color: var(--text);
+  font-size: 13px;
 }
 
 .twisty i.open {
@@ -674,10 +716,9 @@ onMounted(loadCategories);
 }
 
 .code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   color: #1e293b;
   background: rgba(15, 23, 42, 0.06);
   padding: 4px 8px;
@@ -685,40 +726,159 @@ onMounted(loadCategories);
   white-space: nowrap;
 }
 
+/* ✅ на десктопе — одна строка, аккуратный ellipsis */
 .name {
-  font-weight: 800;
-  color: #0f172a;
+  font-weight: 900;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 520px;
+  min-width: 0;
 }
 
+/* actions */
 .row-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
-@media (max-width: 980px) {
-  .input.small {
+/* чуть компактнее контролы в строке */
+.select.small {
+  min-width: 240px;
+}
+
+/* ===== Responsive details ===== */
+
+/* планшет/малый ноут — шапка и кнопка обновить не сжимаются */
+@media (max-width: 1020px) {
+  .page-head-right {
     width: 100%;
   }
-  .select.small {
-    min-width: 100%;
-  }
-  .name {
-    max-width: 100%;
-  }
-  .row {
+}
+
+/* ✅ ТЕЛЕФОН/ПЛАНШЕТ: переносим list-head + row в колонку */
+@media (max-width: 860px) {
+  .page-head {
+    flex-direction: column;
     align-items: flex-start;
   }
-  .row-actions {
+
+  .page-subtitle {
+    max-width: 100%;
+  }
+
+  .list-head-right {
     width: 100%;
     justify-content: flex-start;
   }
+
+  .input.small {
+    width: 100%;
+  }
+
+  /* строка — в колонку */
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .row-main {
+    width: 100%;
+  }
+
+  /* ✅ actions в 2 колонки, чтобы не было каши */
+  .row-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .row-actions .select.small,
+  .row-actions .btn {
+    flex: 1 1 220px; /* 2 колонки на большинстве телефонов в landscape/планшете */
+    min-width: 0;
+  }
+
+  .select.small {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* имя — можно переносить, без горизонтального скролла */
+  .name {
+    max-width: 100%;
+  }
 }
+
+/* ✅ Очень маленькие экраны: всё в 1 колонку + удобные тапы */
+@media (max-width: 520px) {
+  .admin-page {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  /* кнопка "Обновить" и кнопки формы — на всю ширину */
+  .page-head-right .btn,
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* actions — строго столбиком */
+  .row-actions {
+    gap: 8px;
+  }
+
+  .row-actions .select.small,
+  .row-actions .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* комфортная высота на мобиле */
+  .input,
+  .select,
+  .btn {
+    min-height: 44px;
+  }
+
+  .twisty {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+  }
+
+  /* ✅ имя — максимум 2 строки */
+  .name {
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .btn,
+  .twisty,
+  .input,
+  .select {
+    transition: none !important;
+  }
+}
+
+
 </style>

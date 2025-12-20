@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/db.php";
-require_once __DIR__ . "/libs/tcpdf/tcpdf.php";
+require_once __DIR__ . "/../db.php";
+require_once __DIR__ . "/../libs/tcpdf/tcpdf.php";
 
 /* === ПАРАМЕТРЫ === */
 $id        = intval($_GET['id'] ?? 0);

@@ -1,4 +1,3 @@
-щас скажу что хочу
 <template>
   <div class="ppage">
     <!-- ===== TOP BAR ===== -->
@@ -84,6 +83,7 @@
                   class="navbtn prev"
                   aria-label="Предыдущее фото"
                   title="Предыдущее"
+                  @click.stop
                 >
                   <i class="fa-solid fa-chevron-left"></i>
                 </button>
@@ -93,26 +93,26 @@
                   class="navbtn next"
                   aria-label="Следующее фото"
                   title="Следующее"
+                  @click.stop
                 >
                   <i class="fa-solid fa-chevron-right"></i>
                 </button>
 
-<Swiper
-  :key="galleryKey"
-  class="mainSwiper"
-  :modules="swiperModules"
-  :slides-per-view="1"
-  :space-between="10"
-  :navigation="false"
-  :pagination="{ clickable: true }"
-  :keyboard="{ enabled: true }"
-  :thumbs="{ swiper: thumbsSwiper }"
-  @swiper="onMainSwiper"
-  @slideChange="onMainSlideChange"
->
-
+                <Swiper
+                  :key="galleryKey"
+                  class="mainSwiper"
+                  :modules="swiperModules"
+                  :slides-per-view="1"
+                  :space-between="10"
+                  :navigation="false"
+                  :pagination="{ clickable: true }"
+                  :keyboard="{ enabled: true }"
+                  :thumbs="{ swiper: thumbsSwiper }"
+                  @swiper="onMainSwiper"
+                  @slideChange="onMainSlideChange"
+                >
                   <SwiperSlide v-for="(img, i) in images" :key="img + i">
-                    <div class="zoomwrap" @click="openLightbox" role="button" tabindex="0" @keydown.enter="openLightbox">
+                    <div class="zoomwrap">
                       <img
                         :src="img"
                         :alt="product?.name || ''"
@@ -143,7 +143,12 @@
                 @swiper="onThumbsSwiper"
               >
                 <SwiperSlide v-for="(img, i) in images" :key="img + i" class="thumbSlide">
-                  <button class="thumb" :class="{ on: i === activeIndex }" @click="goTo(i)" :title="`Фото ${i + 1}`">
+                  <button
+                    class="thumb"
+                    :class="{ on: i === activeIndex }"
+                    @click="goTo(i)"
+                    :title="`Фото ${i + 1}`"
+                  >
                     <img :src="img" alt="" @error="onThumbError(i)" />
                   </button>
                 </SwiperSlide>
@@ -267,69 +272,11 @@
         </aside>
       </section>
     </main>
-
-    <!-- ===== LIGHTBOX ===== -->
-    <Teleport to="body">
-      <div v-if="lightboxOpen" class="lightbox" @click.self="closeLightbox">
-        <div class="lbTop">
-          <div class="lbTitle" :title="product?.name">{{ product?.name }}</div>
-
-          <div class="lbActions">
-            <button class="iconbtn" @click="closeLightbox" aria-label="Закрыть" title="Закрыть">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="lbBody">
-          <button ref="lbPrevEl" class="navbtn prev lbnav" aria-label="Предыдущее фото">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <button ref="lbNextEl" class="navbtn next lbnav" aria-label="Следующее фото">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-
-<Swiper
-  :key="'lb-' + galleryKey"
-  class="lbSwiper"
-  :modules="swiperModules"
-  :initial-slide="activeIndex"
-  :slides-per-view="1"
-  :space-between="10"
-  :navigation="false"
-  :pagination="{ clickable: true }"
-  :keyboard="{ enabled: true }"
-  @swiper="onLbSwiper"
-  @slideChange="onLbSlideChange"
->
-
-            <SwiperSlide v-for="(img, i) in images" :key="img + i">
-              <div class="lbImgWrap">
-                <img :src="img" :alt="product?.name || ''" class="lbImg" />
-              </div>
-            </SwiperSlide>
-          </Swiper>
-        </div>
-
-        <div v-if="images.length > 1" class="lbThumbs">
-          <button
-            v-for="(img, i) in images"
-            :key="img + i"
-            class="lbThumb"
-            :class="{ on: i === activeIndex }"
-            @click="goTo(i)"
-            :aria-label="`Открыть фото ${i + 1}`"
-          >
-            <img :src="img" alt="" />
-          </button>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 /* Swiper */
@@ -357,8 +304,6 @@ const activeIndex = ref(0);
 
 const mainSwiper = ref(null);
 const thumbsSwiper = ref(null);
-
-const lightboxOpen = ref(false);
 
 const tab = ref("desc");
 const descExpanded = ref(false);
@@ -423,10 +368,6 @@ const attrs = computed(() => {
 /* Swiper navigation elements */
 const mainPrevEl = ref(null);
 const mainNextEl = ref(null);
-const lbPrevEl = ref(null);
-const lbNextEl = ref(null);
-
-const lbSwiper = ref(null);
 
 function attachMainNav() {
   const sw = mainSwiper.value;
@@ -443,50 +384,17 @@ function attachMainNav() {
   sw.navigation?.update?.();
 }
 
-function attachLbNav() {
-  const sw = lbSwiper.value;
-  if (!sw || !lbPrevEl.value || !lbNextEl.value) return;
-
-  sw.params.navigation = {
-    ...(sw.params.navigation || {}),
-    prevEl: lbPrevEl.value,
-    nextEl: lbNextEl.value,
-  };
-
-  sw.navigation?.destroy?.();
-  sw.navigation?.init?.();
-  sw.navigation?.update?.();
-}
-
 function onMainSwiper(sw) {
   mainSwiper.value = sw;
   nextTick(attachMainNav);
 }
 
-function onLbSwiper(sw) {
-  lbSwiper.value = sw;
-  nextTick(attachLbNav);
-}
-
-
-function onBeforeMainInit(swiper) {
-  swiper.params.navigation.prevEl = mainPrevEl.value;
-  swiper.params.navigation.nextEl = mainNextEl.value;
-}
-function onBeforeLbInit(swiper) {
-  swiper.params.navigation.prevEl = lbPrevEl.value;
-  swiper.params.navigation.nextEl = lbNextEl.value;
-}
-
 function onThumbsSwiper(sw) {
   thumbsSwiper.value = sw;
 }
+
 function onMainSlideChange(sw) {
   activeIndex.value = sw.activeIndex || 0;
-}
-function onLbSlideChange(sw) {
-  activeIndex.value = sw.activeIndex || 0;
-  mainSwiper.value?.slideTo(activeIndex.value, 0);
 }
 
 function goTo(i) {
@@ -494,14 +402,6 @@ function goTo(i) {
   if (!Number.isFinite(idx)) return;
   activeIndex.value = idx;
   mainSwiper.value?.slideTo(idx);
-}
-
-function openLightbox() {
-  if (!images.value.length) return;
-  lightboxOpen.value = true;
-}
-function closeLightbox() {
-  lightboxOpen.value = false;
 }
 
 /* Image error handling */
@@ -587,26 +487,16 @@ function goBack() {
   else router.push({ path: "/" });
 }
 
-function onKeydown(e) {
-  if (!lightboxOpen.value) return;
-  if (e.key === "Escape") closeLightbox();
-}
-
 onMounted(() => {
-  window.addEventListener("keydown", onKeydown);
   loadOne();
 });
-onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 watch(pid, loadOne);
 </script>
 
 <style scoped>
 /* =========================================================
-   PRODUCT PAGE — cleaned
-   - removed: stock/qty, copy buttons, toast, product code, type
-   - tabs moved under gallery
-   - image never crops (max-w/h)
+   PRODUCT PAGE — no lightbox / no zoom
    Accent: #0400ff
    ========================================================= */
 
@@ -858,24 +748,25 @@ watch(pid, loadOne);
 
 .mainSwiper{ height: 100%; }
 .mainSwiper :deep(.swiper-wrapper){ height: 100%; }
-.mainSwiper :deep(.swiper-slide){ height: 100%; }
+.mainSwiper :deep(.swiper-slide){ height: 100%; display:flex; }
 
 .zoomwrap{
   height: 100%;
   width: 100%;
-  display:grid;
-  place-items:center;
-  cursor: zoom-in;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default; /* ✅ больше не zoom-in */
   outline: none;
+  padding: 10px;
 }
 
 .img{
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
   display: block;
-  background: transparent;
 }
 
 /* Swiper dots */
@@ -938,7 +829,14 @@ watch(pid, loadOne);
   border-color: rgba(4,0,255,0.35);
   box-shadow: 0 0 0 4px rgba(4,0,255,0.10);
 }
-.thumb img{ width:100%; height:100%; object-fit: cover; display:block; }
+.thumb img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  background: #fff;
+}
 
 .nofoto{
   height: 100%;
@@ -1149,92 +1047,6 @@ watch(pid, loadOne);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* ===== lightbox ===== */
-.lightbox{
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgba(2,6,23,0.78);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display:grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 12px;
-  padding: 14px;
-}
-.lbTop{
-  max-width: 1180px;
-  margin: 0 auto;
-  width: 100%;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.lbTitle{
-  color: rgba(255,255,255,0.95);
-  font-weight: 950;
-  max-width: 75%;
-  overflow:hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lbBody{
-  max-width: 1180px;
-  margin: 0 auto;
-  width: 100%;
-  border-radius: 22px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.06);
-  overflow:hidden;
-  position: relative;
-  display:grid;
-  place-items: center;
-}
-.lbSwiper{ width: 100%; height: 100%; }
-.lbImgWrap{
-  width: 100%;
-  height: calc(100vh - 220px);
-  display:grid;
-  place-items:center;
-}
-.lbImg{
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  display:block;
-}
-.lbnav{
-  background: rgba(255,255,255,0.10);
-  border-color: rgba(255,255,255,0.18);
-}
-.lbThumbs{
-  max-width: 1180px;
-  margin: 0 auto;
-  width: 100%;
-  display:flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.lbThumb{
-  width: 76px;
-  height: 56px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.08);
-  overflow:hidden;
-  cursor:pointer;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-}
-.lbThumb:hover{ transform: translateY(-1px); }
-.lbThumb.on{
-  border-color: rgba(255,255,255,0.50);
-  box-shadow: 0 0 0 4px rgba(255,255,255,0.10);
-}
-.lbThumb img{ width:100%; height:100%; object-fit: cover; display:block; }
 
 /* ===== responsive ===== */
 @media (max-width: 980px){
