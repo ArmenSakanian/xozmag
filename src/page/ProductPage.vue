@@ -8,11 +8,7 @@
     <div v-if="error" class="error">{{ error }}</div>
 
     <!-- Затемнение при открытых фильтрах -->
-    <div
-      v-if="showFilters"
-      class="filters-backdrop"
-      @click="showFilters = false"
-    ></div>
+    <div v-if="showFilters" class="filters-backdrop" @click="showFilters = false"></div>
 
     <!-- === ФИЛЬТРЫ === -->
     <div class="filters" :class="{ open: showFilters }">
@@ -22,12 +18,8 @@
         <div class="filters-actions">
           <button class="reset-btn-all" @click="resetAllFilters">Сброс</button>
 
-          <button
-            class="apply-btn"
-            :class="{ disabled: !filtersChanged }"
-            :disabled="!filtersChanged"
-            @click="applyFilters"
-          >
+          <button class="apply-btn" :class="{ disabled: !filtersChanged }" :disabled="!filtersChanged"
+            @click="applyFilters">
             Применить
           </button>
         </div>
@@ -41,28 +33,17 @@
 
         <!-- Категории -->
         <div class="filter-section">
-          <h3
-            class="filter-title"
-            @click="filterOpen.categories = !filterOpen.categories"
-          >
+          <h3 class="filter-title" @click="filterOpen.categories = !filterOpen.categories">
             Категории
             <span><i class="arrow" :class="{ open: filterOpen.categories }"></i></span>
           </h3>
 
           <div class="filter-content-wrapper" :class="{ open: filterOpen.categories }">
             <div class="filter-content">
-              <div
-                v-for="cat in categoryState"
-                :key="cat.uuid"
-                class="category-filter"
-                :class="{ disabled: cat.disabled }"
-              >
-                <input
-                  type="checkbox"
-                  :id="'cat-' + cat.uuid"
-                  :checked="draftCategories.includes(cat.uuid)"
-                  @change="onCategoryClick(cat)"
-                />
+              <div v-for="cat in categoryState" :key="cat.uuid" class="category-filter"
+                :class="{ disabled: cat.disabled }">
+                <input type="checkbox" :id="'cat-' + cat.uuid" :checked="draftCategories.includes(cat.uuid)"
+                  @change="onCategoryClick(cat)" />
                 <label :for="'cat-' + cat.uuid">{{ cat.name }}</label>
               </div>
             </div>
@@ -73,10 +54,7 @@
 
         <!-- Фото -->
         <div class="filter-section">
-          <h3
-            class="filter-title"
-            @click="filterOpen.photo = !filterOpen.photo"
-          >
+          <h3 class="filter-title" @click="filterOpen.photo = !filterOpen.photo">
             Фото
             <span><i class="arrow" :class="{ open: filterOpen.photo }"></i></span>
           </h3>
@@ -106,10 +84,7 @@
 
         <!-- Бренды -->
         <div class="filter-section">
-          <h3
-            class="filter-title"
-            @click="filterOpen.brands = !filterOpen.brands"
-          >
+          <h3 class="filter-title" @click="filterOpen.brands = !filterOpen.brands">
             Бренд
             <span><i class="arrow" :class="{ open: filterOpen.brands }"></i></span>
           </h3>
@@ -119,27 +94,12 @@
 
               <div class="filter-search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input
-                  type="text"
-                  v-model="brandSearch"
-                  placeholder="Поиск бренда..."
-                  class="filter-search"
-                />
+                <input type="text" v-model="brandSearch" placeholder="Поиск бренда..." class="filter-search" />
               </div>
 
               <div class="brands-scroll">
-                <div
-                  v-for="b in visibleBrands"
-                  :key="b.norm"
-                  class="category-filter"
-                  :class="{ disabled: b.disabled }"
-                >
-                  <input
-                    type="checkbox"
-                    :id="'brand-' + b.norm"
-                    :value="b.norm"
-                    v-model="draftBrand"
-                  />
+                <div v-for="b in visibleBrands" :key="b.norm" class="category-filter" :class="{ disabled: b.disabled }">
+                  <input type="checkbox" :id="'brand-' + b.norm" :value="b.norm" v-model="draftBrand" />
                   <label :for="'brand-' + b.norm">{{ b.name }}</label>
                 </div>
               </div>
@@ -160,10 +120,7 @@
 
         <!-- Тип товара -->
         <div class="filter-section">
-          <h3
-            class="filter-title"
-            @click="filterOpen.types = !filterOpen.types"
-          >
+          <h3 class="filter-title" @click="filterOpen.types = !filterOpen.types">
             Тип товара
             <span><i class="arrow" :class="{ open: filterOpen.types }"></i></span>
           </h3>
@@ -174,27 +131,12 @@
               <div class="filter-search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
 
-                <input
-                  type="text"
-                  v-model="typeSearch"
-                  placeholder="Поиск типа..."
-                  class="filter-search"
-                />
+                <input type="text" v-model="typeSearch" placeholder="Поиск типа..." class="filter-search" />
               </div>
 
               <div class="types-scroll">
-                <div
-                  v-for="t in visibleTypes"
-                  :key="t.id"
-                  class="category-filter"
-                  :class="{ disabled: t.disabled }"
-                >
-                  <input
-                    type="checkbox"
-                    :id="'type-' + t.id"
-                    :value="t.id"
-                    v-model="draftType"
-                  />
+                <div v-for="t in visibleTypes" :key="t.id" class="category-filter" :class="{ disabled: t.disabled }">
+                  <input type="checkbox" :id="'type-' + t.id" :value="t.id" v-model="draftType" />
                   <label :for="'type-' + t.id">{{ t.name }}</label>
                 </div>
               </div>
@@ -215,10 +157,7 @@
 
         <!-- Цена -->
         <div class="filter-section">
-          <h3
-            class="filter-title"
-            @click="filterOpen.price = !filterOpen.price"
-          >
+          <h3 class="filter-title" @click="filterOpen.price = !filterOpen.price">
             Цена
             <span><i class="arrow" :class="{ open: filterOpen.price }"></i></span>
           </h3>
@@ -226,19 +165,9 @@
           <div class="filter-content-wrapper" :class="{ open: filterOpen.price }">
             <div class="filter-content">
               <div class="price-range-inputs">
-                <input
-                  type="number"
-                  v-model.number="draftPrice[0]"
-                  min="0"
-                  :max="maxPrice"
-                />
+                <input type="number" v-model.number="draftPrice[0]" min="0" :max="maxPrice" />
                 <span class="sep">–</span>
-                <input
-                  type="number"
-                  v-model.number="draftPrice[1]"
-                  min="0"
-                  :max="maxPrice"
-                />
+                <input type="number" v-model.number="draftPrice[1]" min="0" :max="maxPrice" />
               </div>
             </div>
           </div>
@@ -253,17 +182,56 @@
       Фильтры
     </button>
 
+<!-- ПОИСК ПО ТОВАРАМ -->
+<div class="products-top">
+  <div class="products-search-row">
+    <!-- Название / Артикул -->
+    <div class="products-search">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input
+        v-model="searchNameArticle"
+        type="text"
+        placeholder="Поиск: название или артикул…"
+      />
+      <button
+        v-if="searchNameArticle"
+        class="products-search-clear"
+        type="button"
+        @click="searchNameArticle = ''"
+        title="Очистить"
+      >✕</button>
+    </div>
+
+    <!-- Штрихкод -->
+    <div class="products-search barcode">
+      <i class="fa-solid fa-barcode" aria-hidden="true"></i>
+      <input
+        v-model="searchBarcode"
+        type="text"
+        inputmode="numeric"
+        placeholder="Поиск по штрихкоду…"
+      />
+      <button
+        v-if="searchBarcode"
+        class="products-search-clear"
+        type="button"
+        @click="searchBarcode = ''"
+        title="Очистить"
+      >✕</button>
+    </div>
+  </div>
+</div>
+
+
+
+
     <!-- === ТОВАРЫ === -->
     <div class="products-grid">
       <div v-if="!loading && filteredProducts.length === 0" class="no-products">
         Товаров по текущим выбранным фильтрам нет
       </div>
 
-      <div
-        v-for="item in paginatedProducts"
-        :key="item.uuid"
-        class="product-card"
-      >
+      <div v-for="item in paginatedProducts" :key="item.uuid" class="product-card">
         <!-- ==== ЕСЛИ ФОТО НЕТ ==== -->
         <div v-if="!item.images || item.images.length === 0" class="main-image-wrapper">
           <img src="/img/no-photo.png" class="product-img-big" />
@@ -272,17 +240,9 @@
         <!-- ==== ЕСЛИ ФОТО ЕСТЬ ==== -->
         <div v-else>
           <!-- БОЛЬШОЙ SWIPER -->
-          <Swiper
-            class="main-swiper"
-            :modules="[Navigation, Thumbs]"
-            :navigation="true"
-            :thumbs="{ swiper: thumbsSwiper[item.uuid] }"
-            :slidesPerView="1"
-          >
-            <SwiperSlide
-              v-for="(img, index) in item.images"
-              :key="index"
-            >
+          <Swiper class="main-swiper" :modules="[Navigation, Thumbs]" :navigation="true"
+            :thumbs="{ swiper: thumbsSwiper[item.uuid] }" :slidesPerView="1">
+            <SwiperSlide v-for="(img, index) in item.images" :key="index">
               <div class="main-image-wrapper">
                 <img :src="img" class="product-img-big" />
               </div>
@@ -290,19 +250,9 @@
           </Swiper>
 
           <!-- THUMBS SWIPER -->
-          <Swiper
-            class="thumbs-swiper"
-            :modules="[Thumbs]"
-            :slidesPerView="4"
-            :spaceBetween="8"
-            watchSlidesProgress
-            @swiper="(val) => (thumbsSwiper[item.uuid] = val)"
-          >
-            <SwiperSlide
-              v-for="(img, index) in item.images"
-              :key="'thumb-' + index"
-              class="thumb-slide"
-            >
+          <Swiper class="thumbs-swiper" :modules="[Thumbs]" :slidesPerView="4" :spaceBetween="8" watchSlidesProgress
+            @swiper="(val) => (thumbsSwiper[item.uuid] = val)">
+            <SwiperSlide v-for="(img, index) in item.images" :key="'thumb-' + index" class="thumb-slide">
               <img :src="img" class="thumb-img" />
             </SwiperSlide>
           </Swiper>
@@ -317,12 +267,12 @@
       </div>
     </div>
     <div class="pagination">
-  <button @click="prevPage" :disabled="currentPage === 1">← Назад</button>
+      <button @click="prevPage" :disabled="currentPage === 1">← Назад</button>
 
-  <span>{{ currentPage }} / {{ totalPages }}</span>
+      <span>{{ currentPage }} / {{ totalPages }}</span>
 
-  <button @click="nextPage" :disabled="currentPage === totalPages">Вперёд →</button>
-</div>
+      <button @click="nextPage" :disabled="currentPage === totalPages">Вперёд →</button>
+    </div>
 
   </div>
 </template>
@@ -337,6 +287,18 @@ import { Navigation, Thumbs } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
+const searchNameArticle = ref("");
+const searchBarcode = ref("");
+
+function normalizeSearchText(v = "") {
+  return String(v ?? "")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/\u00A0/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ") // убираем знаки, оставляем буквы/цифры
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 // Объект для хранения thumb-swiper для каждого товара
 const thumbsSwiper = ref({});
@@ -603,21 +565,25 @@ function onCategoryClick(cat) {
   draftCategories.value = [cat.uuid];
 }
 
-// === ОТФИЛЬТРОВАННЫЕ ТОВАРЫ ===
 const filteredProducts = computed(() => {
+  const qNA = normalizeSearchText(searchNameArticle.value);
+  const tokensNA = qNA ? qNA.split(" ").filter(Boolean) : [];
+
+  // штрихкод — оставляем только цифры
+  const qBC = String(searchBarcode.value || "").replace(/\D/g, "").trim();
+
   return products.value.filter((p) => {
     const price = Number(p.price) || 0;
 
+    // ----- твои фильтры -----
     if (
       selectedCategories.value.length &&
       !selectedCategories.value.includes(p.categoryUuid)
-    )
-      return false;
+    ) return false;
 
     if (selectedBrand.value.length) {
       if (!p.brandName) return false;
-      if (!selectedBrand.value.includes(normalizeBrandName(p.brandName)))
-        return false;
+      if (!selectedBrand.value.includes(normalizeBrandName(p.brandName))) return false;
     }
 
     if (selectedType.value.length) {
@@ -635,9 +601,22 @@ const filteredProducts = computed(() => {
 
     if (price < priceRange.value[0] || price > priceRange.value[1]) return false;
 
+    // ✅ 1) Поиск только по НАЗВАНИЮ или АРТИКУЛУ (по словам)
+    if (tokensNA.length) {
+      const hayNA = normalizeSearchText([p.name, p.article].join(" "));
+      if (!tokensNA.every((t) => hayNA.includes(t))) return false;
+    }
+
+    // ✅ 2) Поиск только по ШТРИХКОДУ
+    if (qBC) {
+      const hayBC = String(p.barcode || "").replace(/\D/g, "");
+      if (!hayBC.includes(qBC)) return false;
+    }
+
     return true;
   });
 });
+
 
 // === ПРИМЕНЕНИЕ ФИЛЬТРОВ ===
 function applyFilters() {
@@ -646,6 +625,8 @@ function applyFilters() {
   selectedType.value = [...draftType.value];
   priceRange.value = [...draftPrice.value];
   photoFilter.value = draftPhotoFilter.value;
+  currentPage.value = 1;
+
 }
 
 // === СБРОС ===
@@ -655,6 +636,7 @@ function resetAllFilters() {
   draftType.value = [];
   draftPrice.value = [0, maxPrice.value];
   draftPhotoFilter.value = "all";
+  currentPage.value = 1;
 
   applyFilters();
 }
@@ -677,10 +659,36 @@ onMounted(loadData);
 watch(showFilters, (v) => {
   document.body.style.overflow = v ? "hidden" : "auto";
 });
+
+watch([searchNameArticle, searchBarcode], () => {
+  currentPage.value = 1;
+});
+
+
+watch(
+  filteredProducts,
+  () => {
+    // если текущая страница стала больше, чем totalPages — сдвинем назад
+    if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
+  },
+  { deep: true }
+);
+
 </script>
 
-
 <style scoped>
+/* ===========================
+   BASE
+=========================== */
+.catalog-page {
+  padding: 20px;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* ===========================
+   PAGINATION
+=========================== */
 .pagination {
   margin-left: 280px;
   padding: 20px;
@@ -691,21 +699,41 @@ watch(showFilters, (v) => {
 }
 
 .pagination button {
-  background: var(--accent-color);
-  color: white;
+  background: var(--accent);
+  color: #fff;
   padding: 10px 16px;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: 0.2s;
+}
+
+.pagination button:hover {
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.02);
 }
 
 .pagination button:disabled {
-  background: #333;
-  color: #777;
+  background: var(--bg-soft);
+  color: var(--text-light);
   cursor: not-allowed;
+  box-shadow: none;
 }
 
+/* ===========================
+   ERROR / LOADING
+=========================== */
+.error {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: var(--accent-danger);
+  font-weight: 700;
+}
 
 .filters-header {
   position: sticky;
@@ -718,7 +746,7 @@ watch(showFilters, (v) => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: white;
+  color: var(--text-main);
   font-size: 18px;
   gap: 16px;
   margin: 0 auto;
@@ -728,8 +756,8 @@ watch(showFilters, (v) => {
 .loader {
   width: 48px;
   height: 48px;
-  border: 5px solid #3a3d44;
-  border-top-color: var(--accent-color);
+  border: 5px solid rgba(27, 30, 40, 0.12);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spinner 0.9s linear infinite;
 }
@@ -740,14 +768,18 @@ watch(showFilters, (v) => {
   }
 }
 
+/* ===========================
+   FILTER TITLES / CONTENT
+=========================== */
 .filter-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--accent-color);
+  color: var(--text-main);
   cursor: pointer;
-  padding: 8px 0;
-  font-size: 18px;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: 900;
   user-select: none;
 }
 
@@ -758,7 +790,7 @@ watch(showFilters, (v) => {
 
 .brands-scroll,
 .types-scroll {
-  max-height: 300px; /* можно 400, 500 — как хочешь */
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 5px;
 }
@@ -771,7 +803,7 @@ watch(showFilters, (v) => {
 }
 
 .filter-content-wrapper.open {
-  max-height: 2000px; /* можно 5000px — вообще без разницы */
+  max-height: 2000px;
   opacity: 1;
 }
 
@@ -783,8 +815,8 @@ watch(showFilters, (v) => {
 .filter-title .arrow {
   width: 10px;
   height: 10px;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
   transform: rotate(45deg);
   transition: transform 0.3s ease;
   margin-left: 8px;
@@ -796,44 +828,38 @@ watch(showFilters, (v) => {
 
 .clear-btn {
   margin-top: 10px;
-  background: #2a2d31;
-  color: #bbb;
-  border: 1px solid #444;
-  padding: 6px 10px;
-  border-radius: 6px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  border: 1px solid var(--border-soft);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .clear-btn:hover {
-  background: #3a3f44;
+  filter: brightness(0.98);
 }
 
+/* disabled filters */
 .category-filter.disabled,
 .brand-filter.disabled,
 .type-filter.disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   pointer-events: none;
 }
 
-.category-filter.disabled label {
-  opacity: 0.4;
-  cursor: pointer;
-}
-
-.category-filter.disabled input {
-  opacity: 0.4;
-}
-
-.category-filter label.disabled {
-  color: #555;
-  opacity: 0.4;
-}
-
+.category-filter.disabled label,
+.category-filter.disabled input,
+.category-filter label.disabled,
 .category-filter input[disabled] {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
+/* ===========================
+   PHOTO FILTER (RADIO)
+=========================== */
 .photo-filter {
   display: flex;
   flex-direction: column;
@@ -849,48 +875,54 @@ watch(showFilters, (v) => {
 }
 
 .radio-row input[type="radio"] {
-  display: none; /* скрываем дефолт */
+  display: none;
 }
 
 .radio-check {
   width: 20px;
   height: 20px;
-  border: 2px solid white;
+  border: 2px solid var(--border-soft);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.25s ease;
+  background: var(--bg-soft);
 }
 
-.radio-row input[type="radio"]:checked + .radio-check {
-  background: var(--accent-color);
+.radio-row input[type="radio"]:checked+.radio-check {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .radio-text {
-  color: white;
-  font-size: 16px;
+  color: var(--text-main);
+  font-size: 15px;
   user-select: none;
 }
 
+/* ===========================
+   FILTER ACTION BUTTONS
+=========================== */
 .apply-btn,
 .reset-btn-all {
-  padding: 15px;
-  color: white;
+  padding: 14px;
+  color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 18px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
   cursor: pointer;
-  margin-top: 15px;
+  margin-top: 12px;
   transition: 0.2s;
+  box-shadow: var(--shadow-sm);
 }
 
 .apply-btn {
-  background: var(--accent-color);
+  background: var(--accent);
 }
 
 .reset-btn-all {
-  background: var(--delete-color);
+  background: var(--accent-danger);
 }
 
 .filters-actions {
@@ -899,23 +931,32 @@ watch(showFilters, (v) => {
   align-items: center;
 }
 
-.reset-btn-all:hover {
-  background: var(--accent-color);
-  color: #000;
+.reset-btn-all:hover,
+.apply-btn:hover {
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.02);
 }
 
+.apply-btn.disabled {
+  background: var(--bg-soft);
+  color: var(--text-light);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* show more */
 .show-more-btn {
   width: 100%;
   text-align: center;
   padding: 10px 0;
   margin: 6px 0 12px 0;
 
-  color: var(--accent-color);
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
 
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  background: rgba(4, 0, 231, 0.06);
+  border-radius: var(--radius-md);
   cursor: pointer;
 
   transition: all 0.25s ease;
@@ -923,17 +964,16 @@ watch(showFilters, (v) => {
 }
 
 .show-more-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: scale(1.02);
+  background: rgba(4, 0, 231, 0.10);
+  transform: scale(1.01);
 }
 
 .show-more-btn:active {
-  transform: scale(0.98);
-  background: rgba(255, 255, 255, 0.18);
+  transform: scale(0.99);
 }
 
 .reset-button-filters {
-  color: var(--delete-color);
+  color: var(--accent-danger);
   background: transparent;
   text-decoration: underline;
   border: none;
@@ -941,39 +981,71 @@ watch(showFilters, (v) => {
   cursor: pointer;
 }
 
-.apply-btn.disabled {
-  background: #2f3237;
-  color: #999;
-  cursor: not-allowed;
-}
-
 .no-products {
-  color: #ccc;
-  font-size: 18px;
+  color: var(--text-muted);
+  font-size: 16px;
   padding: 20px;
 }
 
-.catalog-page {
-  padding: 20px;
-}
-
-/* === ФИЛЬТРЫ === */
+/* ===========================
+   FILTERS SIDEBAR
+=========================== */
 .filters {
   position: fixed;
-  top: 69px; /* <<< фильтры начинаются под хедером */
+  top: var(--site-header-h);
   left: 0;
   width: 260px;
-  height: calc(100vh - 60px); /* <<< чтобы не вылазило за экран */
+  height: calc(100vh - var(--site-header-h));
   padding: 20px;
-  background: var(--background-container);
+  background: var(--bg-panel);
   overflow-y: auto;
-  z-index: 10; /* можно оставить маленький */
+  z-index: 10;
+  border-right: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .filters-close-btn {
   display: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 900;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.25s;
 }
-/* ОБЩИЙ КОНТЕЙНЕР */
+
+.filters-close-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* search wrapper */
+
+.products-search-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
+}
+
+.products-search.barcode {
+  max-width: 320px;
+}
+
+@media (max-width: 768px) {
+  .products-search-row {
+    grid-template-columns: 1fr;
+  }
+  .products-search.barcode {
+    max-width: 100%;
+  }
+}
+
 .filter-search-wrapper {
   position: relative;
   width: 100%;
@@ -981,66 +1053,66 @@ watch(showFilters, (v) => {
 
 .search-icon {
   position: absolute;
-  left: 15px;
-  top: 21px;
+  left: 14px;
+  top: 20px;
   transform: translateY(-50%);
-  font-size: 16px;
-  color: #8a8d92;
+  font-size: 15px;
+  color: var(--text-light);
   pointer-events: none;
 }
 
-/* САМО ПОЛЕ ПОИСКА */
+/* filter search input */
 .filter-search {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   width: 100%;
-  padding: 12px 14px 12px 44px; /* место под иконку слева */
+  padding: 12px 14px 12px 42px;
   border-radius: 12px;
-  border: 1px solid #2a2d32;
-  background: #1c1e22;
-  color: #f2f2f2;
-  font-size: 15px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-soft);
+  color: var(--text-main);
+  font-size: 14px;
   transition: all 0.25s ease;
   outline: none;
 }
 
 .filter-search::placeholder {
-  color: #8a8d92;
+  color: var(--text-light);
 }
 
-/* ХОВЕР */
 .filter-search:hover {
-  border-color: #3a3f45;
+  border-color: rgba(4, 0, 231, 0.25);
 }
 
-/* ФОКУС — красивое неоновое свечение */
 .filter-search:focus {
-  border-color: #4c7dff;
-  box-shadow: 0 0 0 3px rgba(76, 125, 255, 0.35);
-  background: #202328;
+  border-color: rgba(4, 0, 231, 0.5);
+  box-shadow: 0 0 0 3px rgba(4, 0, 231, 0.18);
+  background: #eef1fb;
 }
 
-/* Кнопка закрытия внутри фильтров — по умолчанию скрыта */
+/* close inside filters (if you use it somewhere) */
 .close-filters {
   display: none;
   background: none;
   border: none;
-  color: white;
-  font-size: 26px;
+  color: var(--text-main);
+  font-size: 28px;
   margin-bottom: 10px;
   cursor: pointer;
 }
 
-/* Мобильная кнопка “Фильтры” — по умолчанию скрыта */
+/* mobile filters button */
 .mobile-filters-btn {
   display: none;
 }
 
-/* Затемнение фона при открытых фильтрах (мобилка) */
+/* backdrop */
 .filters-backdrop {
   display: none;
 }
 
-/* === КАТЕГОРИИ === */
+/* ===========================
+   CATEGORY CHECKBOXES
+=========================== */
 .category-filter {
   display: flex;
   align-items: center;
@@ -1053,9 +1125,9 @@ watch(showFilters, (v) => {
   height: 20px;
   appearance: none !important;
   -webkit-appearance: none !important;
-  background: #1f2227;
-  border: 2px solid #4e5258;
-  border-radius: 5px;
+  background: var(--bg-soft);
+  border: 2px solid rgba(107, 114, 128, 0.35);
+  border-radius: 6px;
   cursor: pointer;
   position: relative;
   transition: all 0.25s ease;
@@ -1063,8 +1135,8 @@ watch(showFilters, (v) => {
 
 /* Активное */
 .category-filter input[type="checkbox"]:checked {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 /* SVG галочка */
@@ -1072,48 +1144,117 @@ watch(showFilters, (v) => {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath fill='black' d='M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z'/%3E%3C/svg%3E");
-  background-position: 50% 56%; /* <<< идеальный центр */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'%3E%3Cpath fill='white' d='M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z'/%3E%3C/svg%3E");
+  background-position: 50% 56%;
   background-repeat: no-repeat;
 }
 
 .category-filter label {
-  color: white;
+  color: var(--text-main);
+  font-size: 14px;
 }
 
+/* ===========================
+   PRICE
+=========================== */
 .filter-price {
   margin-top: 10px;
 }
 
 .filter-price h3 {
   margin-bottom: 10px;
-  color: white;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 900;
 }
 
-/* === ИНПУТЫ ЦЕН === */
 .price-range-inputs {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .price-range-inputs input {
-  width: 90px;
-  padding: 7px;
-  background: var(--background-input);
-  border: 1px solid var(--accent-color);
-  border-radius: 6px;
-  color: white;
+  width: 92px;
+  padding: 8px 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
   text-align: center;
+  outline: none;
+}
+
+.price-range-inputs input:focus {
+  border-color: rgba(4, 0, 231, 0.5);
+  box-shadow: 0 0 0 3px rgba(4, 0, 231, 0.12);
 }
 
 .sep {
-  color: #aaa;
+  color: var(--text-light);
 }
 
-/* === ТОВАРЫ === */
+/* ===========================
+   PRODUCTS SEARCH (TOP)
+=========================== */
+.products-top {
+  margin-left: 280px;
+  padding: 0 20px 10px 20px;
+}
+
+.products-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 12px 14px;
+
+  box-shadow: var(--shadow-sm);
+}
+
+.products-search i {
+  color: var(--text-light);
+  font-size: 15px;
+}
+
+.products-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.products-search input::placeholder {
+  color: var(--text-light);
+}
+
+.products-search-clear {
+  border: none;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  transition: 0.2s;
+}
+
+.products-search-clear:hover {
+  filter: brightness(0.98);
+  color: var(--text-main);
+}
+
+/* ===========================
+   PRODUCTS GRID
+=========================== */
 .products-grid {
-  margin-left: 280px; /* ширина фильтров */
+  margin-left: 280px;
   padding: 20px;
 
   display: grid;
@@ -1122,23 +1263,25 @@ watch(showFilters, (v) => {
 }
 
 .product-card {
-  background: var(--background-container);
+  background: var(--bg-panel);
   padding: 18px;
   border-radius: 14px;
-  box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
-/* === ГЛАВНОЕ ИЗОБРАЖЕНИЕ === */
+/* main image */
 .main-image-wrapper {
   width: 100%;
   height: 220px;
-  background: white;
+  background: #fff;
   border-radius: 14px;
   margin-bottom: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  border: 1px solid var(--border-soft);
 }
 
 .product-img-big {
@@ -1153,67 +1296,46 @@ watch(showFilters, (v) => {
   transform: scale(1.03);
 }
 
-/* === МИНИАТЮРЫ === */
-.thumbs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.thumb {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  background: #222;
-  border-radius: 8px;
-  cursor: pointer;
-  opacity: 0.6;
-  border: 2px solid transparent;
-  transition: 0.25s;
-}
-
-.thumb.active {
-  border-color: var(--accent-color);
-  opacity: 1;
-}
-
-.thumb:hover {
-  opacity: 1;
-}
-
+/* product text */
 .product-name {
-  color: white;
-  font-size: 17px;
-  font-weight: 600;
+  color: var(--text-main);
+  font-size: 16px;
+  font-weight: 900;
 }
+
 .product-price {
-  color: var(--accent-color);
-  font-size: 22px;
-  font-weight: 700;
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 900;
 }
+
 .product-barcode {
-  color: #ccc;
+  color: var(--text-muted);
 }
+
 .product-article {
-  color: #bbb;
+  color: var(--text-muted);
 }
+
 .product-qty {
-  color: var(--accent-color);
+  color: var(--accent);
+  font-weight: 900;
 }
 
-
+/* ===========================
+   SWIPER
+=========================== */
 .main-swiper {
   width: 100%;
   margin-bottom: 10px;
 }
 
-/* Высота как у тебя сейчас */
 .main-swiper .main-image-wrapper {
   width: 100%;
   height: 220px;
   border-radius: 14px;
   overflow: hidden;
-  background: white;
+  background: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1225,22 +1347,19 @@ watch(showFilters, (v) => {
   object-fit: contain;
 }
 
-/* Стрелки */
+/* arrows */
 .swiper-button-prev,
 .swiper-button-next {
-  color: var(--accent-color);
+  color: var(--accent);
   scale: 0.7;
 }
 
 .swiper-button-prev:hover,
 .swiper-button-next:hover {
-  color: white;
+  filter: brightness(1.05);
 }
 
-/* ------------------------------ */
-/*       THUMBS SWIPER            */
-/* ------------------------------ */
-
+/* thumbs swiper */
 .thumbs-swiper {
   width: 100%;
   margin-top: 10px;
@@ -1248,8 +1367,8 @@ watch(showFilters, (v) => {
 }
 
 .thumbs-swiper .swiper-slide {
-  width: 25%;        /* >>> 4 миниатюры в ряд */
-  aspect-ratio: 1/1; /* квадратные превьюшки */
+  width: 25%;
+  aspect-ratio: 1/1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1259,9 +1378,9 @@ watch(showFilters, (v) => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border-radius: 8px;
-  background: #222;
-  opacity: 0.6;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  opacity: 0.7;
   border: 2px solid transparent;
   transition: 0.25s;
 }
@@ -1272,53 +1391,156 @@ watch(showFilters, (v) => {
 
 .swiper-slide-thumb-active .thumb-img {
   opacity: 1;
-  border-color: var(--accent-color);
+  border-color: var(--accent);
 }
-
-/* ------------------------------ */
-/*   ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ = OFF   */
-/* ------------------------------ */
 
 .thumbs-swiper .swiper-wrapper {
   width: 100%;
 }
 
-/* Отключаем выделение И кликовые подсветки только у swiper */
+/* disable selection/tap highlight */
 .main-swiper,
 .thumbs-swiper,
 .thumbs-swiper .swiper-slide,
 .thumb-img,
 .swiper-button-prev,
 .swiper-button-next {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .swiper-button-prev:focus,
 .swiper-button-next:focus,
 .thumbs-swiper .swiper-slide:focus,
 .thumb-img:focus {
-    outline: none !important;
-    box-shadow: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-/* ————————————————————— */
-/*   МОБИЛЬНАЯ АДАПТАЦИЯ   */
-/* ————————————————————— */
+/* ===========================
+   MOBILE
+=========================== */
 @media (max-width: 768px) {
-
   .pagination {
     margin: 0 auto;
   }
- /* Большое фото */
+
+  .catalog-page {
+    padding: 12px;
+  }
+
+  .products-top {
+    margin-left: 0 !important;
+    padding: 0 0 10px 0;
+  }
+
+  /* button filters */
+  .mobile-filters-btn {
+    display: block;
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    margin: 0 0 15px 0;
+    border: none;
+    cursor: pointer;
+    font-weight: 900;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* backdrop */
+  .filters-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(1px);
+    z-index: 2500;
+    opacity: 1;
+  }
+
+  /* filters panel */
+  .filters {
+    position: fixed;
+    top: var(--site-header-h);
+    left: 0;
+    width: 100%;
+    height: calc(100vh - var(--site-header-h));
+    padding: 0;
+    border-radius: 0;
+    transform: translateY(100%);
+    z-index: 3000;
+    overflow-y: auto;
+    transition: transform 0.35s ease;
+  }
+
+  .filters.open {
+    transform: translateY(0);
+  }
+
+  .filters-header {
+    background: var(--bg-panel);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 10px;
+  }
+
+  .filters-header h2 {
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+
+  .filters-close-btn {
+    display: flex;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+  }
+
+  .filters-actions {
+    grid-column: 1 / 3;
+    grid-row: 2 / 3;
+  }
+
+  .filters-scroll {
+    padding: 20px;
+  }
+
+  /* products grid */
+  .products-grid {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .product-card {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* swiper mobile */
   .main-swiper {
     width: 100%;
-    height: 220px;          /* фикс как в desktop */
+    height: 220px;
     max-height: 220px;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
+    border: 1px solid var(--border-soft);
   }
 
   .main-swiper .swiper-wrapper {
@@ -1332,15 +1554,13 @@ watch(showFilters, (v) => {
     object-fit: contain;
   }
 
-  /* Стрелки */
   .main-swiper .swiper-button-prev,
   .main-swiper .swiper-button-next {
     width: 26px;
     height: 26px;
-    color: var(--accent-color);
+    color: var(--accent);
   }
 
-  /* Миниатюры */
   .thumbs-swiper {
     width: 100%;
     margin-top: 10px;
@@ -1349,211 +1569,16 @@ watch(showFilters, (v) => {
 
   .thumbs-swiper .swiper-wrapper {
     display: flex;
-    overflow: hidden;
-    max-width: 100%;   /* главное, чтобы wrapper не ломал верстку */
     overflow: hidden !important;
+    max-width: 100%;
   }
-.product-card {
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-  }
+
   .thumbs-swiper .swiper-slide {
     width: 58px !important;
     height: 58px;
-    flex-shrink: 0;     /* запрещаем уменьшение */
+    flex-shrink: 0;
     margin-right: 8px !important;
-  }
-
-  .thumb-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #222;
-    border-radius: 6px;
-    opacity: 0.6;
-    transition: 0.25s;
-  }
-
-  .thumb-img.active {
-    opacity: 1;
-    border: 2px solid var(--accent-color);
-  }
-
-  /* Если фото нет */
-  .no-photo-wrapper img {
-    width: 100%;
-    height: 220px;
-    object-fit: contain;
-    background: #fff;
-    border-radius: 12px;
-  }
-
-  .catalog-page {
-    padding: 12px;
-  }
-
-  .filters-close-btn {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    border: 2px solid var(--accent-color);
-    background: transparent;
-    color: var(--accent-color);
-    font-size: 20px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.25s;
-  }
-  .filters-close-btn:hover {
-    background: var(--accent-color);
-    color: #000;
-    transform: scale(1.05);
-  }
-
-  .filters-actions {
-    grid-column: 1 / 3; /* растянуть кнопки на всю ширину */
-    grid-row: 2 / 3;
-  }
-
-  /* Кнопка "Фильтры" */
-  .mobile-filters-btn {
-    display: block;
-    width: 100%;
-    background: var(--accent-color);
-    color: #fff;
-    padding: 14px;
-    font-size: 18px;
-    border-radius: 12px;
-    margin: 0 0 15px 0;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-  }
-
-  /* Затемнение */
-  .filters-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(1px);
-    z-index: 2500;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  .filters.open ~ .filters-backdrop {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Фильтры занимают 100% ширины */
-  .filters {
-    position: fixed;
-    top: 69px; /* ниже header */
-    left: 0;
-    width: 100%;
-    height: calc(100vh - 69px);
-    padding: 0;
-    border-radius: 0;
-    transform: translateY(100%);
-    z-index: 3000;
-    overflow-y: auto;
-    transition: transform 0.35s ease;
-  }
-
-  /* показать фильтры */
-  .filters.open {
-    transform: translateY(0);
-  }
-
-  /* ВЕРХНЯЯ ПАНЕЛЬ */
-  .filters-header {
-    background: var(--background-container);
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-
-    display: grid;
-    grid-template-columns: 1fr auto; /* слева текст, справа крест */
-    grid-template-rows: auto auto; /* первая строка — заголовок, вторая — кнопки */
-  }
-
-  .filters-header h2 {
-    color: white;
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-  }
-
-  .close-filters {
-    display: block;
-    font-size: 28px;
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    padding: 0 10px;
-    opacity: 0.8;
-    transition: 0.2s;
-  }
-
-  .close-filters:hover {
-    opacity: 1;
-  }
-  .filters-scroll {
-    padding: 20px;
-  }
-  /* ВНУТРЕННИЙ КОНТЕНТ */
-  .filters-inner {
-    padding: 20px;
-    padding-bottom: 120px;
-  }
-
-  .filter-title {
-    font-size: 18px;
-    font-weight: 600;
-    padding: 12px 0;
-  }
-
-  .filter-content-wrapper {
-    margin-bottom: 18px;
-  }
-
-  .category-filter input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
-  }
-
-  .category-filter {
-    margin-bottom: 16px;
-  }
-
-  /* Применить */
-  .apply-btn {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  /* Сетка товаров */
-  .products-grid {
-    margin-left: 0 !important;
-    padding: 0 !important;
-    grid-template-columns: 1fr;
-    gap: 14px;
   }
 }
 </style>
+

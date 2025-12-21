@@ -8,7 +8,7 @@ import catalog from "../page/CatalogV2.vue";
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
-  { path: "/product", name: "product", component: ProductPage },
+  { path: "/product", name: "product_v1", component: ProductPage },
   { path: "/login", name: "login", component: LoginPage },
   { path: "/catalogv2", name: "catalog", component: catalog },
   { path: "/barcode", name: "barcode", component: BarcodePage, meta: { requiresAuth: true } },
@@ -35,10 +35,6 @@ const routes = [
 {
   path: "/admin/order",
   component: () => import("@/admin/AdminOrder.vue"),
-},
-{
-  path: "/admin/barcode",
-  component: () => import("@/admin/BarcodeLabelSizesPage.vue"),
 },
 {
   path: "/product/:id",
