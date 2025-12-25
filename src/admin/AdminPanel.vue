@@ -8,58 +8,59 @@
     </header>
 
     <section class="tiles" aria-label="Разделы админ-панели">
-      <router-link to="/admin/categories" class="tile">
+      <a href="/admin/categories" class="tile">
         <span class="ico"><i class="fa-solid fa-folder-tree"></i></span>
         <span class="t">
           <span class="t-title">Категории</span>
           <span class="t-desc">Дерево категорий и подкатегорий</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
+      </a>
 
-      <router-link to="/admin/attributes" class="tile">
+      <a href="/admin/attributes" class="tile">
         <span class="ico"><i class="fa-solid fa-sliders"></i></span>
         <span class="t">
           <span class="t-title">Характеристики</span>
           <span class="t-desc">Атрибуты и значения</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
+      </a>
 
-      <router-link to="/admin/products" class="tile">
+      <a href="/admin/products" class="tile">
         <span class="ico"><i class="fa-solid fa-boxes-stacked"></i></span>
         <span class="t">
           <span class="t-title">Товары</span>
           <span class="t-desc">Таблица, редактирование, bulk</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
+      </a>
 
-      <router-link to="/admin/functions" class="tile">
+      <a href="/admin/functions" class="tile">
         <span class="ico"><i class="fa-solid fa-gears"></i></span>
         <span class="t">
           <span class="t-title">Функции</span>
           <span class="t-desc">Сервисные инструменты</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
+      </a>
 
-      <router-link to="/admin/order" class="tile">
+      <a href="/admin/order" class="tile">
         <span class="ico"><i class="fa-solid fa-truck"></i></span>
         <span class="t">
           <span class="t-title">Заказ поставщику</span>
           <span class="t-desc">Сформировать и выгрузить заказ</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
-            <router-link to="/admin/barcode" class="tile">
+      </a>
+
+      <a href="/admin/barcode" class="tile">
         <span class="ico"><i class="fa-solid fa-barcode"></i></span>
         <span class="t">
           <span class="t-title">Штрихкод</span>
           <span class="t-desc">Создать/изменить размер штрихкода</span>
         </span>
         <i class="fa-solid fa-chevron-right arrow"></i>
-      </router-link>
+      </a>
     </section>
   </div>
 </template>
@@ -202,4 +203,3 @@
   .tile:hover{ transform: none; }
 }
 </style>
-

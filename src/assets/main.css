@@ -14,7 +14,7 @@
 :root {
   --bg-main: #f4f6fb;
   --bg-panel: #ffffff;
-    --accent: #0400e7;
+    --accent: #0400ff;
   --accent-2: #16a34a;
   --accent-danger: #dc2626;
     --text-main: #1b1e28;
@@ -41,4 +41,12 @@
 }
 body {
   background: var(--bg-main);
+}
+
+@media (max-width: 1024px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }

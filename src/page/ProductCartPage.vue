@@ -450,16 +450,31 @@ async function loadOne() {
     const found = list.find((p) => String(p?.id) === pid.value);
     if (!found) return;
 
-    // photos from evotor_catalog
-    let imgArr = [];
-    try {
-      const r2 = await fetch("/api/vitrina/evotor_catalog.php", { cache: "no-store" });
-      const ev = await r2.json();
-      const ep = (ev?.products || []).find((x) => String(x?.barcode) === String(found?.barcode));
-      imgArr = Array.isArray(ep?.images) ? ep.images.filter(Boolean) : [];
-    } catch {
-      imgArr = [];
-    }
+// ✅ photos only from get_products.php (found.photo)
+let imgArr = [];
+
+// если вдруг бек начнет отдавать уже готовый массив images — поддержим
+if (Array.isArray(found?.images)) {
+  imgArr = found.images.filter(Boolean);
+}
+
+// основной вариант: found.photo = JSON-строка массива
+if (!imgArr.length && found?.photo) {
+  const ph = found.photo;
+
+  const parsed = typeof ph === "string" ? safeJson(ph) : ph;
+
+  if (Array.isArray(parsed)) {
+    imgArr = parsed.filter(Boolean);
+  } else if (typeof ph === "string" && ph.trim()) {
+    // если вдруг photo окажется одной строкой-путём
+    imgArr = [ph.trim()];
+  }
+}
+
+// нормализуем пути (у тебя они уже /photo_product_vitrina/... так что просто пройдут)
+imgArr = imgArr.map(toImgUrl).filter(Boolean);
+
 
     // fallback: found.photo
     if (!imgArr.length && found.photo) {

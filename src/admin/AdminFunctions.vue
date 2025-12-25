@@ -22,7 +22,10 @@
               <span>{{ convert.current }} / {{ convert.total }}</span>
             </div>
             <div class="progress-track">
-              <div class="progress-fill convert" :style="{ width: convertPercent + '%' }"></div>
+              <div
+                class="progress-fill convert"
+                :style="{ width: convertPercent + '%' }"
+              ></div>
             </div>
           </div>
 
@@ -33,7 +36,10 @@
               <span>{{ remove.current }} / {{ remove.total }}</span>
             </div>
             <div class="progress-track">
-              <div class="progress-fill remove" :style="{ width: removePercent + '%' }"></div>
+              <div
+                class="progress-fill remove"
+                :style="{ width: removePercent + '%' }"
+              ></div>
             </div>
           </div>
 
@@ -60,7 +66,9 @@
 
           <div class="sync-status" v-if="sync.status">
             <span class="pill" :class="sync.status">{{ sync.statusText }}</span>
-            <span class="muted" v-if="sync.finishedAt">• {{ sync.finishedAt }}</span>
+            <span class="muted" v-if="sync.finishedAt"
+              >• {{ sync.finishedAt }}</span
+            >
           </div>
 
           <div class="stats-grid" v-if="sync.hasResult">
@@ -81,9 +89,15 @@
           <!-- ===== CHANGES LISTS ===== -->
           <div class="changes" v-if="sync.hasResult">
             <div class="change-block" v-if="createdItems.length">
-              <div class="change-title add">Добавлено ({{ createdItems.length }})</div>
+<div class="change-title add">
+  Добавлено ({{ sync.inserted }}) <span class="muted">• показано: {{ createdItems.length }}</span>
+</div>
               <div class="change-list">
-                <div class="change-line" v-for="(it, i) in createdItems" :key="'c'+i">
+                <div
+                  class="change-line"
+                  v-for="(it, i) in createdItems"
+                  :key="'c' + i"
+                >
                   <span class="bc">{{ it.barcode }}</span>
                   <span class="nm">{{ it.name }}</span>
                 </div>
@@ -91,41 +105,55 @@
             </div>
 
             <div class="change-block" v-if="updatedItems.length">
-              <div class="change-title upd">Обновлено ({{ updatedItems.length }})</div>
+<div class="change-title upd">
+  Обновлено ({{ sync.updated }}) <span class="muted">• показано: {{ updatedItems.length }}</span>
+</div>
               <div class="change-list">
-                <div class="change-line" v-for="(it, i) in updatedItems" :key="'u'+i">
-<span class="bc">{{ it.barcode }}</span>
+                <div
+                  class="change-line"
+                  v-for="(it, i) in updatedItems"
+                  :key="'u' + i"
+                >
+                  <span class="bc">{{ it.barcode }}</span>
 
-<span class="nm">
-  <span class="nm-title">{{ it.name }}</span>
-  <span class="nm-meta" v-if="it.fields?.length">
-    изменено: {{ it.fields.join(", ") }}
-  </span>
-</span>
-
+                  <span class="nm">
+                    <span class="nm-title">{{ it.name }}</span>
+                    <span class="nm-meta" v-if="it.fields?.length">
+                      изменено: {{ it.fields.join(", ") }}
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
 
             <div class="change-block" v-if="deletedItems.length">
-              <div class="change-title del">Удалено ({{ deletedItems.length }})</div>
+<div class="change-title del">
+  Удалено ({{ sync.deleted }}) <span class="muted">• показано: {{ deletedItems.length }}</span>
+</div>
               <div class="change-list">
-                <div class="change-line" v-for="(it, i) in deletedItems" :key="'d'+i">
-<span class="bc">{{ it.barcode }}</span>
+                <div
+                  class="change-line"
+                  v-for="(it, i) in deletedItems"
+                  :key="'d' + i"
+                >
+                  <span class="bc">{{ it.barcode }}</span>
 
-<span class="nm">
-  <span class="nm-title">{{ it.name }}</span>
+                  <span class="nm">
+                    <span class="nm-title">{{ it.name }}</span>
 
-  <span class="nm-meta">
-    фото: удалено {{ it.photos_deleted_count ?? (it.photos_deleted?.length || 0) }},
-    не найдено {{ it.photos_missing_count ?? (it.photos_missing?.length || 0) }}
-  </span>
-</span>
+                    <span class="nm-meta">
+фото: удалено {{ it.photos_deleted_count != null ? it.photos_deleted_count : (it.photos_deleted?.length || 0) }},
+не найдено {{ it.photos_missing_count != null ? it.photos_missing_count : (it.photos_missing?.length || 0) }}
+
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div class="hint" v-if="truncated">⚠ Показаны не все строки (ограничение).</div>
+            <div class="hint" v-if="truncated">
+              ⚠ Показаны не все строки (ограничение).
+            </div>
           </div>
 
           <!-- LOG (sync) -->
@@ -140,12 +168,17 @@
         <section class="panel">
           <h1 class="title">Импорт “Минимальный остаток”</h1>
           <p class="subtitle">
-            Загрузи <b>XLSX</b> или <b>CSV</b>: <b>Штрихкод</b> + <b>Минимальный остаток</b>.
-            Повторный импорт по штрихкоду обновит значение.
+            Загрузи <b>XLSX</b> или <b>CSV</b>: <b>Штрихкод</b> +
+            <b>Минимальный остаток</b>. Повторный импорт по штрихкоду обновит
+            значение.
           </p>
 
           <div class="min-toolbar">
-            <button class="min-btn ghost" :disabled="loadingMin || loadingConvert || loadingSync" @click="downloadMinTemplate">
+            <button
+              class="min-btn ghost"
+              :disabled="loadingMin || loadingConvert || loadingSync"
+              @click="downloadMinTemplate"
+            >
               <i class="fa-regular fa-file-lines"></i>
               Скачать шаблон (CSV)
             </button>
@@ -175,7 +208,11 @@
               <div class="min-txt">
                 <div class="min-t1">
                   Перетащи файл сюда или
-                  <button class="min-link" :disabled="loadingMin || loadingConvert || loadingSync" @click="openMinPicker">
+                  <button
+                    class="min-link"
+                    :disabled="loadingMin || loadingConvert || loadingSync"
+                    @click="openMinPicker"
+                  >
                     выбери
                   </button>
                 </div>
@@ -188,7 +225,11 @@
                   {{ minPickedName }}
                 </div>
                 <div class="min-pactions">
-                  <button class="min-btn small ghost" @click="clearMinFile" :disabled="loadingMin || loadingConvert || loadingSync">
+                  <button
+                    class="min-btn small ghost"
+                    @click="clearMinFile"
+                    :disabled="loadingMin || loadingConvert || loadingSync"
+                  >
                     <i class="fa-solid fa-xmark"></i> Убрать
                   </button>
                 </div>
@@ -197,13 +238,19 @@
 
             <div class="min-actions">
               <label class="min-check">
-                <input type="checkbox" v-model="minDryRun" :disabled="loadingMin || loadingConvert || loadingSync" />
+                <input
+                  type="checkbox"
+                  v-model="minDryRun"
+                  :disabled="loadingMin || loadingConvert || loadingSync"
+                />
                 Проверить без записи (dry-run)
               </label>
 
               <button
                 class="min-btn primary"
-                :disabled="!minFile || loadingMin || loadingConvert || loadingSync"
+                :disabled="
+                  !minFile || loadingMin || loadingConvert || loadingSync
+                "
                 @click="uploadMin"
               >
                 <i v-if="!loadingMin" class="fa-solid fa-upload"></i>
@@ -228,7 +275,8 @@
                 <span v-if="minResult.dry_run" class="min-badge">dry-run</span>
               </div>
               <div class="min-r-file">
-                {{ minResult.file }} <span class="muted">({{ minResult.ext }})</span>
+                {{ minResult.file }}
+                <span class="muted">({{ minResult.ext }})</span>
               </div>
             </div>
 
@@ -268,10 +316,18 @@
                     <div>Мин. остаток</div>
                     <div>Действие</div>
                   </div>
-                  <div class="min-tr" v-for="(r, i) in (minResult.preview || [])" :key="i">
+                  <div
+                    class="min-tr"
+                    v-for="(r, i) in minResult.preview || []"
+                    :key="i"
+                  >
                     <div class="mono">{{ r.barcode }}</div>
                     <div>{{ r.min_stock }}</div>
-                    <div><span class="min-pill" :class="r.action">{{ minActionLabel(r.action) }}</span></div>
+                    <div>
+                      <span class="min-pill" :class="r.action">{{
+                        minActionLabel(r.action)
+                      }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -279,7 +335,11 @@
               <div class="min-box" v-if="minResult.invalid_preview?.length">
                 <div class="min-box-title">Ошибки (первые)</div>
                 <div class="min-bad">
-                  <div class="min-bad-row" v-for="(b, i) in minResult.invalid_preview" :key="i">
+                  <div
+                    class="min-bad-row"
+                    v-for="(b, i) in minResult.invalid_preview"
+                    :key="i"
+                  >
                     <div class="b1">Строка {{ b.row }}</div>
                     <div class="b2">
                       <span v-if="b.barcode" class="mono">{{ b.barcode }}</span>
@@ -334,10 +394,14 @@ const convert = ref({ current: 0, total: 0 });
 const remove = ref({ current: 0, total: 0 });
 
 const convertPercent = computed(() =>
-  convert.value.total ? Math.round((convert.value.current / convert.value.total) * 100) : 0
+  convert.value.total
+    ? Math.round((convert.value.current / convert.value.total) * 100)
+    : 0
 );
 const removePercent = computed(() =>
-  remove.value.total ? Math.round((remove.value.current / remove.value.total) * 100) : 0
+  remove.value.total
+    ? Math.round((remove.value.current / remove.value.total) * 100)
+    : 0
 );
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -353,9 +417,12 @@ const start = async () => {
 
   try {
     while (true) {
-      const res = await fetch(`/api/admin/functions/convert_images_step.php?index=${index}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/admin/functions/convert_images_step.php?index=${index}`,
+        {
+          cache: "no-store",
+        }
+      );
       const data = await res.json();
 
       if (data.done) {
@@ -371,7 +438,9 @@ const start = async () => {
       index = data.index;
 
       logs.value.unshift(
-        `${String(data.status || "").toUpperCase().padEnd(10)} | ${data.file}`
+        `${String(data.status || "")
+          .toUpperCase()
+          .padEnd(10)} | ${data.file}`
       );
       NProgress.set(convertPercent.value / 100);
 
@@ -451,9 +520,15 @@ const startSync = async () => {
     const updated = Number(data.updated ?? 0);
     const deleted = Number(data.deleted ?? 0);
 
-    createdItems.value = Array.isArray(data.insertedItems) ? data.insertedItems : [];
-    updatedItems.value = Array.isArray(data.updatedItems) ? data.updatedItems : [];
-    deletedItems.value = Array.isArray(data.deletedItems) ? data.deletedItems : [];
+    createdItems.value = Array.isArray(data.insertedItems)
+      ? data.insertedItems
+      : [];
+    updatedItems.value = Array.isArray(data.updatedItems)
+      ? data.updatedItems
+      : [];
+    deletedItems.value = Array.isArray(data.deletedItems)
+      ? data.deletedItems
+      : [];
     truncated.value = !!data.truncated;
 
     sync.value.hasResult = true;
@@ -600,19 +675,19 @@ function downloadMinTemplate() {
 /* =========================
    ROOT / LAYOUT
 ========================= */
-.convert-root{
+.convert-root {
   min-height: 100dvh;
   background: var(--bg-main);
   color: var(--text-main);
   padding: clamp(12px, 2.2vw, 24px);
 }
 
-.convert-wrap{
+.convert-wrap {
   max-width: 1320px;
   margin: 0 auto;
 }
 
-.panels{
+.panels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 14px;
@@ -621,7 +696,7 @@ function downloadMinTemplate() {
 /* =========================
    PANEL CARD
 ========================= */
-.panel{
+.panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
@@ -633,16 +708,16 @@ function downloadMinTemplate() {
 }
 
 /* titles */
-.title{
+.title {
   margin: 0;
   text-align: center;
   font-size: 18px;
   font-weight: 900;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   color: var(--text-main);
 }
 
-.subtitle{
+.subtitle {
   margin: 6px 0 14px;
   text-align: center;
   font-size: 13px;
@@ -654,7 +729,7 @@ function downloadMinTemplate() {
    BUTTONS
 ========================= */
 .main-btn,
-.sync-btn{
+.sync-btn {
   width: 100%;
   min-height: 44px;
   padding: 12px 14px;
@@ -663,19 +738,20 @@ function downloadMinTemplate() {
   cursor: pointer;
   font-weight: 900;
   font-size: 13px;
-  letter-spacing: .2px;
-  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease, opacity .12s ease, background .12s ease, border-color .12s ease;
+  letter-spacing: 0.2px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease,
+    opacity 0.12s ease, background 0.12s ease, border-color 0.12s ease;
   user-select: none;
 }
 
-.main-btn{
+.main-btn {
   background: var(--accent);
   color: #fff;
   box-shadow: var(--shadow-sm);
   margin-bottom: 14px;
 }
 
-.sync-btn{
+.sync-btn {
   background: var(--accent-2);
   color: #fff;
   box-shadow: var(--shadow-sm);
@@ -683,39 +759,40 @@ function downloadMinTemplate() {
 }
 
 .main-btn:hover:not(:disabled),
-.sync-btn:hover:not(:disabled){
+.sync-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
   filter: brightness(1.02);
 }
 
 .main-btn:active:not(:disabled),
-.sync-btn:active:not(:disabled){
+.sync-btn:active:not(:disabled) {
   transform: translateY(0px);
 }
 
 .main-btn:disabled,
-.sync-btn:disabled{
-  opacity: .55;
+.sync-btn:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
 .main-btn:focus-visible,
-.sync-btn:focus-visible{
+.sync-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-md);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent),
+    var(--shadow-md);
 }
 
 /* =========================
    PROGRESS
 ========================= */
-.progress-section{
+.progress-section {
   margin-bottom: 14px;
 }
 
-.progress-header{
+.progress-header {
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -725,7 +802,7 @@ function downloadMinTemplate() {
   font-weight: 800;
 }
 
-.progress-track{
+.progress-track {
   height: 12px;
   background: var(--bg-soft);
   border-radius: 999px;
@@ -733,20 +810,22 @@ function downloadMinTemplate() {
   border: 1px solid var(--border-soft);
 }
 
-.progress-fill{
+.progress-fill {
   height: 100%;
-  transition: width .18s ease;
+  transition: width 0.18s ease;
 }
 
-.progress-fill.convert{
-  background: linear-gradient(90deg,
+.progress-fill.convert {
+  background: linear-gradient(
+    90deg,
     color-mix(in srgb, var(--accent) 85%, #ffffff),
     var(--accent)
   );
 }
 
-.progress-fill.remove{
-  background: linear-gradient(90deg,
+.progress-fill.remove {
+  background: linear-gradient(
+    90deg,
     color-mix(in srgb, var(--accent-danger) 75%, #ffffff),
     var(--accent-danger)
   );
@@ -755,7 +834,7 @@ function downloadMinTemplate() {
 /* =========================
    LOG
 ========================= */
-.log-box{
+.log-box {
   margin-top: 12px;
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
@@ -763,24 +842,29 @@ function downloadMinTemplate() {
   padding: 12px;
   max-height: 260px;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   font-size: 12px;
   color: var(--text-main);
 }
 
-.panel .log-box{ margin-top: auto; }
+.panel .log-box {
+  margin-top: auto;
+}
 
-.log-line{
+.log-line {
   padding: 3px 0;
   color: color-mix(in srgb, var(--text-main) 85%, var(--text-muted));
 }
 
-.sync-log{ max-height: 320px; }
+.sync-log {
+  max-height: 320px;
+}
 
 /* =========================
    SYNC STATUS / STATS
 ========================= */
-.sync-status{
+.sync-status {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -788,7 +872,7 @@ function downloadMinTemplate() {
   margin-bottom: 10px;
 }
 
-.pill{
+.pill {
   display: inline-flex;
   align-items: center;
   padding: 6px 10px;
@@ -800,34 +884,38 @@ function downloadMinTemplate() {
   color: var(--text-main);
 }
 
-.pill.run{
+.pill.run {
   background: color-mix(in srgb, var(--accent) 10%, var(--bg-soft));
   border-color: color-mix(in srgb, var(--accent) 25%, var(--border-soft));
 }
 
-.pill.ok{
+.pill.ok {
   background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-soft));
   border-color: color-mix(in srgb, var(--accent-2) 25%, var(--border-soft));
 }
 
-.pill.error{
+.pill.error {
   background: color-mix(in srgb, var(--accent-danger) 10%, var(--bg-soft));
-  border-color: color-mix(in srgb, var(--accent-danger) 28%, var(--border-soft));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-danger) 28%,
+    var(--border-soft)
+  );
 }
 
-.muted{
+.muted {
   color: var(--text-muted);
   font-size: 12px;
 }
 
-.stats-grid{
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin: 10px 0 10px;
 }
 
-.stat{
+.stat {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -835,14 +923,14 @@ function downloadMinTemplate() {
   text-align: center;
 }
 
-.stat-label{
+.stat-label {
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 4px;
   font-weight: 800;
 }
 
-.stat-val{
+.stat-val {
   font-size: 18px;
   font-weight: 900;
   color: var(--text-main);
@@ -851,31 +939,37 @@ function downloadMinTemplate() {
 /* =========================
    CHANGES LISTS
 ========================= */
-.changes{
+.changes {
   margin-top: 10px;
   display: grid;
   gap: 10px;
 }
 
-.change-block{
+.change-block {
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
   border-radius: var(--radius-md);
   padding: 10px;
 }
 
-.change-title{
+.change-title {
   font-weight: 900;
   font-size: 12px;
   margin-bottom: 8px;
   color: var(--text-main);
 }
 
-.change-title.add{ color: var(--accent-2); }
-.change-title.upd{ color: var(--accent); }
-.change-title.del{ color: var(--accent-danger); }
+.change-title.add {
+  color: var(--accent-2);
+}
+.change-title.upd {
+  color: var(--accent);
+}
+.change-title.del {
+  color: var(--accent-danger);
+}
 
-.change-list{
+.change-list {
   max-height: 200px;
   overflow: auto;
   border-radius: 12px;
@@ -884,38 +978,43 @@ function downloadMinTemplate() {
   border: 1px solid var(--border-soft);
 }
 
-.change-line{
+.change-line {
   display: grid;
   grid-template-columns: 140px 1fr;
   gap: 10px;
   padding: 6px 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
-  border-bottom: 1px dashed color-mix(in srgb, var(--border-soft) 75%, transparent);
+  border-bottom: 1px dashed
+    color-mix(in srgb, var(--border-soft) 75%, transparent);
 }
-.change-line:last-child{ border-bottom: none; }
+.change-line:last-child {
+  border-bottom: none;
+}
 
-.bc{ color: var(--text-muted); }
+.bc {
+  color: var(--text-muted);
+}
 
-.nm{
+.nm {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
-.nm-title{
+.nm-title {
   color: var(--text-main);
   font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.nm-meta{
+.nm-meta {
   font-size: 11px;
   color: var(--text-muted);
 }
 
-.hint{
+.hint {
   font-size: 12px;
   color: var(--text-muted);
   text-align: center;
@@ -925,13 +1024,13 @@ function downloadMinTemplate() {
 /* =========================
    MIN STOCK PANEL
 ========================= */
-.min-toolbar{
+.min-toolbar {
   display: flex;
   justify-content: center;
   margin-bottom: 10px;
 }
 
-.min-btn{
+.min-btn {
   min-height: 42px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
@@ -943,70 +1042,74 @@ function downloadMinTemplate() {
   align-items: center;
   font-weight: 900;
   color: var(--text-main);
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease,
+    border-color 0.12s ease, opacity 0.12s ease;
 }
 
-.min-btn.small{
+.min-btn.small {
   min-height: 36px;
   border-radius: var(--radius-md);
   padding: 0 12px;
 }
 
-.min-btn:disabled{
-  opacity: .55;
+.min-btn:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.min-btn.ghost{
+.min-btn.ghost {
   background: var(--bg-soft);
 }
 
-.min-btn.ghost:hover:not(:disabled){
+.min-btn.ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--bg-soft) 70%, var(--bg-panel));
 }
 
-.min-btn.primary{
+.min-btn.primary {
   background: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border-soft));
   color: #fff;
   box-shadow: var(--shadow-sm);
 }
 
-.min-btn.primary:hover:not(:disabled){
+.min-btn.primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
   filter: brightness(1.02);
 }
 
 /* dropzone */
-.min-drop{
+.min-drop {
   padding: 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
 }
 
-.min-drop.drag{
+.min-drop.drag {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border-soft));
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-.min-file{ display: none; }
+.min-file {
+  display: none;
+}
 
-.min-drop-inner{
+.min-drop-inner {
   display: grid;
   grid-template-columns: 54px 1fr auto;
   gap: 14px;
   align-items: center;
   padding: 12px;
-  border: 1px dashed color-mix(in srgb, var(--border-soft) 85%, var(--text-light));
+  border: 1px dashed
+    color-mix(in srgb, var(--border-soft) 85%, var(--text-light));
   border-radius: var(--radius-md);
   background: var(--bg-panel);
 }
 
-.min-icon{
+.min-icon {
   width: 54px;
   height: 54px;
   border-radius: 16px;
@@ -1018,19 +1121,19 @@ function downloadMinTemplate() {
   font-size: 20px;
 }
 
-.min-t1{
+.min-t1 {
   font-weight: 900;
   font-size: 14px;
   color: var(--text-main);
 }
 
-.min-t2{
+.min-t2 {
   margin-top: 4px;
   color: var(--text-muted);
   font-size: 12px;
 }
 
-.min-link{
+.min-link {
   border: 0;
   background: transparent;
   color: var(--accent);
@@ -1041,13 +1144,13 @@ function downloadMinTemplate() {
   text-underline-offset: 2px;
 }
 
-.min-picked{
+.min-picked {
   display: grid;
   gap: 8px;
   justify-items: end;
 }
 
-.min-pname{
+.min-pname {
   display: inline-flex;
   gap: 10px;
   align-items: center;
@@ -1061,7 +1164,7 @@ function downloadMinTemplate() {
 }
 
 /* bottom actions */
-.min-actions{
+.min-actions {
   margin-top: 12px;
   display: flex;
   align-items: center;
@@ -1070,7 +1173,7 @@ function downloadMinTemplate() {
   flex-wrap: wrap;
 }
 
-.min-check{
+.min-check {
   display: inline-flex;
   gap: 10px;
   align-items: center;
@@ -1079,13 +1182,13 @@ function downloadMinTemplate() {
   user-select: none;
 }
 
-.min-check input{
+.min-check input {
   width: 16px;
   height: 16px;
 }
 
 /* states */
-.min-state{
+.min-state {
   margin-top: 12px;
   border-radius: var(--radius-md);
   padding: 12px;
@@ -1093,12 +1196,16 @@ function downloadMinTemplate() {
   background: var(--bg-panel);
 }
 
-.min-state.error{
-  border-color: color-mix(in srgb, var(--accent-danger) 28%, var(--border-soft));
+.min-state.error {
+  border-color: color-mix(
+    in srgb,
+    var(--accent-danger) 28%,
+    var(--border-soft)
+  );
   background: color-mix(in srgb, var(--accent-danger) 8%, var(--bg-panel));
 }
 
-.min-st-title{
+.min-st-title {
   font-weight: 900;
   display: flex;
   gap: 10px;
@@ -1107,12 +1214,12 @@ function downloadMinTemplate() {
   color: var(--text-main);
 }
 
-.min-st-text{
+.min-st-text {
   color: var(--text-muted);
   font-size: 13px;
 }
 
-.min-result{
+.min-result {
   margin-top: 12px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
@@ -1121,7 +1228,7 @@ function downloadMinTemplate() {
   box-shadow: var(--shadow-sm);
 }
 
-.min-r-top{
+.min-r-top {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -1130,7 +1237,7 @@ function downloadMinTemplate() {
   border-bottom: 1px dashed var(--border-soft);
 }
 
-.min-r-title{
+.min-r-title {
   font-weight: 900;
   display: inline-flex;
   gap: 10px;
@@ -1138,7 +1245,7 @@ function downloadMinTemplate() {
   color: var(--text-main);
 }
 
-.min-badge{
+.min-badge {
   margin-left: 8px;
   font-size: 11px;
   padding: 4px 8px;
@@ -1149,73 +1256,73 @@ function downloadMinTemplate() {
   font-weight: 900;
 }
 
-.min-r-file{
+.min-r-file {
   color: var(--text-muted);
   font-size: 12px;
 }
 
-.min-stats{
+.min-stats {
   margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
-.min-stat{
+.min-stat {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   padding: 10px 12px;
   background: var(--bg-soft);
 }
 
-.min-stat .k{
+.min-stat .k {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 800;
 }
 
-.min-stat .v{
+.min-stat .v {
   margin-top: 6px;
   font-size: 18px;
   font-weight: 900;
   color: var(--text-main);
 }
 
-.min-stat.ok{
+.min-stat.ok {
   border-color: color-mix(in srgb, var(--accent-2) 30%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-soft));
 }
-.min-stat.warn{
+.min-stat.warn {
   border-color: rgba(234, 179, 8, 0.35);
-  background: rgba(234, 179, 8, 0.10);
+  background: rgba(234, 179, 8, 0.1);
 }
 
-.min-split{
+.min-split {
   margin-top: 12px;
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
 }
 
-.min-box{
+.min-box {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   padding: 12px;
   background: var(--bg-soft);
 }
 
-.min-box-title{
+.min-box-title {
   font-weight: 900;
   margin-bottom: 10px;
   color: var(--text-main);
 }
 
-.min-table{
+.min-table {
   display: grid;
   gap: 8px;
 }
 
-.min-tr{
+.min-tr {
   display: grid;
   grid-template-columns: 1.6fr 0.9fr 0.9fr;
   gap: 10px;
@@ -1226,17 +1333,17 @@ function downloadMinTemplate() {
   background: var(--bg-panel);
 }
 
-.min-tr.th{
+.min-tr.th {
   background: color-mix(in srgb, var(--bg-soft) 70%, var(--bg-panel));
   font-weight: 900;
   color: var(--text-main);
 }
 
-.mono{
+.mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.min-pill{
+.min-pill {
   display: inline-flex;
   padding: 6px 10px;
   border-radius: 999px;
@@ -1247,41 +1354,49 @@ function downloadMinTemplate() {
   color: var(--text-main);
 }
 
-.min-pill.insert{
+.min-pill.insert {
   border-color: color-mix(in srgb, var(--accent-2) 30%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-soft));
   color: color-mix(in srgb, var(--accent-2) 85%, #000);
 }
-.min-pill.update{
+.min-pill.update {
   border-color: rgba(234, 179, 8, 0.35);
   background: rgba(234, 179, 8, 0.12);
 }
-.min-pill.skip{
+.min-pill.skip {
   border-color: color-mix(in srgb, var(--text-muted) 25%, var(--border-soft));
   background: color-mix(in srgb, var(--text-muted) 8%, var(--bg-soft));
   color: var(--text-muted);
 }
 
-.min-bad{
+.min-bad {
   display: grid;
   gap: 8px;
 }
 
-.min-bad-row{
+.min-bad-row {
   display: grid;
   grid-template-columns: 90px 1fr 1.6fr;
   gap: 10px;
   padding: 10px;
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--accent-danger) 30%, var(--border-soft));
+  border: 1px solid
+    color-mix(in srgb, var(--accent-danger) 30%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-danger) 10%, var(--bg-panel));
 }
 
-.b1{ font-weight: 900; color: var(--text-main); }
-.b2{ color: var(--text-main); }
-.b3{ color: var(--text-muted); }
+.b1 {
+  font-weight: 900;
+  color: var(--text-main);
+}
+.b2 {
+  color: var(--text-main);
+}
+.b3 {
+  color: var(--text-muted);
+}
 
-.min-foot{
+.min-foot {
   text-align: center;
   font-size: 12px;
   padding: 10px 0 2px;
@@ -1291,7 +1406,7 @@ function downloadMinTemplate() {
 /* =========================
    TOAST
 ========================= */
-.toast{
+.toast {
   position: fixed;
   right: 16px;
   bottom: 16px;
@@ -1312,23 +1427,50 @@ function downloadMinTemplate() {
 /* =========================
    MOBILE
 ========================= */
-@media (max-width: 900px){
-  .panel{ min-height: auto; }
-  .stats-grid{ grid-template-columns: 1fr; }
-  .min-drop-inner{ grid-template-columns: 1fr; }
-  .min-picked{ justify-items: start; }
+@media (max-width: 900px) {
+  .panel {
+    min-height: auto;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .min-drop-inner {
+    grid-template-columns: 1fr;
+  }
+  .min-picked {
+    justify-items: start;
+  }
 }
 
-@media (max-width: 520px){
-  .panels{ grid-template-columns: 1fr; }
-  .panel{ padding: 14px; border-radius: var(--radius-lg); }
+@media (max-width: 520px) {
+  .panels {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    padding: 14px;
+    border-radius: var(--radius-lg);
+  }
 
-  .change-line{ grid-template-columns: 1fr; }
-  .nm-title{ white-space: normal; }
+  .change-line {
+    grid-template-columns: 1fr;
+  }
+  .nm-title {
+    white-space: normal;
+  }
 
-  .min-actions{ flex-direction: column; align-items: stretch; }
-  .min-btn{ width: 100%; justify-content: center; }
-  .min-tr{ grid-template-columns: 1fr; }
-  .min-bad-row{ grid-template-columns: 1fr; }
+  .min-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .min-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .min-tr {
+    grid-template-columns: 1fr;
+  }
+  .min-bad-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

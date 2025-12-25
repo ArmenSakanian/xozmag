@@ -2,6 +2,41 @@
 header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
 
+/* === helpers === */
+function safe_rel_from_url_or_path($p) {
+  $p = trim((string)$p);
+  if ($p === "") return "";
+
+  if (preg_match('~^https?://~i', $p)) {
+    $u = parse_url($p);
+    $p = !empty($u["path"]) ? $u["path"] : "";
+  }
+  $p = trim((string)$p);
+  if ($p === "") return "";
+
+  // нормализуем: всегда начинаем с /
+  if ($p[0] !== "/") $p = "/" . ltrim($p, "/");
+
+  return $p;
+}
+
+function decode_photo_to_images($photo) {
+  $photo = trim((string)$photo);
+  if ($photo === "") return [];
+
+  $decoded = json_decode($photo, true);
+  if (!is_array($decoded)) return [];
+
+  $out = [];
+  foreach ($decoded as $p) {
+    $p = safe_rel_from_url_or_path($p);
+    if ($p !== "") $out[] = $p;
+  }
+
+  $out = array_values(array_unique($out));
+  return $out;
+}
+
 /* === 1. Категории === */
 $cats = $pdo->query("
   SELECT id, name, parent_id, code
@@ -90,6 +125,9 @@ foreach ($products as &$p) {
   }
 
   $p["attributes"] = $attrMap[$p["id"]] ?? [];
+
+  // ✅ ВАЖНО: отдаём фотки массивом, чтобы фронт сразу мог использовать
+  $p["images"] = decode_photo_to_images($p["photo"] ?? "");
 }
 unset($p);
 
