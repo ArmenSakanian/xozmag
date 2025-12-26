@@ -10,55 +10,65 @@
 
           <!-- Телефон -->
           <div class="info-block">
-            <p class="label">Телефон</p>
-            <a href="tel:+79258693416" class="value-text">+7 (925) 869-34-16</a>
+            <div class="ib-ico">
+              <Fa :icon="['fas','phone']" />
+            </div>
+            <div class="ib-body">
+              <p class="label">Телефон</p>
+              <a :href="phoneHref" class="value-text link">{{ phone }}</a>
+            </div>
           </div>
 
           <!-- Адрес -->
           <div class="info-block">
-            <p class="label">Адрес</p>
-            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text">
-              Москва, <br />
-              Улица Героев Панфиловцев, дом 3
-            </a>
+            <div class="ib-ico">
+              <Fa :icon="['fas','location-dot']" />
+            </div>
+            <div class="ib-body">
+              <p class="label">Адрес</p>
+              <a :href="mapsLink" class="value-text link" target="_blank" rel="noopener">
+                Москва, <br />
+                Улица Героев Панфиловцев, дом 3
+              </a>
+
+              <a
+                class="sub-link"
+                :href="mapsLink"
+                target="_blank"
+                rel="noopener"
+              >
+                Открыть в Яндекс.Картах
+              </a>
+            </div>
           </div>
 
           <!-- Время работы -->
           <div class="info-block">
-            <p class="label">Режим работы</p>
-            <p class="value-text">
-              Будни: <b>09:00 – 20:00</b><br />
-              Выходные: <b>10:00 – 19:00</b>
-            </p>
+            <div class="ib-ico">
+              <Fa :icon="['fas','clock']" />
+            </div>
+            <div class="ib-body">
+              <p class="label">Режим работы</p>
+              <p class="value-text">
+                Будни: <b>09:00 – 20:00</b><br />
+                Выходные: <b>10:00 – 19:00</b>
+              </p>
+            </div>
           </div>
         </div>
 
         <!-- Правая часть: карта -->
-        <div class="contact-map">
-          <!-- Заглушка до клика -->
-          <div v-if="!showMap" class="map-placeholder">
-            <button class="map-btn" type="button" @click="showMap = true">
-              Показать карту
-            </button>
+        <div class="contact-map" ref="mapWrapRef">
+          <!-- пока src не установлен — показываем спокойную заглушку (без кнопок) -->
+          <div v-if="!mapLoaded" class="map-skeleton" aria-hidden="true"></div>
 
-            <a
-              class="map-link"
-              href="https://yandex.ru/maps/-/CLgkAIiy"
-              target="_blank"
-              rel="noopener"
-            >
-              Открыть в Яндекс.Картах
-            </a>
-          </div>
-
-          <!-- Карта после клика -->
           <iframe
-            v-else
-            :src="mapUrl"
+            class="map-iframe"
+            :src="mapLoaded ? mapUrl : ''"
             loading="lazy"
-            width="1051"
-            height="608"
             frameborder="0"
+            title="Карта магазина"
+            referrerpolicy="no-referrer-when-downgrade"
           ></iframe>
         </div>
       </div>
@@ -67,13 +77,49 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 
-const showMap = ref(false);
+const phone = "+7 (925) 869-34-16";
+const phoneHref = "tel:+79258693416";
+
+const mapsLink = "https://yandex.ru/maps/-/CLgkAIiy";
 
 // ТВОЙ constructor iframe:
 const mapUrl =
   "https://yandex.ru/map-widget/v1/?um=constructor%3A620efd7c99bc91020f789a56c6f0e55bd29c1a6a5f3cb8a86aa31e52f6d1242e&source=constructor";
+
+const mapLoaded = ref(false);
+const mapWrapRef = ref(null);
+
+let io = null;
+
+onMounted(() => {
+  // ✅ Автозагрузка карты без кнопки, но только когда блок карты почти виден.
+  // Это сильно помогает Lighthouse (карта не грузится на первом экране).
+  if ("IntersectionObserver" in window) {
+    io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0];
+        if (e && e.isIntersecting) {
+          mapLoaded.value = true;
+          io?.disconnect();
+          io = null;
+        }
+      },
+      { root: null, rootMargin: "300px 0px", threshold: 0.01 }
+    );
+
+    if (mapWrapRef.value) io.observe(mapWrapRef.value);
+  } else {
+    // fallback: если браузер старый — просто загрузим с небольшой задержкой
+    setTimeout(() => (mapLoaded.value = true), 800);
+  }
+});
+
+onBeforeUnmount(() => {
+  io?.disconnect();
+  io = null;
+});
 </script>
 
 <style scoped>
@@ -119,7 +165,12 @@ const mapUrl =
   color: var(--text-main);
 }
 
+/* Info blocks */
 .info-block{
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+
   padding: 14px 14px;
   margin-bottom: 12px;
 
@@ -132,6 +183,23 @@ const mapUrl =
 .info-block:last-child{
   margin-bottom: 0;
 }
+
+.ib-ico{
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.ib-body{ min-width: 0; }
 
 /* подписи */
 .label{
@@ -151,26 +219,24 @@ const mapUrl =
   line-height: 1.6;
   text-decoration: none;
   font-weight: 700;
-
-  transition: color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
-/* ссылка выглядит как аккуратная кнопка-тег */
-a.value-text{
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid transparent;
+.link{
+  transition: color .18s ease;
 }
 
-a.value-text:hover{
+.link:hover{
   color: var(--accent);
-  border-color: rgba(4, 0, 231, 0.18);
-  background: rgba(4, 0, 231, 0.06);
-  transform: translateY(-1px);
 }
 
-a.value-text:active{
-  transform: translateY(0);
+/* под-ссылка под адресом */
+.sub-link{
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 13.5px;
 }
 
 /* Правая часть: карта */
@@ -180,42 +246,31 @@ a.value-text:active{
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  position: relative;
+}
+
+/* Заглушка (спокойная, без неона) */
+.map-skeleton{
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.035), rgba(0,0,0,0.02), rgba(0,0,0,0.035));
+  background-size: 300% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer{
+  0%{ background-position: 0% 0%; }
+  100%{ background-position: 100% 0%; }
 }
 
 /* Карта */
-.contact-map iframe{
+.map-iframe{
   width: 100%;
   height: 420px;
   display: block;
   border: 0;
-  border-radius: 0; /* уже обрезается контейнером */
-}
-
-/* Заглушка вместо карты до клика */
-.map-placeholder{
-  height: 420px;
-  display: grid;
-  place-content: center;
-  gap: 12px;
-  padding: 16px;
   background: var(--bg-panel);
-}
-
-.map-btn{
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: var(--bg-soft);
-  color: var(--text-main);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.map-link{
-  text-align: center;
-  text-decoration: none;
-  font-weight: 700;
-  color: var(--accent);
 }
 
 /* ===== Responsive ===== */
@@ -224,11 +279,7 @@ a.value-text:active{
     grid-template-columns: 1fr;
   }
 
-  .contact-map iframe{
-    height: 380px;
-  }
-
-  .map-placeholder{
+  .map-iframe{
     height: 380px;
   }
 }
@@ -255,11 +306,7 @@ a.value-text:active{
     font-size: 16px;
   }
 
-  .contact-map iframe{
-    height: 320px;
-  }
-
-  .map-placeholder{
+  .map-iframe{
     height: 320px;
   }
 }

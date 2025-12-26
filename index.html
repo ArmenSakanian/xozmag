@@ -1,14 +1,27 @@
 <!DOCTYPE html>
 <html lang="">
   <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- ✅ ДОБАВИТЬ: manifest + apple icon + theme-color (для переключения обычный/админ) -->
+    <link id="app-manifest" rel="manifest" href="/site.webmanifest" />
+    <link id="app-apple-icon" rel="apple-touch-icon" sizes="180x180" href="/icons/app-apple-180.png" />
+    <meta id="app-theme-color" name="theme-color" content="#0ea5e9" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-title" content="Все Для дома" />
     <title>Все Для Дома</title>
   </head>
   <body>
     <div id="app"></div>
-    <!-- <script defer src="https://kit.fontawesome.com/6ef9d3d69b.js" crossorigin="anonymous"></script> -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

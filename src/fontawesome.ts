@@ -1,6 +1,7 @@
 // src/fontawesome.ts
-import { library } from '@fortawesome/fontawesome-svg-core'
+import { library } from "@fortawesome/fontawesome-svg-core";
 
+// SOLID (fas)
 // SOLID (fas)
 import {
   faArrowLeft,
@@ -42,7 +43,13 @@ import {
   faTruck,
   faUpload,
   faXmark,
+
+  // ✅ add
+  faPhone,
+  faLocationDot,
+  faClock,
 } from '@fortawesome/free-solid-svg-icons'
+
 
 // REGULAR (far) — алиасы, потому что имена пересекаются с solid
 import {
@@ -52,7 +59,7 @@ import {
   faFileLines,
   faImage,
   faRectangleList,
-} from '@fortawesome/free-regular-svg-icons'
+} from "@fortawesome/free-regular-svg-icons";
 
 library.add(
   // fas
@@ -95,6 +102,11 @@ library.add(
   faTruck,
   faUpload,
   faXmark,
+
+  // ✅ add
+  faPhone,
+  faLocationDot,
+  faClock,
 
   // far
   faCopyR,

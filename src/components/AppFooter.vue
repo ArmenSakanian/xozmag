@@ -5,7 +5,15 @@
 
       <!-- ЛОГОТИП + ОПИСАНИЕ -->
       <div class="footer-col footer-logo">
-        <img src="@/assets/logo.webp" alt="Логотип" class="logo" />
+<img
+  src="@/assets/logo.webp"
+  class="logo"
+  alt="Логотип"
+  width="118"
+  height="118"
+  decoding="async"
+/>
+
 
         <p class="footer-desc">
           Магазин товаров для дома, ремонта и электрооборудования.<br>
@@ -109,7 +117,11 @@ function scrollToSection(id) {
 /* Лого */
 .logo{
   width: 120px;
+  aspect-ratio: 1 / 1;     /* резервируем высоту сразу */
   height: auto;
+  object-fit: contain;
+  display: block;
+
   border-radius: 12px;
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-sm);
@@ -235,9 +247,9 @@ function scrollToSection(id) {
     padding: 14px 14px;
   }
 
-  .logo{
-    width: 110px;
-  }
+.logo{ 
+  width: 110px; 
+}
 
   .footer-title{
     font-size: 15px;

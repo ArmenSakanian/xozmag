@@ -24,7 +24,7 @@
             @error="catImgErr[c.id] = true"
           />
           <div v-else class="cat-photo-ph" aria-hidden="true">
-            <Fa :icon="['far','image']" />
+            <Fa :icon="['far', 'image']" />
           </div>
         </div>
 
@@ -44,8 +44,8 @@ import { useRouter } from "vue-router";
 
 const props = defineProps({
   showHead: { type: Boolean, default: true },
-  items: { type: Array, default: () => [] },      // теперь всегда работаем только от items
-  navigateOnPick: { type: Boolean, default: true }
+  items: { type: Array, default: () => [] }, // получаем извне
+  navigateOnPick: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(["select-category"]);

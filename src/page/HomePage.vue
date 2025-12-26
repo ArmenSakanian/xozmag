@@ -1,24 +1,17 @@
 <template>
-  <section class="home-entry">
-    <HomeSearch
-      :show-category="false"
-      :sync-route="false"
-      catalog-path="/catalogv2"
-    />
-  </section>
+      <PhotoGallery />
+
 
   <Aboutus />
   <Contact />
-  <StoreConditions />
-  <PhotoGallery />
 </template>
 
 <script setup lang="ts">
+import PhotoGallery from "@/components/PhotoGallery.vue";
 import HomeSearch from "@/components/HomeSearch.vue";
 import Aboutus from "@/components/Aboutus.vue";
 import Contact from "@/components/Contact.vue";
-import StoreConditions from "@/components/StoreConditions.vue";
-import PhotoGallery from "@/components/PhotoGallery.vue";
+
 </script>
 
 <style scoped>

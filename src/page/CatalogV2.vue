@@ -2,7 +2,6 @@
   <div class="catalog-page">
     <section class="catalog-content">
       <div class="catalog-top">
-        <!-- ✅ SEARCH (вынесен в компонент) -->
         <div class="catalog-search">
           <HomeSearch
             :show-category="true"
@@ -14,6 +13,8 @@
             :server-limit="30"
             :dropdown-limit="12"
             @search-hits="searchHits = $event"
+            @categories-loaded="onCategoriesLoaded"
+            @categories-loading="catsLoading = $event"
           />
 
           <div v-if="searchQ && !loading" class="search-meta">
@@ -21,7 +22,6 @@
           </div>
         </div>
 
-        <!-- TITLE + BREADCRUMBS -->
         <div class="catalog-heading">
           <div class="breadcrumbs">
             <span class="breadcrumb-home">Каталог</span>
@@ -33,14 +33,10 @@
 
           <h1 class="catalog-title">
             <template v-if="!hasActiveCategory && !searchQ">Категории</template>
-
-            <template v-else-if="searchQ && !hasActiveCategory">
-              Результаты поиска
-            </template>
-
-            <template v-else>
-              {{ currentCategoryName || "Каталог" }}
-            </template>
+            <template v-else-if="searchQ && !hasActiveCategory"
+              >Результаты поиска</template
+            >
+            <template v-else>{{ currentCategoryName || "Каталог" }}</template>
           </h1>
         </div>
 
@@ -82,7 +78,9 @@
                       : " Все"
                   }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.brand }"
+                  >▾</span
+                >
               </div>
 
               <div
@@ -125,7 +123,9 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('photo')">
                 <span class="filter-head-text">{{ photoHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.photo }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.photo }"
+                  >▾</span
+                >
               </div>
 
               <div v-show="openFilters.photo" class="filter-dropdown-body">
@@ -173,8 +173,12 @@
 
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter(attr)">
-                <span class="filter-head-text">{{ attributeHeadText(attr) }}</span>
-                <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
+                <span class="filter-head-text">{{
+                  attributeHeadText(attr)
+                }}</span>
+                <span class="arrow" :class="{ open: openFilters[attr] }"
+                  >▾</span
+                >
               </div>
 
               <div
@@ -242,7 +246,7 @@
           </div>
 
           <button class="mobile-filter-btn" @click="showMobileFilters = true">
-            <Fa :icon="['fas','filter']" /> Фильтры
+            <Fa :icon="['fas', 'filter']" /> Фильтры
           </button>
         </div>
       </div>
@@ -256,55 +260,64 @@
 
         <template v-else>
           <div v-if="!hasActiveCategory && !searchQ" class="categories-landing">
-<HomeCatalogEntry
-  :show-head="false"
-  :items="topCats"
-  :navigate-on-pick="false"
-  @select-category="pickCategoryFromGrid"
-/>
-
+            <HomeCatalogEntry
+              :show-head="false"
+              :items="topCats"
+              :navigate-on-pick="false"
+              @select-category="pickCategoryFromGrid"
+            />
           </div>
 
-          <div v-else class="products-grid">
-            <article v-for="p in visibleProducts" :key="p.id" class="product-card">
-              <div
-                class="product-image"
-                @click.stop
-                @pointerdown.stop
-                @mousedown.stop
-                @touchstart.stop
-              >
-                <ProductCardGallery
-                  :images="p.images"
-                  :alt="p.name"
-                  :compact="isMobile"
-                />
-              </div>
+<div v-else class="products-grid">
+  <article v-for="p in visibleProducts" :key="p.id" class="product-card">
+    <div
+      class="product-image"
+      @click.stop
+      @pointerdown.stop
+      @mousedown.stop
+      @touchstart.stop
+    >
+      <ProductCardGallery :images="p.images" :alt="p.name" :compact="isMobile" />
+    </div>
 
-              <div class="product-info" @click="openProduct(p)">
-                <div class="product-name">{{ p.name }}</div>
+    <div class="product-info">
+      <div class="product-name">{{ p.name }}</div>
 
-                <div class="product-row">
-                  <div class="product-price">{{ p.price }} ₽</div>
-                  <div v-if="p.brand" class="product-brand">{{ p.brand }}</div>
-                </div>
+      <div class="product-row">
+        <div class="product-price">{{ p.price }} ₽</div>
 
-                <div class="product-meta">
-                  <span class="product-barcode">{{ p.barcode }}</span>
-                </div>
-              </div>
-            </article>
+        <div class="product-qty">
+          Остаток: {{ p.quantity ?? "—" }}
+        </div>
+      </div>
 
-            <div v-if="filteredProducts.length === 0" class="products-empty">
-              <div class="empty-title">Товары не найдены</div>
-              <div class="empty-text">
-                Попробуйте изменить категорию, поиск или фильтры
-              </div>
-            </div>
-          </div>
+      <div class="product-meta">
+        <span v-if="p.barcode" class="product-chip product-barcode">{{ p.barcode }}</span>
+        <span v-if="p.article" class="product-chip product-article">Арт: {{ p.article }}</span>
+      </div>
 
-          <div v-if="(hasActiveCategory || searchQ) && canLoadMore" class="load-more">
-            <button class="load-more-btn" @click="loadMore">Показать ещё</button>
+      <div class="product-actions">
+        <button class="product-open" type="button" @click.stop="openProduct(p)">
+          Открыть
+        </button>
+      </div>
+    </div>
+  </article>
+
+  <div v-if="filteredProducts.length === 0" class="products-empty">
+    <div class="empty-title">Товары не найдены</div>
+    <div class="empty-text">Попробуйте изменить категорию, поиск или фильтры</div>
+  </div>
+</div>
+
+
+          <div
+            v-if="(hasActiveCategory || searchQ) && canLoadMore"
+            class="load-more"
+          >
+            <button class="load-more-btn" @click="loadMore">
+              Показать ещё
+            </button>
           </div>
         </template>
       </div>
@@ -329,7 +342,7 @@
             @click="mobileView = 'root'"
             title="Назад"
           >
-            <Fa :icon="['fas','arrow-left']" />
+            <Fa :icon="['fas', 'arrow-left']" />
           </button>
 
           <span class="moverlay-title">
@@ -360,10 +373,10 @@
         <div class="moverlay-body">
           <div v-if="mobileView === 'root'" class="mfil-list">
             <div class="mfil-item" @click="mobileView = 'brand'">
-              Бренд <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
+              Бренд <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
             </div>
             <div class="mfil-item" @click="mobileView = 'photo'">
-              Фото <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
+              Фото <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
             </div>
 
             <div
@@ -375,7 +388,8 @@
                 mobileView = 'attr';
               "
             >
-              {{ attr }} <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
+              {{ attr }}
+              <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
             </div>
           </div>
 
@@ -459,7 +473,9 @@
 
               <span class="filter-option">
                 <span
-                  v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
+                  v-if="
+                    attributeFilters[activeMobileAttr]?.ui_render === 'color'
+                  "
                   class="color-dot"
                   :class="{ empty: !v.meta?.color }"
                   :style="v.meta?.color ? { background: v.meta.color } : {}"
@@ -483,7 +499,11 @@
             Готово
           </button>
 
-          <button class="moverlay-ghost" @click="resetAllFilters" title="Сбросить все фильтры">
+          <button
+            class="moverlay-ghost"
+            @click="resetAllFilters"
+            title="Сбросить все фильтры"
+          >
             Сбросить
           </button>
         </div>
@@ -523,10 +543,9 @@ function getCatCodeOfProduct(p) {
 }
 
 /* ================= STATE ================= */
-const error = ref(null);
-
 const products = ref([]);
 const categories = ref([]);
+const catsLoading = ref(false);
 
 /* ✅ search hits from HomeSearch (PHP) */
 const searchHits = ref([]);
@@ -554,7 +573,11 @@ const currentCategoryName = computed(() => {
 /* ===== photo filter ===== */
 const photoModel = ref(
   route.query.photo
-    ? String(Array.isArray(route.query.photo) ? route.query.photo[0] : route.query.photo)
+    ? String(
+        Array.isArray(route.query.photo)
+          ? route.query.photo[0]
+          : route.query.photo
+      )
     : "all"
 );
 
@@ -566,48 +589,18 @@ const photoHeadText = computed(() => {
 
 /* ================= FILTER MODELS ================= */
 const brandModel = ref([]);
-const priceFromModel = ref(route.query.price_from ? Number(route.query.price_from) : null);
-const priceToModel = ref(route.query.price_to ? Number(route.query.price_to) : null);
+const priceFromModel = ref(
+  route.query.price_from ? Number(route.query.price_from) : null
+);
+const priceToModel = ref(
+  route.query.price_to ? Number(route.query.price_to) : null
+);
 const attributeModels = ref({});
 
-/* ================= DATA LOAD ================= */
-const catsLoading = ref(false);
+/* ================= DATA LOAD (PRODUCTS ONLY WHEN CATEGORY) ================= */
 const productsLoading = ref(false);
-
 const productsLoaded = ref(false);
 let productsPromise = null;
-
-function normalizeCat(c) {
-  const pid = c.parent_id;
-  const parent =
-    pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
-      ? null
-      : String(pid);
-
-  return {
-    id: c.id,
-    name: c.name,
-    code: c.code,
-    parent,
-    photo:
-      c.photo_url_abs ||
-      c.photo_url ||
-      (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
-  };
-}
-
-async function loadCategoriesOnly() {
-  catsLoading.value = true;
-  try {
-    const r = await fetch("/api/admin/product/get_categories_flat.php");
-    const rawCats = await r.json();
-    categories.value = (Array.isArray(rawCats) ? rawCats : []).map(normalizeCat);
-  } catch (e) {
-    categories.value = [];
-  } finally {
-    catsLoading.value = false;
-  }
-}
 
 // ✅ товары грузим ТОЛЬКО когда выбрана категория
 async function ensureProductsOnlyWhenCategory() {
@@ -623,35 +616,35 @@ async function ensureProductsOnlyWhenCategory() {
         ? baseProducts
         : baseProducts.products || [];
 
-      products.value = (list || [])
-        .filter(Boolean)
-        .map((p) => {
-          let images = [];
+      products.value = (list || []).filter(Boolean).map((p) => {
+        let images = [];
 
-          if (Array.isArray(p.images)) {
-            images = p.images.filter(Boolean);
-          } else {
-            const ph = p.photo ?? "";
-            if (Array.isArray(ph)) {
-              images = ph.filter(Boolean);
-            } else if (typeof ph === "string" && ph.trim()) {
-              try {
-                const arr = JSON.parse(ph);
-                if (Array.isArray(arr)) images = arr.filter(Boolean);
-              } catch {
-                if (ph.startsWith("/photo_product_vitrina/")) images = [ph];
-              }
+        if (Array.isArray(p.images)) {
+          images = p.images.filter(Boolean);
+        } else {
+          const ph = p.photo ?? "";
+          if (Array.isArray(ph)) {
+            images = ph.filter(Boolean);
+          } else if (typeof ph === "string" && ph.trim()) {
+            try {
+              const arr = JSON.parse(ph);
+              if (Array.isArray(arr)) images = arr.filter(Boolean);
+            } catch {
+              if (ph.startsWith("/photo_product_vitrina/")) images = [ph];
             }
           }
+        }
 
-          return {
-            ...p,
-            images,
-            _search: normalize(
-              `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`
-            ),
-          };
-        });
+        return {
+          ...p,
+          images,
+          _search: normalize(
+            `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${
+              p.barcode || ""
+            }`
+          ),
+        };
+      });
 
       productsLoaded.value = true;
     })
@@ -666,8 +659,6 @@ async function ensureProductsOnlyWhenCategory() {
   return productsPromise;
 }
 
-onMounted(loadCategoriesOnly);
-
 // когда появляется cat — грузим товары (один раз)
 watch(
   hasActiveCategory,
@@ -678,13 +669,47 @@ watch(
 );
 
 // loader теперь зависит от того, что реально грузим
-const loading = computed(() => catsLoading.value || (hasActiveCategory.value && productsLoading.value));
+const loading = computed(
+  () => catsLoading.value || (hasActiveCategory.value && productsLoading.value)
+);
 
+/* ================= GET CATEGORIES FROM HomeSearch ================= */
+function normalizeCat(c) {
+  const pid = c?.parent_id ?? c?.parent ?? null;
+  const parent =
+    pid === null ||
+    pid === undefined ||
+    String(pid) === "0" ||
+    String(pid) === ""
+      ? null
+      : String(pid);
+
+  return {
+    id: c.id,
+    name: c.name,
+    code: c.code,
+    parent,
+    photo:
+      c.photo_url_abs ||
+      c.photo_url ||
+      c.photo ||
+      (c.photo_categories
+        ? `/photo_categories_vitrina/${c.photo_categories}`
+        : null),
+  };
+}
+
+function onCategoriesLoaded(list) {
+  const arr = Array.isArray(list) ? list : [];
+  categories.value = arr.map(normalizeCat);
+}
 
 /* ================= TREE FROM FLAT ================= */
 const treeData = computed(() => {
   const byId = new Map();
-  categories.value.forEach((c) => byId.set(String(c.id), { ...c, children: [] }));
+  categories.value.forEach((c) =>
+    byId.set(String(c.id), { ...c, children: [] })
+  );
 
   const roots = [];
   categories.value.forEach((c) => {
@@ -760,7 +785,8 @@ const attributeFilters = computed(() => {
     (p.attributes || []).forEach((a) => {
       if (!a?.name || !a?.value) return;
 
-      if (!temp[a.name]) temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
+      if (!temp[a.name])
+        temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
       if (a.ui_render === "color") temp[a.name].ui_render = "color";
 
       let metaObj = a.meta ?? null;
@@ -773,7 +799,8 @@ const attributeFilters = computed(() => {
       }
 
       const existed = temp[a.name].map.get(a.value);
-      if (!existed) temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
+      if (!existed)
+        temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
       else if (!existed.meta?.color && metaObj?.color) existed.meta = metaObj;
     });
   });
@@ -783,7 +810,9 @@ const attributeFilters = computed(() => {
     res[k] = {
       ui_render: temp[k].ui_render,
       values: Array.from(temp[k].map.values()).sort((x, y) =>
-        String(x.value).localeCompare(String(y.value), "ru", { sensitivity: "base" })
+        String(x.value).localeCompare(String(y.value), "ru", {
+          sensitivity: "base",
+        })
       ),
     };
   }
@@ -805,7 +834,9 @@ watch(
       brand: openFilters.value.brand ?? false,
       photo: openFilters.value.photo ?? false,
     };
-    Object.keys(attributeFilters.value).forEach((k) => (nextOpen[k] = openFilters.value[k] ?? false));
+    Object.keys(attributeFilters.value).forEach(
+      (k) => (nextOpen[k] = openFilters.value[k] ?? false)
+    );
     openFilters.value = nextOpen;
   },
   { immediate: true }
@@ -854,7 +885,8 @@ function applyFilters() {
     cat: currentCategory.value || undefined,
     q: qRaw || undefined,
     brand: brandModel.value.length ? brandModel.value : undefined,
-    price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
+    price_from:
+      priceFromModel.value !== null ? priceFromModel.value : undefined,
     photo: photoModel.value !== "all" ? photoModel.value : undefined,
     price_to: priceToModel.value !== null ? priceToModel.value : undefined,
   };
@@ -866,7 +898,7 @@ function applyFilters() {
   router.replace({ query });
 }
 
-/* ================= URL → MODELS (без searchModel) ================= */
+/* ================= URL → MODELS ================= */
 watch(
   () => route.query,
   (q) => {
@@ -954,7 +986,9 @@ const mergedSearchProducts = computed(() => {
     .map((hit) => {
       const full = map.get(String(hit.id));
 
-      const hitImages = Array.isArray(hit.images) ? hit.images.filter(Boolean) : [];
+      const hitImages = Array.isArray(hit.images)
+        ? hit.images.filter(Boolean)
+        : [];
       const hitThumb = hit.thumb ? [hit.thumb] : [];
       const fromHit = hitImages.length ? hitImages : hitThumb;
 
@@ -979,7 +1013,9 @@ const mergedSearchProducts = computed(() => {
         images: fromHit,
         attributes: [],
         category_code: "",
-        _search: normalize(`${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`),
+        _search: normalize(
+          `${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`
+        ),
       };
     })
     .filter((p) => p?.id != null && p?.name);
@@ -1000,17 +1036,23 @@ const filteredProducts = computed(() => {
     list = list.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
   }
 
-  if (brandModel.value.length) list = list.filter((p) => brandModel.value.includes(p.brand));
+  if (brandModel.value.length)
+    list = list.filter((p) => brandModel.value.includes(p.brand));
 
-  if (priceFromModel.value !== null) list = list.filter((p) => Number(p.price) >= priceFromModel.value);
-  if (priceToModel.value !== null) list = list.filter((p) => Number(p.price) <= priceToModel.value);
+  if (priceFromModel.value !== null)
+    list = list.filter((p) => Number(p.price) >= priceFromModel.value);
+  if (priceToModel.value !== null)
+    list = list.filter((p) => Number(p.price) <= priceToModel.value);
 
   if (photoModel.value === "with") list = list.filter((p) => hasImages(p));
-  else if (photoModel.value === "without") list = list.filter((p) => !hasImages(p));
+  else if (photoModel.value === "without")
+    list = list.filter((p) => !hasImages(p));
 
   for (const [k, arr] of Object.entries(attributeModels.value)) {
     if (!Array.isArray(arr) || !arr.length) continue;
-    list = list.filter((p) => p.attributes?.some((a) => a.name === k && arr.includes(a.value)));
+    list = list.filter((p) =>
+      p.attributes?.some((a) => a.name === k && arr.includes(a.value))
+    );
   }
 
   return list;
@@ -1027,8 +1069,12 @@ watch(
   }
 );
 
-const visibleProducts = computed(() => filteredProducts.value.slice(0, displayLimit.value));
-const canLoadMore = computed(() => filteredProducts.value.length > displayLimit.value);
+const visibleProducts = computed(() =>
+  filteredProducts.value.slice(0, displayLimit.value)
+);
+const canLoadMore = computed(
+  () => filteredProducts.value.length > displayLimit.value
+);
 
 function loadMore() {
   displayLimit.value += step.value;
@@ -1375,7 +1421,7 @@ watch(showMobileFilters, (open) => {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 18px;
 }
 
@@ -1447,8 +1493,10 @@ watch(showMobileFilters, (open) => {
 .product-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  cursor: pointer;
+  gap: 10px;
+  cursor: default; /* больше не кликается вся карточка */
+    flex: 1;
+
 }
 
 .product-name {
@@ -1457,54 +1505,77 @@ watch(showMobileFilters, (open) => {
   font-weight: 650;
   color: var(--text-main);
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.7em;
+  min-height: 2.4em;
 }
 
 .product-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 10px;
 }
 
 .product-price {
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 800; /* чуть мягче чем было */
   color: var(--accent);
   letter-spacing: -0.01em;
 }
 
-.product-brand {
+.product-qty {
   font-size: 12px;
-  font-weight: 750;
-  color: #111827;
-  background: rgba(4, 0, 255, 0.08);
-  border: 1px solid rgba(4, 0, 255, 0.16);
-  padding: 6px 10px;
-  border-radius: 999px;
+  color: var(--text-muted);
   white-space: nowrap;
-  max-width: 45%;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .product-meta {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap; /* чтобы чипы красиво переносились */
   align-items: center;
 }
-.product-barcode {
+
+.product-chip {
   font-size: 12px;
   color: var(--text-muted);
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   padding: 6px 10px;
   border-radius: 999px;
+}
+
+.product-barcode {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
+}
+
+.product-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.product-open {
+  border: 1px solid rgba(4, 0, 255, 0.22);
+  background: rgba(4, 0, 255, 0.08);
+  color: var(--accent);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.product-open:hover {
+  background: rgba(4, 0, 255, 0.12);
+  box-shadow: var(--shadow-sm);
+}
+
+.product-open:active {
+  transform: scale(0.99);
 }
 
 /* EMPTY / LOADER / LOADMORE */

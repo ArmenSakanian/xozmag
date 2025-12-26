@@ -1,143 +1,216 @@
 <template>
-  <header class="header">
-    <div class="header-container">
-      <!-- ЛОГО -->
-      <div class="logo">
-        <a href="/">
-          <img src="@/assets/logo.webp" alt="Logo" />
-          <h1>Все Для Дома</h1></a
+  <header
+    class="header"
+    ref="headerRef"
+    :style="{ '--hdr-h': headerH + 'px' }"
+  >
+    <!-- ===== TOP ROW ===== -->
+    <div class="header-top">
+      <div class="header-top-container">
+        <!-- LOGO -->
+        <div class="logo">
+          <a href="/">
+            <img src="@/assets/logo.webp" alt="Logo" />
+            <h1>Все Для Дома</h1>
+          </a>
+        </div>
+
+        <!-- DESKTOP NAV -->
+        <nav class="nav">
+          <a href="/product" class="nav-item">Каталог</a>
+          <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
+          <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+          <a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
+        </nav>
+
+        <!-- BURGER (mobile) -->
+        <button
+          class="burger"
+          type="button"
+          @click="mobileOpen = !mobileOpen"
+          aria-label="Открыть меню"
         >
+          <span :class="{ open: mobileOpen }"></span>
+          <span :class="{ open: mobileOpen }"></span>
+          <span :class="{ open: mobileOpen }"></span>
+        </button>
       </div>
-
-      <!-- ДЕСКТОП МЕНЮ -->
-      <nav class="nav">
-        <a href="/product" class="nav-item">Каталог</a>
-        <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
-        <a class="nav-item" @click.prevent="scrollToSection('contact')"
-          >Контакты</a
-        >
-                <a class="nav-item" @click.prevent="scrollToSection('StoreConditions')"
-          >Удобства магазина</a
-        >
-        <a class="nav-item" @click.prevent="scrollToSection('photo')"
-          >Фотографии</a
-        >
-      </nav>
-
-      <!-- БУРГЕР -->
-      <button class="burger" @click="mobileOpen = !mobileOpen">
-        <span :class="{ open: mobileOpen }"></span>
-        <span :class="{ open: mobileOpen }"></span>
-        <span :class="{ open: mobileOpen }"></span>
-      </button>
     </div>
 
-    <!-- МОБИЛЬНОЕ МЕНЮ -->
+    <!-- ===== BOTTOM ROW (CENTER SEARCH) ===== -->
+    <!-- ❗️На CatalogV2 не показываем -->
+    <div v-if="showHeaderSearch" class="header-bottom">
+      <div class="header-bottom-container">
+        <div class="header-search">
+          <HomeSearch
+            :show-category="true"
+            :categories="categories"
+            :current-category="null"
+            :sync-route="false"
+            catalog-path="/catalogv2"
+            @categories-loaded="onCategoriesLoaded"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MOBILE MENU ===== -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
       <a href="/product" class="mobile-item" @click="closeMenu">Каталог</a>
       <a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
-      <a class="mobile-item" @click.prevent="scrollToSection('contact')"
-        >Контакты</a
-      >
-                      <a class="mobile-item" @click.prevent="scrollToSection('StoreConditions')"
-          >Удобства магазина</a
-        >
-      <a class="mobile-item" @click.prevent="scrollToSection('photo')"
-        >Фотографии</a
-      >
+      <a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+      <a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import { useRoute } from "vue-router";
+import HomeSearch from "@/components/HomeSearch.vue";
 
-const mobileOpen = ref(false);
 const route = useRoute();
+const mobileOpen = ref(false);
 
-// ============================
-//   ПЕРЕХОД И СКРОЛЛ
-// ============================
+/* =========================
+   HIDE SEARCH ON CATALOGV2
+========================= */
+const showHeaderSearch = computed(() => {
+  // прячем на /catalogv2 и на вложенных типа /catalogv2/...
+  return !(route.path === "/catalogv2" || route.path.startsWith("/catalogv2/"));
+});
+
+/* =========================
+   CATEGORIES (from HomeSearch)
+========================= */
+const categories = ref([]);
+function onCategoriesLoaded(arr) {
+  categories.value = Array.isArray(arr) ? arr : [];
+}
+
+/* =========================
+   HEADER HEIGHT (for mobile-menu top)
+========================= */
+const headerRef = ref(null);
+const headerH = ref(0);
+
+async function updateHeaderH() {
+  await nextTick();
+  headerH.value = headerRef.value?.offsetHeight || 0;
+}
+
+function handleResize() {
+  updateHeaderH();
+}
+
+/* =========================
+   SCROLL NAVIGATION (your logic)
+========================= */
 function scrollToSection(id) {
   const currentPath = route.path;
 
-  // если НЕ на главной → делаем ПОЛНОЕ обновление страницы
   if (currentPath !== "/") {
-    mobileOpen.value = false; // закрыть бургер
-
-    // передаём параметр scroll в URL
+    mobileOpen.value = false;
     window.location.href = `/?scroll=${id}`;
     return;
   }
-
-  // если уже на главной — просто скроллим
   doScroll(id);
 }
 
-// ============================
-//   ФУНКЦИЯ СКРОЛЛА
-// ============================
 function doScroll(id) {
   const el = document.getElementById(id);
   if (!el) return;
 
-  const headerHeight = document.querySelector(".header").offsetHeight;
+  const hh = headerRef.value?.offsetHeight || 0;
 
   window.scrollTo({
-    top: el.offsetTop - headerHeight,
+    top: el.offsetTop - hh,
     behavior: "smooth",
   });
 
-  mobileOpen.value = false; // закрыть бургер
+  mobileOpen.value = false;
 }
 
-// ============================
-//   СКРОЛЛ ПОСЛЕ ПЕРЕХОДА
-// ============================
+function closeMenu() {
+  mobileOpen.value = false;
+}
+
+/* =========================
+   WATCHERS
+========================= */
+watch(
+  () => route.fullPath,
+  () => {
+    mobileOpen.value = false;
+    updateHeaderH();
+  }
+);
+
+watch(showHeaderSearch, () => updateHeaderH());
+watch(mobileOpen, () => updateHeaderH());
+
+/* =========================
+   MOUNT
+========================= */
 onMounted(() => {
+  updateHeaderH();
+  window.addEventListener("resize", handleResize, { passive: true });
+
   const params = new URLSearchParams(window.location.search);
   const section = params.get("scroll");
+  if (section) setTimeout(() => doScroll(section), 400);
+});
 
-  if (section) {
-    setTimeout(() => doScroll(section), 400);
-  }
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 
 <style scoped>
-/* ===== HEADER (под твой :root) ===== */
-
-.header{
+/* ===== HEADER SHELL ===== */
+/* ❗️ВАЖНО: backdrop-filter НЕ на header, иначе fixed внутри (категории) ломаются */
+.header {
   width: 100%;
   position: sticky;
   top: 0;
   z-index: 9999;
 
-  height: var(--site-header-h);
-  display: flex;
-  align-items: center;
-
-  background: rgba(255,255,255,0.85);
   border-bottom: 1px solid var(--border-soft);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px);
+
+  /* чтобы ::before с z-index:-1 не улетал за пределы */
+  isolation: isolate;
 }
 
-.header-container{
+/* фон + blur теперь на псевдоэлементе */
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: -1;
+}
+
+/* ===== TOP ROW ===== */
+.header-top {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.header-top-container {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 10px 16px;
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
 }
 
-/* ===== ЛОГО ===== */
-.logo a{
+/* LOGO */
+.logo a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -146,7 +219,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.logo img{
+.logo img {
   height: 42px;
   width: auto;
   display: block;
@@ -154,7 +227,7 @@ onMounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
-.logo h1{
+.logo h1 {
   margin: 0;
   font-size: 18px;
   font-weight: 900;
@@ -162,14 +235,15 @@ onMounted(() => {
   color: var(--text-main);
 }
 
-/* ===== DESKTOP NAV ===== */
-.nav{
+/* DESKTOP NAV */
+.nav {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 18px;
 }
 
-.nav-item{
+.nav-item {
   position: relative;
   text-decoration: none;
   cursor: pointer;
@@ -180,20 +254,15 @@ onMounted(() => {
   padding: 10px 10px;
   border-radius: 12px;
 
-  transition: background .18s ease, color .18s ease, transform .18s ease;
+  transition: background 0.18s ease, transform 0.18s ease;
 }
 
-.nav-item:hover{
+.nav-item:hover {
   background: var(--bg-soft);
   transform: translateY(-1px);
 }
 
-.nav-item:active{
-  transform: translateY(0);
-}
-
-/* маленькая “точка-акцент” снизу */
-.nav-item::after{
+.nav-item::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -203,17 +272,18 @@ onMounted(() => {
   border-radius: 999px;
   background: var(--accent);
   transform: translateX(-50%);
-  transition: width .2s ease;
-  opacity: .9;
+  transition: width 0.2s ease;
+  opacity: 0.9;
 }
-
-.nav-item:hover::after{
+.nav-item:hover::after {
   width: 26px;
 }
 
-/* ===== BURGER ===== */
-.burger{
+/* BURGER */
+.burger {
   display: none;
+  margin-left: auto;
+
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: 12px;
@@ -226,31 +296,78 @@ onMounted(() => {
 
   align-items: center;
   justify-content: center;
-
   position: relative;
 }
 
-.burger span{
+.burger span {
   position: absolute;
   width: 22px;
   height: 2px;
   background: var(--text-main);
   border-radius: 3px;
-  transition: transform .25s ease, opacity .2s ease;
+  transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
-.burger span:nth-child(1){ transform: translateY(-7px); }
-.burger span:nth-child(2){ transform: translateY(0); }
-.burger span:nth-child(3){ transform: translateY(7px); }
+.burger span:nth-child(1) { transform: translateY(-7px); }
+.burger span:nth-child(2) { transform: translateY(0); }
+.burger span:nth-child(3) { transform: translateY(7px); }
 
-.burger span.open:nth-child(1){ transform: translateY(0) rotate(45deg); }
-.burger span.open:nth-child(2){ opacity: 0; }
-.burger span.open:nth-child(3){ transform: translateY(0) rotate(-45deg); }
+.burger span.open:nth-child(1) { transform: translateY(0) rotate(45deg); }
+.burger span.open:nth-child(2) { opacity: 0; }
+.burger span.open:nth-child(3) { transform: translateY(0) rotate(-45deg); }
+
+/* ===== BOTTOM ROW (CENTER SEARCH) ===== */
+.header-bottom-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 16px 12px;
+
+  display: flex;
+  justify-content: center;
+}
+
+.header-search {
+  width: min(760px, 100%);
+}
+
+/* компактнее HomeSearch в шапке */
+.header-search :deep(.search-wrap) {
+  width: 100%;
+  margin: 0;
+}
+.header-search :deep(.search-box) {
+  padding: 9px 12px;
+  gap: 8px;
+}
+.header-search :deep(.search-clear),
+.header-search :deep(.catpick-btn) {
+  width: 32px;
+  height: 32px;
+}
+.header-search :deep(.search-hint) {
+  display: none;
+}
+
+/* чтобы dropdown/popover были поверх всего */
+.header-search :deep(.dd),
+.header-search :deep(.catpop) {
+  z-index: 20000 !important;
+}
+
+/* ✅ ФИКС ДЛЯ МОБИЛЬНЫХ КАТЕГОРИЙ:
+   поднимаем overlay выше хедера/всего */
+.header :deep(.moverlay-overlay) {
+  z-index: 20000 !important;
+}
+.header :deep(.moverlay-panel) {
+  z-index: 20001 !important;
+}
 
 /* ===== MOBILE MENU ===== */
-.mobile-menu{
+.mobile-menu {
   position: fixed;
-  top: var(--site-header-h);
+  top: var(--hdr-h);
   right: 12px;
   left: 12px;
 
@@ -266,18 +383,18 @@ onMounted(() => {
   transform: translateY(-10px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity .2s ease, transform .2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 
   z-index: 9998;
 }
 
-.mobile-menu.open{
+.mobile-menu.open {
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
 
-.mobile-item{
+.mobile-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -296,40 +413,34 @@ onMounted(() => {
   font-size: 15.5px;
   font-weight: 900;
 
-  transition: transform .18s ease, filter .18s ease;
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
 
-.mobile-item:hover{
+.mobile-item:hover {
   transform: translateY(-1px);
   filter: brightness(1.02);
 }
-
-.mobile-item:active{
-  transform: translateY(0);
-}
-
-/* маленькая стрелка справа (без иконок) */
-.mobile-item::after{
+.mobile-item::after {
   content: "›";
   font-size: 18px;
   color: var(--text-muted);
 }
 
-/* ===== АДАПТАЦИЯ ===== */
-@media (max-width: 900px){
-  .logo h1{ font-size: 16px; }
-  .nav{ gap: 10px; }
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .logo h1 { font-size: 16px; }
+  .nav { gap: 10px; }
 }
 
-@media (max-width: 768px){
-  .nav{ display: none; }
-  .burger{ display: inline-flex; }
+@media (max-width: 768px) {
+  .nav { display: none; }
+  .burger { display: inline-flex; }
 }
 
-/* если хочешь “плотнее” на очень маленьких */
-@media (max-width: 420px){
-  .logo img{ height: 38px; border-radius: 9px; }
-  .logo h1{ font-size: 15px; }
+@media (max-width: 420px) {
+  .logo img { height: 38px; border-radius: 9px; }
+  .logo h1 { font-size: 15px; }
+  .header-top-container { padding: 9px 12px; }
+  .header-bottom-container { padding: 9px 12px 11px; }
 }
 </style>
-

@@ -4,14 +4,11 @@
       <Fa class="search-icon" :icon="['fas','magnifying-glass']" />
 
       <!-- ✅ CATEGORY BUTTON INSIDE SEARCH -->
-      <div
-        v-if="showCategory && categories?.length"
-        class="catpick-wrap"
-        ref="catPickRef"
-      >
+      <div v-if="showCategory" class="catpick-wrap" ref="catPickRef">
         <button
           class="catpick-btn"
           :class="{ on: showCatPopover && !isMobile }"
+          :disabled="!catsList.length"
           type="button"
           title="Категории"
           aria-label="Категории"
@@ -23,7 +20,7 @@
 
       <!-- ✅ DESKTOP POPOVER CATEGORIES -->
       <div
-        v-if="showCategory && showCatPopover && !isMobile"
+        v-if="showCategory && catsList.length && showCatPopover && !isMobile"
         class="catpop"
         ref="catPopRef"
       >
@@ -63,14 +60,15 @@
               <span class="catpop-text">{{ n.name }}</span>
               <Fa
                 v-if="n.children?.length"
-               
-               class="catpop-chev" :icon="['fas','chevron-right']" />
+                class="catpop-chev"
+                :icon="['fas','chevron-right']"
+              />
             </button>
           </div>
         </div>
       </div>
 
-      <!-- ✅ INPUT (стиль как в CatalogV2) -->
+      <!-- ✅ INPUT -->
       <input
         v-model="q"
         class="search-input"
@@ -97,7 +95,7 @@
       </button>
     </div>
 
-    <!-- ✅ SEARCH DROPDOWN (результаты PHP) -->
+    <!-- ✅ SEARCH DROPDOWN -->
     <div v-if="openDd && qTrim && !loadingSearch && !showCatPopover" class="dd">
       <div class="dd-list">
         <div v-if="!results.length" class="dd-empty">Ничего не найдено</div>
@@ -149,7 +147,7 @@
 
     <!-- ✅ MOBILE CATEGORIES PANEL -->
     <div
-      v-if="showCategory && showMobileCats"
+      v-if="showCategory && catsList.length && showMobileCats"
       class="moverlay-overlay"
       @click.self="closeMobileCats"
     >
@@ -179,7 +177,6 @@
         <div class="moverlay-body">
           <div class="mcat-list">
             <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
-              <!-- ✅ tap чекбокс = выбрать категорию -->
               <button
                 class="mcat-check"
                 :class="{ on: String(c.code) === String(currentCategory || '') }"
@@ -193,11 +190,10 @@
               >
                 <Fa
                   v-if="String(c.code) === String(currentCategory || '')"
-                 
-                 :icon="['fas','check']" />
+                  :icon="['fas','check']"
+                />
               </button>
 
-              <!-- ✅ tap текст = открыть подкатегории (или выбрать если детей нет) -->
               <div
                 class="mcat-name"
                 @click="
@@ -237,16 +233,62 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+/* ================== SHARED CATEGORIES CACHE (MODULE SCOPE) ================== */
+const CATS_URL = "/api/admin/product/get_categories_flat.php";
+let _catsCache = null;
+let _catsPromise = null;
+
+function normalizeCat(c) {
+  const pid = c?.parent_id ?? c?.parent ?? null;
+  const parent =
+    pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
+      ? null
+      : String(pid);
+
+  return {
+    id: c.id,
+    name: c.name,
+    code: c.code,
+    parent,
+    photo:
+      c.photo_url_abs ||
+      c.photo_url ||
+      c.photo ||
+      (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
+  };
+}
+
+async function fetchCategoriesOnce() {
+  if (_catsCache) return _catsCache;
+  if (_catsPromise) return _catsPromise;
+
+  _catsPromise = fetch(CATS_URL, { headers: { Accept: "application/json" } })
+    .then((r) => r.json())
+    .then((data) => {
+      const list = Array.isArray(data) ? data : data.categories || data.items || data.data || [];
+      _catsCache = (list || []).filter(Boolean).map(normalizeCat);
+      return _catsCache;
+    })
+    .catch(() => {
+      _catsCache = [];
+      return _catsCache;
+    })
+    .finally(() => {
+      _catsPromise = null;
+    });
+
+  return _catsPromise;
+}
+
+/* ================== PROPS / EMITS ================== */
 const props = defineProps({
   showCategory: { type: Boolean, default: false },
-  categories: { type: Array, default: () => [] }, // [{id,name,code,parent}]
+  categories: { type: Array, default: () => [] }, // можно передать извне
   currentCategory: { type: [String, Number, null], default: null },
 
-  // ✅ для CatalogV2: input управляет route.query.q
   syncRoute: { type: Boolean, default: false },
   routeKey: { type: String, default: "q" },
 
-  // куда вести "показать все"
   catalogPath: { type: String, default: "/catalogv2" },
 
   placeholder: {
@@ -254,11 +296,60 @@ const props = defineProps({
     default: "Поиск по названию / бренду / штрихкоду…",
   },
 
-  dropdownLimit: { type: Number, default: 12 }, // сколько в dropdown
-  serverLimit: { type: Number, default: 30 }, // сколько просить у PHP
+  dropdownLimit: { type: Number, default: 12 },
+  serverLimit: { type: Number, default: 30 },
 });
 
-const emit = defineEmits(["search-hits"]);
+const emit = defineEmits([
+  "search-hits",
+  "categories-loaded",   // ✅ отдаём наверх
+  "categories-loading",  // ✅ чтобы CatalogV2 мог показывать loader если надо
+]);
+
+/* ================== LOCAL CATS (WHEN NOT PASSED) ================== */
+const localCats = ref([]);
+const localCatsLoading = ref(false);
+
+const catsList = computed(() => {
+  const fromProps = Array.isArray(props.categories) ? props.categories : [];
+  return fromProps.length ? fromProps : localCats.value;
+});
+
+async function ensureCategories() {
+  // грузим только если нужны категории (кнопка/поповер)
+  if (!props.showCategory) return;
+
+  const fromProps = Array.isArray(props.categories) ? props.categories : [];
+  if (fromProps.length) {
+    emit("categories-loaded", fromProps);
+    emit("categories-loading", false);
+    return;
+  }
+
+  localCatsLoading.value = true;
+  emit("categories-loading", true);
+
+  localCats.value = await fetchCategoriesOnce();
+
+  localCatsLoading.value = false;
+  emit("categories-loading", false);
+  emit("categories-loaded", localCats.value);
+}
+
+watch(
+  () => props.showCategory,
+  () => ensureCategories(),
+  { immediate: true }
+);
+
+watch(
+  () => props.categories,
+  (val) => {
+    const arr = Array.isArray(val) ? val : [];
+    if (arr.length) emit("categories-loaded", arr);
+  },
+  { immediate: true }
+);
 
 const route = useRoute();
 const router = useRouter();
@@ -310,7 +401,6 @@ function setRouteQ(nextQ) {
 function onInput() {
   clearTimeout(t);
 
-  // при вводе закрываем категории
   closeCatPopover();
   closeMobileCats();
 
@@ -328,11 +418,8 @@ function onInput() {
 
   openDd.value = true;
   t = setTimeout(() => {
-    if (props.syncRoute) {
-      setRouteQ(s); // поиск выполнится от watch(route.query)
-    } else {
-      doSearch(s);
-    }
+    if (props.syncRoute) setRouteQ(s);
+    else doSearch(s);
   }, 220);
 }
 
@@ -533,13 +620,13 @@ function resetColsScroll(fromLevel) {
 }
 
 const treeData = computed(() => {
+  const list = catsList.value || [];
+
   const byId = new Map();
-  (props.categories || []).forEach((c) =>
-    byId.set(String(c.id), { ...c, children: [] })
-  );
+  list.forEach((c) => byId.set(String(c.id), { ...c, children: [] }));
 
   const roots = [];
-  (props.categories || []).forEach((c) => {
+  list.forEach((c) => {
     const n = byId.get(String(c.id));
     if (!n) return;
     const parent =
@@ -550,9 +637,7 @@ const treeData = computed(() => {
 
   const sortNode = (n) => {
     n.children.sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", {
-        sensitivity: "base",
-      })
+      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
     );
     n.children.forEach(sortNode);
   };
@@ -652,15 +737,13 @@ const mobileCatsStack = ref([]);
 
 const childrenByParent = computed(() => {
   const map = {};
-  (props.categories || []).forEach((c) => {
+  (catsList.value || []).forEach((c) => {
     const parentKey = c.parent ? String(c.parent) : "root";
     (map[parentKey] ||= []).push(c);
   });
   Object.keys(map).forEach((k) =>
     map[k].sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", {
-        sensitivity: "base",
-      })
+      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
     )
   );
   return map;
@@ -668,7 +751,7 @@ const childrenByParent = computed(() => {
 
 const catsById = computed(() => {
   const m = new Map();
-  (props.categories || []).forEach((c) => m.set(String(c.id), c));
+  (catsList.value || []).forEach((c) => m.set(String(c.id), c));
   return m;
 });
 
@@ -712,6 +795,8 @@ function backMobileCat() {
 }
 
 function toggleCatPopover() {
+  if (!catsList.value.length) return;
+
   if (isMobile.value) {
     openMobileCats();
     return;
@@ -753,12 +838,8 @@ function onDocDown(e) {
   if (!inside) closeCatPopover();
 }
 
-onMounted(() =>
-  document.addEventListener("mousedown", onDocDown, { passive: true })
-);
-onBeforeUnmount(() =>
-  document.removeEventListener("mousedown", onDocDown)
-);
+onMounted(() => document.addEventListener("mousedown", onDocDown, { passive: true }));
+onBeforeUnmount(() => document.removeEventListener("mousedown", onDocDown));
 
 /* body lock only for mobile cats */
 let savedScrollY = 0;
@@ -863,7 +944,7 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   border: 1px solid var(--border-soft);
   background: #fff;
-    color: var(--accent);
+  color: var(--accent);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -874,6 +955,12 @@ onBeforeUnmount(() => {
   background: rgba(4, 0, 255, 0.05);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
+}
+.catpick-btn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .catpick-btn.on {
@@ -1052,7 +1139,7 @@ onBeforeUnmount(() => {
   opacity: 0.7;
 }
 
-/* ===== dropdown results (из HomeSearch) ===== */
+/* ===== dropdown results ===== */
 .dd {
   position: absolute;
   left: 0;
@@ -1230,7 +1317,7 @@ onBeforeUnmount(() => {
   background: rgba(4, 0, 255, 0.05);
 }
 
-/* ===== mobile cats overlay (как в CatalogV2) ===== */
+/* ===== mobile cats overlay ===== */
 .moverlay-overlay {
   position: fixed;
   inset: 0;
@@ -1333,9 +1420,8 @@ onBeforeUnmount(() => {
 }
 
 .mcat-check {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 20px;
+  height: 20px;
   border: 1px solid var(--border-soft);
   background: #fff;
   cursor: pointer;
@@ -1349,7 +1435,6 @@ onBeforeUnmount(() => {
   color: var(--accent);
 }
 .mcat-name {
-  font-weight: 900;
   color: var(--text-main);
   line-height: 1.2;
   overflow-wrap: anywhere;
