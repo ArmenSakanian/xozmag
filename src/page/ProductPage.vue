@@ -93,7 +93,7 @@
             <div class="filter-content">
 
               <div class="filter-search-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <Fa class="search-icon" :icon="['fas','magnifying-glass']" />
                 <input type="text" v-model="brandSearch" placeholder="Поиск бренда..." class="filter-search" />
               </div>
 
@@ -129,7 +129,7 @@
             <div class="filter-content">
 
               <div class="filter-search-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <Fa class="search-icon" :icon="['fas','magnifying-glass']" />
 
                 <input type="text" v-model="typeSearch" placeholder="Поиск типа..." class="filter-search" />
               </div>
@@ -187,7 +187,7 @@
   <div class="products-search-row">
     <!-- Название / Артикул -->
     <div class="products-search">
-      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <Fa aria-hidden="true" :icon="['fas','magnifying-glass']" />
       <input
         v-model="searchNameArticle"
         type="text"
@@ -204,7 +204,7 @@
 
     <!-- Штрихкод -->
     <div class="products-search barcode">
-      <i class="fa-solid fa-barcode" aria-hidden="true"></i>
+      <Fa aria-hidden="true" :icon="['fas','barcode']" />
       <input
         v-model="searchBarcode"
         type="text"

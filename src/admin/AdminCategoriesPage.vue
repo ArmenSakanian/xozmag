@@ -11,7 +11,7 @@
 
       <div class="page-head-right">
         <button class="btn soft" @click="loadCategories" :disabled="loading">
-          <i class="fa-solid fa-rotate-right"></i>
+          <Fa :icon="['fas','rotate-right']" />
           Обновить
         </button>
       </div>
@@ -48,7 +48,7 @@
               @click="createCategory"
               :disabled="creating || !newName.trim()"
             >
-              <i class="fa-solid fa-plus"></i>
+              <Fa :icon="['fas','plus']" />
               Создать
             </button>
 
@@ -106,10 +106,10 @@
                 @click.stop="toggle(c.id)"
                 :title="opened[c.id] === false ? 'Развернуть' : 'Свернуть'"
               >
-                <i
-                  class="fa-solid fa-chevron-right"
+                <Fa
+                 
                   :class="{ open: opened[c.id] !== false }"
-                ></i>
+                 :icon="['fas','chevron-right']" />
               </button>
               <span v-else class="twisty placeholder" aria-hidden="true"></span>
 
@@ -136,7 +136,7 @@
                 :disabled="!!moving[c.id]"
                 title="Переместить категорию"
               >
-                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                <Fa :icon="['fas','arrow-right-arrow-left']" />
                 Перенести
               </button>
 
@@ -146,7 +146,7 @@
                 :disabled="!!deleting[c.id]"
                 title="Удалить категорию"
               >
-                <i class="fa-solid fa-trash"></i>
+                <Fa :icon="['fas','trash']" />
                 Удалить
               </button>
             </div>

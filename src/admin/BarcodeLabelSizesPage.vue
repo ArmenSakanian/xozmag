@@ -9,7 +9,7 @@
       </div>
 
       <button class="btn" @click="load">
-        <i class="fa-solid fa-rotate-right"></i>
+        <Fa :icon="['fas','rotate-right']" />
         Обновить
       </button>
     </div>
@@ -53,12 +53,12 @@
 
           <div class="actions">
             <button class="btn primary" @click="save">
-              <i class="fa-solid fa-check"></i>
+              <Fa :icon="['fas','check']" />
               {{ form.id ? "Сохранить" : "Добавить" }}
             </button>
 
             <button class="btn ghost" @click="reset">
-              <i class="fa-solid fa-xmark"></i>
+              <Fa :icon="['fas','xmark']" />
               Сброс
             </button>
           </div>
@@ -86,10 +86,10 @@
 
             <div class="acts">
               <button class="icon edit" @click="edit(it)" title="Редактировать">
-                <i class="fa-solid fa-pen"></i>
+                <Fa :icon="['fas','pen']" />
               </button>
               <button class="icon del" @click="del(it)" title="Удалить">
-                <i class="fa-solid fa-trash"></i>
+                <Fa :icon="['fas','trash']" />
               </button>
             </div>
           </div>

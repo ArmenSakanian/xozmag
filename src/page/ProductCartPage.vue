@@ -4,22 +4,22 @@
     <header class="topbar">
       <div class="shell topbar-inner">
         <button class="iconbtn backbtn" @click="goBack" aria-label="Назад">
-          <i class="fa-solid fa-arrow-left"></i>
+          <Fa :icon="['fas','arrow-left']" />
           <span class="backtxt">Назад</span>
         </button>
 
         <div class="topmid">
           <div class="crumbs" v-if="crumbs.length">
             <span class="crumb home">
-              <i class="fa-solid fa-house"></i>
+              <Fa :icon="['fas','house']" />
               <span>Каталог</span>
             </span>
-            <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+            <span class="sep"><Fa :icon="['fas','chevron-right']" /></span>
 
             <span v-for="(c, i) in crumbs" :key="c + i" class="crumb" :title="c">
               <span class="crumbtxt">{{ c }}</span>
               <span v-if="i !== crumbs.length - 1" class="sep">
-                <i class="fa-solid fa-chevron-right"></i>
+                <Fa :icon="['fas','chevron-right']" />
               </span>
             </span>
           </div>
@@ -48,24 +48,24 @@
 
       <section v-else-if="error" class="state card">
         <div class="state-title">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+          <Fa :icon="['fas','triangle-exclamation']" />
           Ошибка загрузки
         </div>
         <div class="state-text">{{ error }}</div>
         <button class="btn solid" @click="loadOne">
-          <i class="fa-solid fa-rotate-right"></i>
+          <Fa :icon="['fas','rotate-right']" />
           Повторить
         </button>
       </section>
 
       <section v-else-if="!product" class="state card">
         <div class="state-title">
-          <i class="fa-solid fa-circle-question"></i>
+          <Fa :icon="['fas','circle-question']" />
           Товар не найден
         </div>
         <div class="state-text">Проверь ID или обнови страницу.</div>
         <button class="btn" @click="goBack">
-          <i class="fa-solid fa-arrow-left"></i>
+          <Fa :icon="['fas','arrow-left']" />
           Назад
         </button>
       </section>
@@ -85,7 +85,7 @@
                   title="Предыдущее"
                   @click.stop
                 >
-                  <i class="fa-solid fa-chevron-left"></i>
+                  <Fa :icon="['fas','chevron-left']" />
                 </button>
 
                 <button
@@ -95,7 +95,7 @@
                   title="Следующее"
                   @click.stop
                 >
-                  <i class="fa-solid fa-chevron-right"></i>
+                  <Fa :icon="['fas','chevron-right']" />
                 </button>
 
                 <Swiper
@@ -125,7 +125,7 @@
               </template>
 
               <div v-else class="nofoto">
-                <div class="nofoto-ico"><i class="fa-regular fa-image"></i></div>
+                <div class="nofoto-ico"><Fa :icon="['far','image']" /></div>
                 <div class="nofoto-t">Нет фото</div>
                 <div class="nofoto-s">Фото появится — покажем автоматически.</div>
               </div>
@@ -160,18 +160,18 @@
           <div class="card details">
             <div class="tabs">
               <button class="tab" :class="{ on: tab === 'desc' }" @click="tab = 'desc'">
-                <i class="fa-regular fa-file-lines"></i>
+                <Fa :icon="['far','file-lines']" />
                 Описание
               </button>
 
               <button class="tab" :class="{ on: tab === 'attrs' }" @click="tab = 'attrs'">
-                <i class="fa-solid fa-list-check"></i>
+                <Fa :icon="['fas','list-check']" />
                 Характеристики
                 <span v-if="attrs.length" class="count">{{ attrs.length }}</span>
               </button>
 
               <button class="tab" :class="{ on: tab === 'info' }" @click="tab = 'info'">
-                <i class="fa-solid fa-circle-info"></i>
+                <Fa :icon="['fas','circle-info']" />
                 Инфо
               </button>
             </div>
@@ -184,7 +184,7 @@
                 </div>
 
                 <div v-else class="empty">
-                  <i class="fa-regular fa-face-meh"></i>
+                  <Fa :icon="['far','face-meh']" />
                   Описание отсутствует
                 </div>
 
@@ -217,7 +217,7 @@
                 </div>
 
                 <div v-else class="empty">
-                  <i class="fa-regular fa-rectangle-list"></i>
+                  <Fa :icon="['far','rectangle-list']" />
                   Характеристики не заполнены
                 </div>
               </div>
@@ -263,7 +263,7 @@
 
               <div class="metaBadges">
                 <div v-if="product.brand" class="badge">
-                  <i class="fa-solid fa-tag"></i>
+                  <Fa :icon="['fas','tag']" />
                   <span class="btxt" :title="product.brand">{{ product.brand }}</span>
                 </div>
               </div>

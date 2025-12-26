@@ -9,57 +9,57 @@
 
     <section class="tiles" aria-label="Разделы админ-панели">
       <a href="/admin/categories" class="tile">
-        <span class="ico"><i class="fa-solid fa-folder-tree"></i></span>
+        <span class="ico"><Fa :icon="['fas','folder-tree']" /></span>
         <span class="t">
           <span class="t-title">Категории</span>
           <span class="t-desc">Дерево категорий и подкатегорий</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
       <a href="/admin/attributes" class="tile">
-        <span class="ico"><i class="fa-solid fa-sliders"></i></span>
+        <span class="ico"><Fa :icon="['fas','sliders']" /></span>
         <span class="t">
           <span class="t-title">Характеристики</span>
           <span class="t-desc">Атрибуты и значения</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
       <a href="/admin/products" class="tile">
-        <span class="ico"><i class="fa-solid fa-boxes-stacked"></i></span>
+        <span class="ico"><Fa :icon="['fas','boxes-stacked']" /></span>
         <span class="t">
           <span class="t-title">Товары</span>
           <span class="t-desc">Таблица, редактирование, bulk</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
       <a href="/admin/functions" class="tile">
-        <span class="ico"><i class="fa-solid fa-gears"></i></span>
+        <span class="ico"><Fa :icon="['fas','gears']" /></span>
         <span class="t">
           <span class="t-title">Функции</span>
           <span class="t-desc">Сервисные инструменты</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
       <a href="/admin/order" class="tile">
-        <span class="ico"><i class="fa-solid fa-truck"></i></span>
+        <span class="ico"><Fa :icon="['fas','truck']" /></span>
         <span class="t">
           <span class="t-title">Заказ поставщику</span>
           <span class="t-desc">Сформировать и выгрузить заказ</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
       <a href="/admin/barcode" class="tile">
-        <span class="ico"><i class="fa-solid fa-barcode"></i></span>
+        <span class="ico"><Fa :icon="['fas','barcode']" /></span>
         <span class="t">
           <span class="t-title">Штрихкод</span>
           <span class="t-desc">Создать/изменить размер штрихкода</span>
         </span>
-        <i class="fa-solid fa-chevron-right arrow"></i>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
     </section>
   </div>

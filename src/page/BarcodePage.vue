@@ -15,7 +15,7 @@
                 {{ s.text }}
               </option>
             </select>
-            <i class="fa-solid fa-chevron-down select-arrow" aria-hidden="true"></i>
+            <Fa aria-hidden="true" class="select-arrow" :icon="['fas','chevron-down']" />
           </div>
         </div>
       </div>
@@ -34,22 +34,22 @@
 
       <div class="bulk-row bulk-actions-row">
         <button class="btn primary" @click="printSelected">
-          <i class="fa-solid fa-print"></i>
+          <Fa :icon="['fas','print']" />
           Печать ({{ selectedIds.length }})
         </button>
 
         <button class="btn ghost" @click="exportSelected">
-          <i class="fa-solid fa-file-excel"></i>
+          <Fa :icon="['fas','file-excel']" />
           Экспорт
         </button>
 
         <button class="btn danger" @click="deleteSelected">
-          <i class="fa-solid fa-trash"></i>
+          <Fa :icon="['fas','trash']" />
           Удалить
         </button>
 
         <button class="btn soft" @click="clearSelected">
-          <i class="fa-solid fa-xmark"></i>
+          <Fa :icon="['fas','xmark']" />
           Снять выделение
         </button>
       </div>
@@ -99,22 +99,22 @@
 
           <div class="row buttons">
             <button class="btn primary" @click="editMode ? saveEdit() : createBarcode()">
-              <i class="fa-solid fa-check"></i>
+              <Fa :icon="['fas','check']" />
               {{ editMode ? "Сохранить" : "Создать" }}
             </button>
 
             <button v-if="!manualMode && !editMode" class="btn ghost" @click="manualMode = true">
-              <i class="fa-solid fa-pen-to-square"></i>
+              <Fa :icon="['fas','pen-to-square']" />
               Вручную
             </button>
 
             <button v-if="manualMode && !editMode" class="btn soft" @click="cancelManualMode">
-              <i class="fa-solid fa-xmark"></i>
+              <Fa :icon="['fas','xmark']" />
               Отменить
             </button>
 
             <button v-if="editMode" class="btn soft" @click="cancelEdit">
-              <i class="fa-solid fa-xmark"></i>
+              <Fa :icon="['fas','xmark']" />
               Отменить
             </button>
           </div>
@@ -129,7 +129,7 @@
           <!-- Фото -->
           <div class="photo">
             <div v-if="!photoPreview" class="photo-btn" @click="openCameraModal">
-              <i class="fa-solid fa-camera"></i>
+              <Fa :icon="['fas','camera']" />
               Сделать фото
             </div>
 
@@ -138,12 +138,12 @@
 
               <div class="photo-actions">
                 <div class="photo-btn" @click="openCameraModal">
-                  <i class="fa-solid fa-camera-rotate"></i>
+                  <Fa :icon="['fas','camera-rotate']" />
                   Переснять
                 </div>
 
                 <div class="photo-del" @click="removePhoto" title="Удалить фото">
-                  <i class="fa-solid fa-trash"></i>
+                  <Fa :icon="['fas','trash']" />
                 </div>
               </div>
             </div>
@@ -197,10 +197,10 @@
           <!-- tools -->
           <div class="tools">
             <button class="tool edit" @click.stop="startEdit(item)" title="Редактировать">
-              <i class="fa-solid fa-pen"></i>
+              <Fa :icon="['fas','pen']" />
             </button>
             <button class="tool del" @click.stop="deleteItem(item.id)" title="Удалить">
-              <i class="fa-solid fa-trash"></i>
+              <Fa :icon="['fas','trash']" />
             </button>
           </div>
 
@@ -211,7 +211,7 @@
             <div class="code-row">
               <div class="code" v-html="highlight(item.barcode, search)"></div>
               <button class="copy" @click.stop="copy(item.barcode)" title="Копировать штрихкод">
-                <i class="fa-solid fa-copy"></i>
+                <Fa :icon="['fas','copy']" />
               </button>
             </div>
 
@@ -235,11 +235,11 @@
                       {{ s.text }}
                     </option>
                   </select>
-                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                  <Fa class="select-arrow" :icon="['fas','chevron-down']" />
                 </div>
 
                 <button class="btn primary mini" @click.stop="openPrint(item)">
-                  <i class="fa-solid fa-print"></i>
+                  <Fa :icon="['fas','print']" />
                   Печать
                 </button>
               </div>
@@ -253,7 +253,7 @@
                 <div class="k">
                   Товар
                   <button class="copy mini" @click.stop="copy(item.product_name)" title="Копировать">
-                    <i class="fa-solid fa-copy"></i>
+                    <Fa :icon="['fas','copy']" />
                   </button>
                 </div>
                 <div class="v" v-html="highlight(item.product_name, search)"></div>
@@ -263,7 +263,7 @@
                 <div class="k">
                   Артикул
                   <button class="copy mini" @click.stop="copy(item.sku)" title="Копировать">
-                    <i class="fa-solid fa-copy"></i>
+                    <Fa :icon="['fas','copy']" />
                   </button>
                 </div>
                 <div class="v" v-html="highlight(item.sku, search)"></div>
@@ -324,7 +324,7 @@
         <video ref="video" autoplay playsinline class="cam-video"></video>
 
         <button class="btn-capture" @click="takePhoto">
-          <i class="fa-solid fa-camera"></i>
+          <Fa :icon="['fas','camera']" />
         </button>
 
         <button class="btn-close" @click="closeCameraModal">Закрыть</button>
@@ -336,7 +336,7 @@
       <div class="photo-modal-content" @click.stop>
         <img :src="photoModalSrc" class="photo-modal-img" />
         <button class="photo-modal-close" @click="closePhoto">
-          <i class="fa-solid fa-xmark"></i>
+          <Fa :icon="['fas','xmark']" />
         </button>
       </div>
     </div>

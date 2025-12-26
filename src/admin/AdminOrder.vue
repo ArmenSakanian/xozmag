@@ -5,7 +5,7 @@
       <!-- controls: LIST -->
       <div class="controls" v-if="viewMode === 'list'">
         <div class="search">
-          <i class="fa-solid fa-magnifying-glass"></i>
+          <Fa :icon="['fas','magnifying-glass']" />
           <input
             v-model="q"
             class="input"
@@ -14,12 +14,12 @@
             inputmode="search"
           />
           <button v-if="q" class="xbtn" @click="q = ''" title="Очистить">
-            <i class="fa-solid fa-xmark"></i>
+            <Fa :icon="['fas','xmark']" />
           </button>
         </div>
 
         <button class="btn" :disabled="loading" @click="loadList(true)">
-          <i class="fa-solid fa-rotate"></i>
+          <Fa :icon="['fas','rotate']" />
           Обновить
         </button>
       </div>
@@ -27,7 +27,7 @@
       <!-- controls: ITEMS -->
       <div class="controls" v-else>
         <div class="search">
-          <i class="fa-solid fa-magnifying-glass"></i>
+          <Fa :icon="['fas','magnifying-glass']" />
           <input
             v-model="itemsQ"
             class="input"
@@ -41,13 +41,13 @@
             @click="itemsQ = ''"
             title="Очистить"
           >
-            <i class="fa-solid fa-xmark"></i>
+            <Fa :icon="['fas','xmark']" />
           </button>
         </div>
 
         <div class="btns-right">
           <button class="btn" :disabled="itemsLoading" @click="reloadItems">
-            <i class="fa-solid fa-rotate"></i>
+            <Fa :icon="['fas','rotate']" />
             Обновить товары
           </button>
 
@@ -56,8 +56,8 @@
             :disabled="exporting || itemsLoading"
             @click="exportExcel"
           >
-            <i v-if="!exporting" class="fa-solid fa-file-excel"></i>
-            <i v-else class="fa-solid fa-circle-notch fa-spin"></i>
+            <Fa v-if="!exporting" :icon="['fas','file-excel']" />
+            <Fa v-else :icon="['fas','circle-notch']" />
             Выгрузить Excel
           </button>
         </div>
@@ -75,12 +75,12 @@
 
         <section v-else-if="error" class="state card error">
           <div class="state-title">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+            <Fa :icon="['fas','triangle-exclamation']" />
             Ошибка
           </div>
           <div class="state-text">{{ error }}</div>
           <button class="btn" @click="loadList(true)">
-            <i class="fa-solid fa-rotate"></i>
+            <Fa :icon="['fas','rotate']" />
             Повторить
           </button>
         </section>
@@ -137,11 +137,11 @@
                     :disabled="openingKey === c.key"
                     @click="openContragent(c)"
                   >
-                    <i
+                    <Fa
                       v-if="openingKey !== c.key"
-                      class="fa-solid fa-folder-open"
-                    ></i>
-                    <i v-else class="fa-solid fa-circle-notch fa-spin"></i>
+                     
+                     :icon="['fas','folder-open']" />
+                    <Fa v-else :icon="['fas','circle-notch']" />
                     Открыть
                   </button>
                 </div>
@@ -176,12 +176,12 @@
 
           <div v-else-if="itemsError" class="state inner error">
             <div class="state-title">
-              <i class="fa-solid fa-triangle-exclamation"></i>
+              <Fa :icon="['fas','triangle-exclamation']" />
               Ошибка
             </div>
             <div class="state-text">{{ itemsError }}</div>
             <button class="btn" @click="reloadItems">
-              <i class="fa-solid fa-rotate"></i>
+              <Fa :icon="['fas','rotate']" />
               Повторить
             </button>
           </div>
@@ -235,7 +235,7 @@
 
               <div class="p-actions">
                 <button class="btn mini" @click="copyText(p.barcode)">
-                  <i class="fa-regular fa-copy"></i>
+                  <Fa :icon="['far','copy']" />
                   Копировать штрихкод
                 </button>
               </div>
@@ -246,7 +246,7 @@
     </main>
 
     <div v-if="toast" class="toast">
-      <i class="fa-solid fa-check"></i>
+      <Fa :icon="['fas','check']" />
       {{ toast }}
     </div>
   </div>

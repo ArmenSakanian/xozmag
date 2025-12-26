@@ -63,7 +63,7 @@
             title="Удалить значение"
             @click="deleteOption(item.id, i)"
           >
-            <i class="fa-solid fa-xmark"></i>
+            <Fa :icon="['fas','xmark']" />
           </button>
 
           <!-- remove local (new) -->
@@ -73,12 +73,12 @@
             title="Убрать поле"
             @click="removeValue(i)"
           >
-            <i class="fa-solid fa-minus"></i>
+            <Fa :icon="['fas','minus']" />
           </button>
         </div>
 
         <button class="ghost-btn mt-8" @click="addValue">
-          <i class="fa-solid fa-plus"></i>
+          <Fa :icon="['fas','plus']" />
           Добавить значение
         </button>
       </div>
@@ -118,7 +118,7 @@
               title="Редактировать"
               @click="editAttribute(attr)"
             >
-              <i class="fa-solid fa-pen"></i>
+              <Fa :icon="['fas','pen']" />
             </button>
 
             <button
@@ -126,7 +126,7 @@
               title="Удалить характеристику"
               @click="deleteAttribute(attr.id)"
             >
-              <i class="fa-solid fa-trash"></i>
+              <Fa :icon="['fas','trash']" />
             </button>
           </div>
         </div>

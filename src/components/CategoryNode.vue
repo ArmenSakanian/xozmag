@@ -10,7 +10,7 @@
         :aria-expanded="open ? 'true' : 'false'"
         title="Открыть/закрыть"
       >
-        <i class="fa-solid fa-chevron-right" :class="{ open }"></i>
+        <Fa :class="{ open }" :icon="['fas','chevron-right']" />
       </button>
 
       <!-- checkbox -->

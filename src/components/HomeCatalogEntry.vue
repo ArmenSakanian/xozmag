@@ -1,13 +1,11 @@
 <template>
   <div class="cats-root">
-    <!-- Заголовок -->
     <div v-if="showHead" class="cats-head">
       <div class="cats-title">Категории</div>
       <div class="cats-sub">Только первый уровень</div>
     </div>
 
-    <!-- Сетка -->
-    <div class="cats-grid" v-if="displayCats.length">
+    <div class="cats-grid" v-if="topCats.length">
       <button
         v-for="c in topCats"
         :key="c.id"
@@ -22,10 +20,11 @@
             :src="c.photo"
             :alt="c.name"
             loading="lazy"
+            decoding="async"
             @error="catImgErr[c.id] = true"
           />
           <div v-else class="cat-photo-ph" aria-hidden="true">
-            <i class="fa-regular fa-image"></i>
+            <Fa :icon="['far','image']" />
           </div>
         </div>
 
@@ -40,68 +39,27 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 const props = defineProps({
   showHead: { type: Boolean, default: true },
-  items: { type: Array, default: null },          // если передали — используем их
+  items: { type: Array, default: () => [] },      // теперь всегда работаем только от items
   navigateOnPick: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(["select-category"]);
 const router = useRouter();
 
-const categories = ref([]);
 const catImgErr = ref({});
 
-// если передали items — ничего не грузим, просто работаем от них
-const displayCats = computed(() => {
-  if (Array.isArray(props.items) && props.items.length) return props.items;
-  return categories.value;
-});
-
 const topCats = computed(() =>
-  displayCats.value
-    .filter((c) => !c.parent) // у твоих загруженных: parent_id -> parent, у переданных тоже ожидаем parent/parent_id
-    .sort((a, b) => String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" }))
+  (Array.isArray(props.items) ? props.items : [])
+    .filter((c) => !c?.parent && !c?.parent_id)
+    .sort((a, b) =>
+      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
+    )
 );
-
-function normalizeCat(c) {
-  // поддерживаем и формат из API, и формат уже подготовленных items
-  const parent = c.parent ?? c.parent_id ?? null;
-
-  const photo =
-    c.photo ??
-    c.photo_url_abs ??
-    c.photo_url ??
-    (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null);
-
-  return {
-    id: c.id,
-    name: c.name,
-    code: c.code,
-    parent,
-    photo,
-  };
-}
-
-async function loadCats() {
-  try {
-    const r = await fetch("/api/admin/product/get_categories_flat.php");
-    const raw = await r.json();
-
-    categories.value = (Array.isArray(raw) ? raw : []).map(normalizeCat);
-
-    const next = { ...catImgErr.value };
-    categories.value.forEach((x) => {
-      if (x?.id != null) next[x.id] = false;
-    });
-    catImgErr.value = next;
-  } catch {
-    categories.value = [];
-  }
-}
 
 function goCategory(cat) {
   emit("select-category", cat);
@@ -111,7 +69,6 @@ function goCategory(cat) {
   }
 }
 
-// если items меняются — обновим catImgErr под них
 watch(
   () => props.items,
   (val) => {
@@ -124,12 +81,6 @@ watch(
   },
   { immediate: true }
 );
-
-onMounted(() => {
-  if (!Array.isArray(props.items) || !props.items.length) {
-    loadCats();
-  }
-});
 </script>
 
 <style scoped>
@@ -139,7 +90,6 @@ onMounted(() => {
   gap: 12px;
 }
 
-/* header */
 .cats-head{
   display:flex;
   align-items: baseline;
@@ -160,7 +110,6 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
-/* grid */
 .cats-grid{
   display:grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -247,7 +196,6 @@ onMounted(() => {
   font-weight: 900;
 }
 
-/* responsive */
 @media (max-width: 1080px){
   .cats-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

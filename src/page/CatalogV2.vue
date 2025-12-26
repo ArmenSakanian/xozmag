@@ -242,7 +242,7 @@
           </div>
 
           <button class="mobile-filter-btn" @click="showMobileFilters = true">
-            <i class="fa-solid fa-filter"></i> Фильтры
+            <Fa :icon="['fas','filter']" /> Фильтры
           </button>
         </div>
       </div>
@@ -256,13 +256,13 @@
 
         <template v-else>
           <div v-if="!hasActiveCategory && !searchQ" class="categories-landing">
-            <HomeCatalogEntry
-              :show-search="false"
-              :show-head="false"
-              :items="topCats"
-              :navigate-on-pick="false"
-              @select-category="pickCategoryFromGrid"
-            />
+<HomeCatalogEntry
+  :show-head="false"
+  :items="topCats"
+  :navigate-on-pick="false"
+  @select-category="pickCategoryFromGrid"
+/>
+
           </div>
 
           <div v-else class="products-grid">
@@ -329,7 +329,7 @@
             @click="mobileView = 'root'"
             title="Назад"
           >
-            <i class="fa-solid fa-arrow-left"></i>
+            <Fa :icon="['fas','arrow-left']" />
           </button>
 
           <span class="moverlay-title">
@@ -360,10 +360,10 @@
         <div class="moverlay-body">
           <div v-if="mobileView === 'root'" class="mfil-list">
             <div class="mfil-item" @click="mobileView = 'brand'">
-              Бренд <i class="fa-solid fa-chevron-right mfil-arrow"></i>
+              Бренд <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
             </div>
             <div class="mfil-item" @click="mobileView = 'photo'">
-              Фото <i class="fa-solid fa-chevron-right mfil-arrow"></i>
+              Фото <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
             </div>
 
             <div
@@ -375,7 +375,7 @@
                 mobileView = 'attr';
               "
             >
-              {{ attr }} <i class="fa-solid fa-chevron-right mfil-arrow"></i>
+              {{ attr }} <Fa class="mfil-arrow" :icon="['fas','chevron-right']" />
             </div>
           </div>
 
@@ -523,7 +523,6 @@ function getCatCodeOfProduct(p) {
 }
 
 /* ================= STATE ================= */
-const loading = ref(true);
 const error = ref(null);
 
 const products = ref([]);
@@ -572,74 +571,115 @@ const priceToModel = ref(route.query.price_to ? Number(route.query.price_to) : n
 const attributeModels = ref({});
 
 /* ================= DATA LOAD ================= */
-async function loadData() {
+const catsLoading = ref(false);
+const productsLoading = ref(false);
+
+const productsLoaded = ref(false);
+let productsPromise = null;
+
+function normalizeCat(c) {
+  const pid = c.parent_id;
+  const parent =
+    pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
+      ? null
+      : String(pid);
+
+  return {
+    id: c.id,
+    name: c.name,
+    code: c.code,
+    parent,
+    photo:
+      c.photo_url_abs ||
+      c.photo_url ||
+      (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
+  };
+}
+
+async function loadCategoriesOnly() {
+  catsLoading.value = true;
   try {
-    loading.value = true;
-
-    const [r1, r2] = await Promise.all([
-      fetch("/api/admin/product/get_categories_flat.php"),
-      fetch("/api/admin/product/get_products.php"),
-    ]);
-
-    const rawCats = await r1.json();
-    const baseProducts = await r2.json();
-
-    categories.value = rawCats.map((c) => {
-      const pid = c.parent_id;
-      const parent =
-        pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
-          ? null
-          : String(pid);
-
-      return {
-        id: c.id,
-        name: c.name,
-        code: c.code,
-        parent,
-        photo:
-          c.photo_url_abs ||
-          c.photo_url ||
-          (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
-      };
-    });
-
-    const list = Array.isArray(baseProducts) ? baseProducts : baseProducts.products || [];
-
-    products.value = (list || []).filter(Boolean).map((p) => {
-      let images = [];
-
-      if (Array.isArray(p.images)) {
-        images = p.images.filter(Boolean);
-      } else {
-        const ph = p.photo ?? "";
-        if (Array.isArray(ph)) {
-          images = ph.filter(Boolean);
-        } else if (typeof ph === "string" && ph.trim()) {
-          try {
-            const arr = JSON.parse(ph);
-            if (Array.isArray(arr)) images = arr.filter(Boolean);
-          } catch {
-            if (ph.startsWith("/photo_product_vitrina/")) images = [ph];
-          }
-        }
-      }
-
-      return {
-        ...p,
-        images,
-        _search: normalize(
-          `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`
-        ),
-      };
-    });
+    const r = await fetch("/api/admin/product/get_categories_flat.php");
+    const rawCats = await r.json();
+    categories.value = (Array.isArray(rawCats) ? rawCats : []).map(normalizeCat);
   } catch (e) {
-    error.value = e.message || "Ошибка загрузки";
+    categories.value = [];
   } finally {
-    loading.value = false;
+    catsLoading.value = false;
   }
 }
 
-onMounted(loadData);
+// ✅ товары грузим ТОЛЬКО когда выбрана категория
+async function ensureProductsOnlyWhenCategory() {
+  if (productsLoaded.value) return;
+  if (productsPromise) return productsPromise;
+
+  productsLoading.value = true;
+
+  productsPromise = fetch("/api/admin/product/get_products.php")
+    .then((r) => r.json())
+    .then((baseProducts) => {
+      const list = Array.isArray(baseProducts)
+        ? baseProducts
+        : baseProducts.products || [];
+
+      products.value = (list || [])
+        .filter(Boolean)
+        .map((p) => {
+          let images = [];
+
+          if (Array.isArray(p.images)) {
+            images = p.images.filter(Boolean);
+          } else {
+            const ph = p.photo ?? "";
+            if (Array.isArray(ph)) {
+              images = ph.filter(Boolean);
+            } else if (typeof ph === "string" && ph.trim()) {
+              try {
+                const arr = JSON.parse(ph);
+                if (Array.isArray(arr)) images = arr.filter(Boolean);
+              } catch {
+                if (ph.startsWith("/photo_product_vitrina/")) images = [ph];
+              }
+            }
+          }
+
+          return {
+            ...p,
+            images,
+            _search: normalize(
+              `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`
+            ),
+          };
+        });
+
+      productsLoaded.value = true;
+    })
+    .catch(() => {
+      products.value = [];
+    })
+    .finally(() => {
+      productsLoading.value = false;
+      productsPromise = null;
+    });
+
+  return productsPromise;
+}
+
+onMounted(loadCategoriesOnly);
+
+// когда появляется cat — грузим товары (один раз)
+watch(
+  hasActiveCategory,
+  (hasCat) => {
+    if (hasCat) ensureProductsOnlyWhenCategory();
+  },
+  { immediate: true }
+);
+
+// loader теперь зависит от того, что реально грузим
+const loading = computed(() => catsLoading.value || (hasActiveCategory.value && productsLoading.value));
+
 
 /* ================= TREE FROM FLAT ================= */
 const treeData = computed(() => {

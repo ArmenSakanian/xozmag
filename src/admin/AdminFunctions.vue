@@ -179,7 +179,7 @@
               :disabled="loadingMin || loadingConvert || loadingSync"
               @click="downloadMinTemplate"
             >
-              <i class="fa-regular fa-file-lines"></i>
+              <Fa :icon="['far','file-lines']" />
               Скачать шаблон (CSV)
             </button>
           </div>
@@ -202,7 +202,7 @@
 
             <div class="min-drop-inner">
               <div class="min-icon">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <Fa :icon="['fas','cloud-arrow-up']" />
               </div>
 
               <div class="min-txt">
@@ -221,7 +221,7 @@
 
               <div class="min-picked" v-if="minPickedName">
                 <div class="min-pname">
-                  <i class="fa-regular fa-file-excel"></i>
+                  <Fa :icon="['far','file-excel']" />
                   {{ minPickedName }}
                 </div>
                 <div class="min-pactions">
@@ -230,7 +230,7 @@
                     @click="clearMinFile"
                     :disabled="loadingMin || loadingConvert || loadingSync"
                   >
-                    <i class="fa-solid fa-xmark"></i> Убрать
+                    <Fa :icon="['fas','xmark']" /> Убрать
                   </button>
                 </div>
               </div>
@@ -253,8 +253,8 @@
                 "
                 @click="uploadMin"
               >
-                <i v-if="!loadingMin" class="fa-solid fa-upload"></i>
-                <i v-else class="fa-solid fa-circle-notch fa-spin"></i>
+                <Fa v-if="!loadingMin" :icon="['fas','upload']" />
+                <Fa v-else :icon="['fas','circle-notch']" />
                 {{ minDryRun ? "Проверить" : "Импортировать" }}
               </button>
             </div>
@@ -262,7 +262,7 @@
 
           <div v-if="minError" class="min-state error">
             <div class="min-st-title">
-              <i class="fa-solid fa-triangle-exclamation"></i> Ошибка
+              <Fa :icon="['fas','triangle-exclamation']" /> Ошибка
             </div>
             <div class="min-st-text">{{ minError }}</div>
           </div>
@@ -270,7 +270,7 @@
           <div v-if="minResult" class="min-result">
             <div class="min-r-top">
               <div class="min-r-title">
-                <i class="fa-solid fa-circle-check"></i>
+                <Fa :icon="['fas','circle-check']" />
                 Готово
                 <span v-if="minResult.dry_run" class="min-badge">dry-run</span>
               </div>
@@ -365,7 +365,7 @@
     </div>
 
     <div v-if="minToast" class="toast">
-      <i class="fa-solid fa-check"></i> {{ minToast }}
+      <Fa :icon="['fas','check']" /> {{ minToast }}
     </div>
   </div>
 </template>

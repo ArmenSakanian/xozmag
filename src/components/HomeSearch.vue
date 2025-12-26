@@ -1,7 +1,7 @@
 <template>
   <div class="search-wrap">
     <div class="search-box" ref="searchBoxRef">
-      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <Fa class="search-icon" :icon="['fas','magnifying-glass']" />
 
       <!-- ✅ CATEGORY BUTTON INSIDE SEARCH -->
       <div
@@ -17,7 +17,7 @@
           aria-label="Категории"
           @click.prevent="toggleCatPopover"
         >
-          <i class="fa-solid fa-bars-staggered"></i>
+          <Fa :icon="['fas','bars-staggered']" />
         </button>
       </div>
 
@@ -36,7 +36,7 @@
             @click="closeCatPopover"
             title="Закрыть"
           >
-            <i class="fa-solid fa-xmark"></i>
+            <Fa :icon="['fas','xmark']" />
           </button>
         </div>
 
@@ -61,10 +61,10 @@
               type="button"
             >
               <span class="catpop-text">{{ n.name }}</span>
-              <i
+              <Fa
                 v-if="n.children?.length"
-                class="fa-solid fa-chevron-right catpop-chev"
-              ></i>
+               
+               class="catpop-chev" :icon="['fas','chevron-right']" />
             </button>
           </div>
         </div>
@@ -93,7 +93,7 @@
         type="button"
         aria-label="Очистить"
       >
-        <i class="fa-solid fa-xmark"></i>
+        <Fa :icon="['fas','xmark']" />
       </button>
     </div>
 
@@ -121,7 +121,7 @@
               @error="thumbErr[r.id] = true"
             />
             <div v-else class="dd-thumb dd-thumb-ph" aria-hidden="true">
-              <i class="fa-regular fa-image"></i>
+              <Fa :icon="['far','image']" />
             </div>
           </div>
 
@@ -134,7 +134,7 @@
             </div>
           </div>
 
-          <i class="fa-solid fa-chevron-right dd-arrow" aria-hidden="true"></i>
+          <Fa aria-hidden="true" class="dd-arrow" :icon="['fas','chevron-right']" />
         </button>
       </div>
 
@@ -162,7 +162,7 @@
             @click="mobileCatsStack.length && backMobileCat()"
             title="Назад"
           >
-            <i class="fa-solid fa-arrow-left"></i>
+            <Fa :icon="['fas','arrow-left']" />
           </button>
 
           <span class="moverlay-title">{{ mobileCatsTitle }}</span>
@@ -191,10 +191,10 @@
                 "
                 type="button"
               >
-                <i
+                <Fa
                   v-if="String(c.code) === String(currentCategory || '')"
-                  class="fa-solid fa-check"
-                ></i>
+                 
+                 :icon="['fas','check']" />
               </button>
 
               <!-- ✅ tap текст = открыть подкатегории (или выбрать если детей нет) -->
@@ -215,7 +215,7 @@
                 @click.stop="openMobileCat(c)"
                 title="Подкатегории"
               >
-                <i class="fa-solid fa-chevron-right"></i>
+                <Fa :icon="['fas','chevron-right']" />
               </button>
             </div>
 
