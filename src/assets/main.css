@@ -50,3 +50,17 @@ body {
     font-size: 16px !important;
   }
 }
+
+i.fa-solid, i.fa-regular, i.fa-brands,
+svg.svg-inline--fa {
+  display: inline-block;
+  width: 1.25em;
+  height: 1em;
+  line-height: 1;
+  vertical-align: -0.125em;
+}
+
+/* 3) Гарантируем покраску SVG через currentColor */
+svg.svg-inline--fa path {
+  fill: currentColor;
+}

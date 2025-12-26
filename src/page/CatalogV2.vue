@@ -1,104 +1,23 @@
 <template>
   <div class="catalog-page">
-    <!-- ================= MAIN CONTENT ================= -->
     <section class="catalog-content">
       <div class="catalog-top">
-        <!-- ✅ SEARCH ABOVE HEADING -->
+        <!-- ✅ SEARCH (вынесен в компонент) -->
         <div class="catalog-search">
-          <div class="search-box" ref="searchBoxRef">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <HomeSearch
+            :show-category="true"
+            :categories="categories"
+            :current-category="currentCategory"
+            :sync-route="true"
+            route-key="q"
+            catalog-path="/catalogv2"
+            :server-limit="30"
+            :dropdown-limit="12"
+            @search-hits="searchHits = $event"
+          />
 
-            <!-- ✅ CATEGORY BUTTON INSIDE SEARCH (CLICK) -->
-            <div class="catpick-wrap" ref="catPickRef">
-              <button
-                class="catpick-btn"
-                :class="{ on: showCatPopover && !isMobile }"
-                type="button"
-                title="Категории"
-                aria-label="Категории"
-                @click.prevent="toggleCatPopover"
-              >
-                <i class="fa-solid fa-bars-staggered"></i>
-              </button>
-            </div>
-            <!-- DESKTOP POPOVER (click) -->
-            <div
-              v-if="showCatPopover && !isMobile"
-              class="catpop"
-              ref="catPopRef"
-            >
-              <div class="catpop-head">
-                <div class="catpop-title">Категории</div>
-
-                <button
-                  class="catpop-close"
-                  type="button"
-                  @click="closeCatPopover"
-                  title="Закрыть"
-                >
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-
-              <div class="catpop-cols">
-<div
-  v-for="(col, level) in desktopColumns"
-  :key="colKey(level)"
-  class="catpop-col"
-  :ref="(el) => setColRef(el, level)"
->
-
-                  <button
-                    v-for="n in col"
-                    :key="n.id"
-                    class="catpop-item"
-                    :class="{
-                      active: isCatActive(n),
-                      picked: isCatPicked(n),
-                    }"
-                    @mouseenter="desktopHover(level, n)"
-                    @click="pickCategory(n)"
-                    :title="n.name"
-                    type="button"
-                  >
-                    <span class="catpop-text">{{ n.name }}</span>
-                    <i
-                      v-if="n.children?.length"
-                      class="fa-solid fa-chevron-right catpop-chev"
-                    ></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <input
-              v-model="searchModel"
-              class="search-input"
-              type="text"
-              placeholder="Поиск по названию / бренду / штрихкоду…"
-              @input="onSearchInput"
-              @keydown.enter.prevent="applyFilters"
-            />
-
-            <button
-              v-if="searchModel"
-              class="search-clear"
-              @click="clearSearch"
-              aria-label="Очистить поиск"
-              title="Очистить"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-
-          <div
-            v-if="searchModel && !loading && !searchLoading"
-            class="search-meta"
-          >
+          <div v-if="searchQ && !loading" class="search-meta">
             Найдено: <b>{{ filteredProducts.length }}</b>
-          </div>
-
-          <div v-if="searchLoading" class="search-meta">
-            <span class="dot"></span> Поиск…
           </div>
         </div>
 
@@ -113,11 +32,9 @@
           </div>
 
           <h1 class="catalog-title">
-            <template v-if="!hasActiveCategory && !searchModel">
-              Категории
-            </template>
+            <template v-if="!hasActiveCategory && !searchQ">Категории</template>
 
-            <template v-else-if="searchModel && !hasActiveCategory">
+            <template v-else-if="searchQ && !hasActiveCategory">
               Результаты поиска
             </template>
 
@@ -165,9 +82,7 @@
                       : " Все"
                   }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters.brand }"
-                  >▾</span
-                >
+                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
               </div>
 
               <div
@@ -210,9 +125,7 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('photo')">
                 <span class="filter-head-text">{{ photoHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.photo }"
-                  >▾</span
-                >
+                <span class="arrow" :class="{ open: openFilters.photo }">▾</span>
               </div>
 
               <div v-show="openFilters.photo" class="filter-dropdown-body">
@@ -260,12 +173,8 @@
 
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter(attr)">
-                <span class="filter-head-text">{{
-                  attributeHeadText(attr)
-                }}</span>
-                <span class="arrow" :class="{ open: openFilters[attr] }"
-                  >▾</span
-                >
+                <span class="filter-head-text">{{ attributeHeadText(attr) }}</span>
+                <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
               </div>
 
               <div
@@ -346,10 +255,7 @@
         </div>
 
         <template v-else>
-          <div
-            v-if="!hasActiveCategory && !searchModel"
-            class="categories-landing"
-          >
+          <div v-if="!hasActiveCategory && !searchQ" class="categories-landing">
             <HomeCatalogEntry
               :show-search="false"
               :show-head="false"
@@ -360,11 +266,7 @@
           </div>
 
           <div v-else class="products-grid">
-            <article
-              v-for="p in visibleProducts"
-              :key="p.id"
-              class="product-card"
-            >
+            <article v-for="p in visibleProducts" :key="p.id" class="product-card">
               <div
                 class="product-image"
                 @click.stop
@@ -401,14 +303,8 @@
             </div>
           </div>
 
-          <!-- LOAD MORE -->
-          <div
-            v-if="(hasActiveCategory || searchModel) && canLoadMore"
-            class="load-more"
-          >
-            <button class="load-more-btn" @click="loadMore">
-              Показать ещё
-            </button>
+          <div v-if="(hasActiveCategory || searchQ) && canLoadMore" class="load-more">
+            <button class="load-more-btn" @click="loadMore">Показать ещё</button>
           </div>
         </template>
       </div>
@@ -563,9 +459,7 @@
 
               <span class="filter-option">
                 <span
-                  v-if="
-                    attributeFilters[activeMobileAttr]?.ui_render === 'color'
-                  "
+                  v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
                   class="color-dot"
                   :class="{ empty: !v.meta?.color }"
                   :style="v.meta?.color ? { background: v.meta.color } : {}"
@@ -589,97 +483,9 @@
             Готово
           </button>
 
-          <button
-            class="moverlay-ghost"
-            @click="resetAllFilters"
-            title="Сбросить все фильтры"
-          >
+          <button class="moverlay-ghost" @click="resetAllFilters" title="Сбросить все фильтры">
             Сбросить
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================= MOBILE CATEGORIES PANEL ================= -->
-    <div
-      v-if="showMobileCats"
-      class="moverlay-overlay"
-      @click.self="closeMobileCats"
-    >
-      <div class="moverlay-panel">
-        <div class="moverlay-header">
-          <button
-            class="moverlay-btn moverlay-back"
-            :class="{ ghost: !mobileCatsStack.length }"
-            :disabled="!mobileCatsStack.length"
-            @click="mobileCatsStack.length && backMobileCat()"
-            title="Назад"
-          >
-            <i class="fa-solid fa-arrow-left"></i>
-          </button>
-
-          <span class="moverlay-title">{{ mobileCatsTitle }}</span>
-
-          <button
-            class="moverlay-btn moverlay-close"
-            @click="closeMobileCats"
-            title="Закрыть"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="moverlay-body">
-          <div class="mcat-list">
-            <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
-              <!-- ✅ tap чекбокс-зона = выбрать категорию -->
-              <button
-                class="mcat-check"
-                :class="{ on: String(c.code) === String(currentCategory) }"
-                @click.stop="pickCategory(c, { close: true })"
-                :title="
-                  String(c.code) === String(currentCategory)
-                    ? 'Активно'
-                    : 'Выбрать категорию'
-                "
-                type="button"
-              >
-                <i
-                  v-if="String(c.code) === String(currentCategory)"
-                  class="fa-solid fa-check"
-                ></i>
-              </button>
-
-              <!-- ✅ tap текст = открыть подкатегории (или выбрать если детей нет) -->
-              <div
-                class="mcat-name"
-                @click="
-                  hasChildren(c)
-                    ? openMobileCat(c)
-                    : pickCategory(c, { close: true })
-                "
-              >
-                {{ c.name }}
-              </div>
-
-              <button
-                v-if="hasChildren(c)"
-                class="mcat-next"
-                @click.stop="openMobileCat(c)"
-                title="Подкатегории"
-              >
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </div>
-
-            <div v-if="!mobileCatsList.length" class="mcat-empty">
-              Нет подкатегорий
-            </div>
-          </div>
-        </div>
-
-        <div class="moverlay-footer">
-          <button class="moverlay-main" @click="closeMobileCats">Готово</button>
         </div>
       </div>
     </div>
@@ -687,34 +493,11 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  onMounted,
-  watch,
-  onBeforeUnmount,
-  nextTick,
-} from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ProductCardGallery from "@/components/ProductCardGallery.vue";
 import HomeCatalogEntry from "@/components/HomeCatalogEntry.vue";
-
-const colRefs = ref([]);
-
-function setColRef(el, level) {
-  if (!el) return;
-  colRefs.value[level] = el;
-}
-
-function resetColsScroll(fromLevel) {
-  // сбрасываем скролл у колонок глубже текущего уровня
-  nextTick(() => {
-    for (let i = fromLevel + 1; i < colRefs.value.length; i++) {
-      const el = colRefs.value[i];
-      if (el) el.scrollTop = 0;
-    }
-  });
-}
+import HomeSearch from "@/components/HomeSearch.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -730,6 +513,7 @@ const normalize = (s) =>
 
 const toArr = (v) =>
   v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
+
 const hasImages = (p) =>
   Array.isArray(p.images) && p.images.filter(Boolean).length > 0;
 
@@ -745,12 +529,20 @@ const error = ref(null);
 const products = ref([]);
 const categories = ref([]);
 
+/* ✅ search hits from HomeSearch (PHP) */
+const searchHits = ref([]);
+
 /* ================= URL SOURCE OF TRUTH ================= */
 const currentCategory = computed(() => {
   const v = route.query.cat;
   return v ? String(Array.isArray(v) ? v[0] : v) : null;
 });
 const hasActiveCategory = computed(() => !!currentCategory.value);
+
+const searchQ = computed(() => {
+  const v = route.query.q;
+  return v ? String(Array.isArray(v) ? v[0] : v) : "";
+});
 
 const currentCategoryName = computed(() => {
   if (!currentCategory.value) return null;
@@ -763,11 +555,7 @@ const currentCategoryName = computed(() => {
 /* ===== photo filter ===== */
 const photoModel = ref(
   route.query.photo
-    ? String(
-        Array.isArray(route.query.photo)
-          ? route.query.photo[0]
-          : route.query.photo
-      )
+    ? String(Array.isArray(route.query.photo) ? route.query.photo[0] : route.query.photo)
     : "all"
 );
 
@@ -779,17 +567,11 @@ const photoHeadText = computed(() => {
 
 /* ================= FILTER MODELS ================= */
 const brandModel = ref([]);
-const priceFromModel = ref(
-  route.query.price_from ? Number(route.query.price_from) : null
-);
-const priceToModel = ref(
-  route.query.price_to ? Number(route.query.price_to) : null
-);
-
-const searchModel = ref(route.query.q ? String(route.query.q) : "");
+const priceFromModel = ref(route.query.price_from ? Number(route.query.price_from) : null);
+const priceToModel = ref(route.query.price_to ? Number(route.query.price_to) : null);
 const attributeModels = ref({});
 
-/* ================= DATA LOAD (parallel) ================= */
+/* ================= DATA LOAD ================= */
 async function loadData() {
   try {
     loading.value = true;
@@ -802,38 +584,33 @@ async function loadData() {
     const rawCats = await r1.json();
     const baseProducts = await r2.json();
 
-categories.value = rawCats.map((c) => {
-  const pid = c.parent_id;
-  const parent =
-    pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
-      ? null
-      : String(pid);
+    categories.value = rawCats.map((c) => {
+      const pid = c.parent_id;
+      const parent =
+        pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
+          ? null
+          : String(pid);
 
-  return {
-    id: c.id,
-    name: c.name,
-    code: c.code,
-    parent, // ✅ нормализованный
-    photo:
-      c.photo_url_abs ||
-      c.photo_url ||
-      (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
-  };
-});
+      return {
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        parent,
+        photo:
+          c.photo_url_abs ||
+          c.photo_url ||
+          (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
+      };
+    });
 
-
-    const list = Array.isArray(baseProducts)
-      ? baseProducts
-      : baseProducts.products || [];
+    const list = Array.isArray(baseProducts) ? baseProducts : baseProducts.products || [];
 
     products.value = (list || []).filter(Boolean).map((p) => {
       let images = [];
 
-      // 1) если бек уже отдаёт images массивом
       if (Array.isArray(p.images)) {
         images = p.images.filter(Boolean);
       } else {
-        // 2) иначе пробуем взять из photo (у тебя это строка JSON)
         const ph = p.photo ?? "";
         if (Array.isArray(ph)) {
           images = ph.filter(Boolean);
@@ -842,7 +619,6 @@ categories.value = rawCats.map((c) => {
             const arr = JSON.parse(ph);
             if (Array.isArray(arr)) images = arr.filter(Boolean);
           } catch {
-            // если вдруг там просто строка-путь
             if (ph.startsWith("/photo_product_vitrina/")) images = [ph];
           }
         }
@@ -852,9 +628,7 @@ categories.value = rawCats.map((c) => {
         ...p,
         images,
         _search: normalize(
-          `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${
-            p.barcode || ""
-          }`
+          `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`
         ),
       };
     });
@@ -865,21 +639,12 @@ categories.value = rawCats.map((c) => {
   }
 }
 
-function colKey(level) {
-  if (level === 0) return "col-0";
-  const parent = hoverPath.value[level - 1];
-  return `col-${level}-${parent?.id ?? "none"}`;
-}
-
-
 onMounted(loadData);
 
 /* ================= TREE FROM FLAT ================= */
 const treeData = computed(() => {
   const byId = new Map();
-  categories.value.forEach((c) =>
-    byId.set(String(c.id), { ...c, children: [] })
-  );
+  categories.value.forEach((c) => byId.set(String(c.id), { ...c, children: [] }));
 
   const roots = [];
   categories.value.forEach((c) => {
@@ -895,6 +660,7 @@ const treeData = computed(() => {
     );
     n.children.forEach(sortNode);
   };
+
   roots.sort((a, b) =>
     a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
   );
@@ -921,258 +687,15 @@ onBeforeUnmount(() => {
   unlockBody();
 });
 
-const searchLoading = ref(false);
-const searchHits = ref([]);
-
-const productsById = computed(() => {
-  const m = new Map();
-  products.value.forEach((p) => m.set(String(p.id), p));
-  return m;
-});
-
-async function runServerSearch(q) {
-  const s = String(q || "").trim();
-  if (!s) {
-    searchHits.value = [];
-    return;
-  }
-
-  const norm = normalize(s);
-  const isDigits = /^\d{5,}$/.test(norm);
-
-  if (!isDigits && norm.length < 2) {
-    searchHits.value = [];
-    return;
-  }
-
-  searchLoading.value = true;
-  try {
-    const r = await fetch(
-      `/api/admin/product/search_products.php?q=${encodeURIComponent(
-        s
-      )}&limit=30`,
-      {
-        headers: { Accept: "application/json" },
-      }
-    );
-    const data = await r.json();
-    const list = Array.isArray(data) ? data : data.products || data.items || [];
-    searchHits.value = (list || []).filter(Boolean).slice(0, 30);
-  } catch {
-    searchHits.value = [];
-  } finally {
-    searchLoading.value = false;
-  }
-}
-
-/* ===== debounce for search ===== */
-let searchTimer = null;
-const syncingFromRoute = ref(false);
-
-function onSearchInput() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(async () => {
-    if (syncingFromRoute.value) return;
-    await runServerSearch(searchModel.value);
-    applyFilters();
-  }, 220);
-}
-onBeforeUnmount(() => clearTimeout(searchTimer));
-
-async function clearSearch() {
-  searchModel.value = "";
-  await runServerSearch("");
-  applyFilters();
-}
-
-/* ================= CATEGORY PICKER (DESKTOP CLICK + MOBILE PANEL) ================= */
-const showCatPopover = ref(false);
-const catPickRef = ref(null);
-const catPopRef = ref(null);
-const searchBoxRef = ref(null);
-
-/* desktop hover columns */
-const hoverPath = ref([]);
-
-function hydrateHoverPathFromActive() {
-  const code = currentCategory.value;
-  if (!code) {
-    hoverPath.value = [];
-    return;
-  }
-  const node = treeData.value.byCode.get(String(code));
-  if (!node) {
-    hoverPath.value = [];
-    return;
-  }
-
-  const path = [];
-  let cur = node;
-  while (cur) {
-    path.unshift(cur);
-    if (!cur.parent) break;
-    cur = treeData.value.byId.get(String(cur.parent));
-    if (!cur) break;
-  }
-  hoverPath.value = path;
-}
-
-function desktopHover(level, node) {
-  const next = hoverPath.value.slice(0, level);
-  next[level] = node;
-  hoverPath.value = next;
-
-  // ✅ сбросить скролл у "следующих" колонок
-  resetColsScroll(level);
-}
-
-const desktopColumns = computed(() => {
-  const cols = [];
-  cols.push(topCats.value || []);
-  for (let i = 0; i < hoverPath.value.length; i++) {
-    const n = hoverPath.value[i];
-    if (n?.children?.length) cols.push(n.children);
-    else break;
-  }
-  return cols.slice(0, 6);
-});
-
-function isCatActive(n) {
-  if (!currentCategory.value) return false;
-  return String(currentCategory.value).startsWith(String(n.code));
-}
-function isCatPicked(n) {
-  if (!currentCategory.value) return false;
-  return String(currentCategory.value) === String(n.code);
-}
-
-function openCatPopover() {
-  showCatPopover.value = true;
-  hydrateHoverPathFromActive();
-
-  nextTick(() => {
-    colRefs.value.forEach((el) => el && (el.scrollTop = 0));
-  });
-}
-
-function closeCatPopover() {
-  showCatPopover.value = false;
-}
-function toggleCatPopover() {
-  if (isMobile.value) {
-    openMobileCats();
-    return;
-  }
-  showCatPopover.value ? closeCatPopover() : openCatPopover();
-}
+/* ================= CATEGORY GRID PICK ================= */
 function pickCategoryFromGrid(cat) {
-  pickCategory(cat, { close: true });
-}
-
-function pickCategory(nodeOrCat, { close = false } = {}) {
-  const code = String(nodeOrCat?.code || "");
+  const code = String(cat?.code || "");
   if (!code) return;
-
-  // при выборе категории — фильтры сбрасываем, поиск оставляем
-  resetAllFilters({ keepSearch: true, silent: true });
-
-  const qRaw = String(searchModel.value || "").trim();
 
   router.push({
     path: "/catalogv2",
-    query: {
-      cat: code,
-      q: qRaw || undefined,
-    },
+    query: { cat: code },
   });
-
-  if (!isMobile.value) closeCatPopover();
-  if (isMobile.value && close) closeMobileCats();
-}
-
-/* close popover on outside click (desktop) */
-function onDocDown(e) {
-  if (isMobile.value) return;
-  if (!showCatPopover.value) return;
-
-  const t = e.target;
-  const box = searchBoxRef.value;
-  const pop = catPopRef.value;
-  const btn = catPickRef.value;
-
-  const inside =
-    (box && box.contains(t)) ||
-    (pop && pop.contains(t)) ||
-    (btn && btn.contains(t));
-
-  if (!inside) closeCatPopover();
-}
-
-onMounted(() =>
-  document.addEventListener("mousedown", onDocDown, { passive: true })
-);
-onBeforeUnmount(() => document.removeEventListener("mousedown", onDocDown));
-
-/* ================= MOBILE CATS (DRILLDOWN) ================= */
-const showMobileCats = ref(false);
-const mobileCatsParent = ref(null);
-const mobileCatsStack = ref([]);
-
-const childrenByParent = computed(() => {
-  const map = {};
-  categories.value.forEach((c) => {
-    const parentKey = c.parent ? String(c.parent) : "root";
-    (map[parentKey] ||= []).push(c);
-  });
-  Object.keys(map).forEach((k) =>
-    map[k].sort((a, b) =>
-      a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
-    )
-  );
-  return map;
-});
-
-const catsById = computed(() => {
-  const m = new Map();
-  categories.value.forEach((c) => m.set(String(c.id), c));
-  return m;
-});
-
-const mobileCatsTitle = computed(() => {
-  if (!mobileCatsParent.value) return "Категории";
-  const node = catsById.value.get(String(mobileCatsParent.value));
-  return node?.name || "Категории";
-});
-
-const mobileCatsList = computed(() => {
-  const key = mobileCatsParent.value ? String(mobileCatsParent.value) : "root";
-  return childrenByParent.value[key] || [];
-});
-
-function hasChildren(cat) {
-  return (childrenByParent.value[String(cat.id)] || []).length > 0;
-}
-
-function openMobileCats() {
-  showMobileCats.value = true;
-  mobileCatsStack.value = [];
-  mobileCatsParent.value = null;
-}
-
-function closeMobileCats() {
-  showMobileCats.value = false;
-  mobileCatsParent.value = null;
-  mobileCatsStack.value = [];
-}
-
-function openMobileCat(cat) {
-  mobileCatsStack.value.push(mobileCatsParent.value);
-  mobileCatsParent.value = String(cat.id);
-}
-
-function backMobileCat() {
-  const prev = mobileCatsStack.value.pop();
-  mobileCatsParent.value = prev ?? null;
 }
 
 /* ================= BRANDS / ATTRS / FILTERS ================= */
@@ -1197,8 +720,7 @@ const attributeFilters = computed(() => {
     (p.attributes || []).forEach((a) => {
       if (!a?.name || !a?.value) return;
 
-      if (!temp[a.name])
-        temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
+      if (!temp[a.name]) temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
       if (a.ui_render === "color") temp[a.name].ui_render = "color";
 
       let metaObj = a.meta ?? null;
@@ -1211,8 +733,7 @@ const attributeFilters = computed(() => {
       }
 
       const existed = temp[a.name].map.get(a.value);
-      if (!existed)
-        temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
+      if (!existed) temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
       else if (!existed.meta?.color && metaObj?.color) existed.meta = metaObj;
     });
   });
@@ -1222,9 +743,7 @@ const attributeFilters = computed(() => {
     res[k] = {
       ui_render: temp[k].ui_render,
       values: Array.from(temp[k].map.values()).sort((x, y) =>
-        String(x.value).localeCompare(String(y.value), "ru", {
-          sensitivity: "base",
-        })
+        String(x.value).localeCompare(String(y.value), "ru", { sensitivity: "base" })
       ),
     };
   }
@@ -1232,6 +751,7 @@ const attributeFilters = computed(() => {
 });
 
 const openFilters = ref({});
+
 watch(
   attributeFilters,
   () => {
@@ -1245,9 +765,7 @@ watch(
       brand: openFilters.value.brand ?? false,
       photo: openFilters.value.photo ?? false,
     };
-    Object.keys(attributeFilters.value).forEach(
-      (k) => (nextOpen[k] = openFilters.value[k] ?? false)
-    );
+    Object.keys(attributeFilters.value).forEach((k) => (nextOpen[k] = openFilters.value[k] ?? false));
     openFilters.value = nextOpen;
   },
   { immediate: true }
@@ -1280,12 +798,13 @@ function toggleFilter(key) {
 }
 
 /* ================= APPLY FILTERS (router.replace) ================= */
+const syncingFromRoute = ref(false);
+
 function applyFilters() {
   if (syncingFromRoute.value) return;
 
-  const qRaw = String(searchModel.value || "").trim();
+  const qRaw = String(searchQ.value || "").trim();
 
-  // если категории нет — пишем только q
   if (!hasActiveCategory.value) {
     router.replace({ query: { q: qRaw || undefined } });
     return;
@@ -1295,8 +814,7 @@ function applyFilters() {
     cat: currentCategory.value || undefined,
     q: qRaw || undefined,
     brand: brandModel.value.length ? brandModel.value : undefined,
-    price_from:
-      priceFromModel.value !== null ? priceFromModel.value : undefined,
+    price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
     photo: photoModel.value !== "all" ? photoModel.value : undefined,
     price_to: priceToModel.value !== null ? priceToModel.value : undefined,
   };
@@ -1308,13 +826,12 @@ function applyFilters() {
   router.replace({ query });
 }
 
-/* ================= URL → MODELS ================= */
+/* ================= URL → MODELS (без searchModel) ================= */
 watch(
   () => route.query,
-  async (q) => {
+  (q) => {
     syncingFromRoute.value = true;
 
-    searchModel.value = q.q ? String(Array.isArray(q.q) ? q.q[0] : q.q) : "";
     brandModel.value = toArr(q.brand);
 
     priceFromModel.value =
@@ -1340,8 +857,6 @@ watch(
       : "all";
 
     syncingFromRoute.value = false;
-
-    await runServerSearch(searchModel.value);
   },
   { immediate: true }
 );
@@ -1351,13 +866,11 @@ const showMobileFilters = ref(false);
 const mobileView = ref("root");
 const activeMobileAttr = ref(null);
 
-function resetAllFilters({ keepSearch = false, silent = false } = {}) {
+function resetAllFilters() {
   brandModel.value = [];
   priceFromModel.value = null;
   priceToModel.value = null;
   photoModel.value = "all";
-
-  if (!keepSearch) searchModel.value = "";
 
   const next = { ...attributeModels.value };
   Object.keys(next).forEach((k) => (next[k] = []));
@@ -1368,15 +881,30 @@ function resetAllFilters({ keepSearch = false, silent = false } = {}) {
   mobileView.value = "root";
   activeMobileAttr.value = null;
 
-  if (!silent) applyFilters();
+  applyFilters();
 }
 
+/* при смене категории — сбрасываем фильтры (поиск остаётся в URL) */
 watch(currentCategory, () => {
-  resetAllFilters({ keepSearch: true, silent: true });
+  brandModel.value = [];
+  priceFromModel.value = null;
+  priceToModel.value = null;
+  photoModel.value = "all";
+
+  const next = { ...attributeModels.value };
+  Object.keys(next).forEach((k) => (next[k] = []));
+  attributeModels.value = next;
+
   applyFilters();
 });
 
-/* ================= FINAL PRODUCTS ================= */
+/* ================= SEARCH MERGE (из PHP hits) ================= */
+const productsById = computed(() => {
+  const m = new Map();
+  products.value.forEach((p) => m.set(String(p.id), p));
+  return m;
+});
+
 const mergedSearchProducts = computed(() => {
   if (!searchHits.value.length) return [];
 
@@ -1386,9 +914,7 @@ const mergedSearchProducts = computed(() => {
     .map((hit) => {
       const full = map.get(String(hit.id));
 
-      const hitImages = Array.isArray(hit.images)
-        ? hit.images.filter(Boolean)
-        : [];
+      const hitImages = Array.isArray(hit.images) ? hit.images.filter(Boolean) : [];
       const hitThumb = hit.thumb ? [hit.thumb] : [];
       const fromHit = hitImages.length ? hitImages : hitThumb;
 
@@ -1413,9 +939,7 @@ const mergedSearchProducts = computed(() => {
         images: fromHit,
         attributes: [],
         category_code: "",
-        _search: normalize(
-          `${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`
-        ),
+        _search: normalize(`${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`),
       };
     })
     .filter((p) => p?.id != null && p?.name);
@@ -1424,36 +948,29 @@ const mergedSearchProducts = computed(() => {
 const filteredProducts = computed(() => {
   let list = [];
 
-  const qRaw = String(searchModel.value || "").trim();
+  const qRaw = String(searchQ.value || "").trim();
   const hasQ = !!qRaw;
 
   if (hasQ) list = mergedSearchProducts.value;
   else if (hasActiveCategory.value) list = categoryProducts.value;
   else list = [];
 
-  // если и cat и q — пересечение по категории
   if (hasActiveCategory.value) {
     const pref = String(currentCategory.value);
     list = list.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
   }
 
-  if (brandModel.value.length)
-    list = list.filter((p) => brandModel.value.includes(p.brand));
+  if (brandModel.value.length) list = list.filter((p) => brandModel.value.includes(p.brand));
 
-  if (priceFromModel.value !== null)
-    list = list.filter((p) => Number(p.price) >= priceFromModel.value);
-  if (priceToModel.value !== null)
-    list = list.filter((p) => Number(p.price) <= priceToModel.value);
+  if (priceFromModel.value !== null) list = list.filter((p) => Number(p.price) >= priceFromModel.value);
+  if (priceToModel.value !== null) list = list.filter((p) => Number(p.price) <= priceToModel.value);
 
   if (photoModel.value === "with") list = list.filter((p) => hasImages(p));
-  else if (photoModel.value === "without")
-    list = list.filter((p) => !hasImages(p));
+  else if (photoModel.value === "without") list = list.filter((p) => !hasImages(p));
 
   for (const [k, arr] of Object.entries(attributeModels.value)) {
     if (!Array.isArray(arr) || !arr.length) continue;
-    list = list.filter((p) =>
-      p.attributes?.some((a) => a.name === k && arr.includes(a.value))
-    );
+    list = list.filter((p) => p.attributes?.some((a) => a.name === k && arr.includes(a.value)));
   }
 
   return list;
@@ -1470,12 +987,8 @@ watch(
   }
 );
 
-const visibleProducts = computed(() =>
-  filteredProducts.value.slice(0, displayLimit.value)
-);
-const canLoadMore = computed(
-  () => filteredProducts.value.length > displayLimit.value
-);
+const visibleProducts = computed(() => filteredProducts.value.slice(0, displayLimit.value));
+const canLoadMore = computed(() => filteredProducts.value.length > displayLimit.value);
 
 function loadMore() {
   displayLimit.value += step.value;
@@ -1486,7 +999,7 @@ function openProduct(p) {
   router.push({ name: "product", params: { id: p.id } });
 }
 
-/* ================= BODY LOCK (mobile overlays) ================= */
+/* ================= BODY LOCK (only filters modal) ================= */
 let savedScrollY = 0;
 
 function lockBody() {
@@ -1510,8 +1023,7 @@ function unlockBody() {
   window.scrollTo(0, savedScrollY);
 }
 
-watch([showMobileFilters, showMobileCats], ([f, c]) => {
-  const open = f || c;
+watch(showMobileFilters, (open) => {
   if (open) lockBody();
   else unlockBody();
 });
@@ -1566,7 +1078,7 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
   gap: 14px;
 }
 
-/* ========================= SEARCH ========================= */
+/* ========================= SEARCH WRAPPER (без input стилей!) ========================= */
 .catalog-search {
   display: flex;
   flex-direction: column;
@@ -1575,299 +1087,12 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
   position: relative;
 }
 
-.search-box {
-  width: min(760px, 100%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 999px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-}
-
-.search-icon {
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 15px;
-  color: var(--text-main);
-  min-width: 0;
-}
-
-/* ✅ category button */
-.catpick-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-.catpick-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-.catpick-btn:hover {
-  background: rgba(4, 0, 255, 0.05);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-.catpick-btn i {
-  color: var(--accent);
-  font-size: 14px;
-}
-
-/* DESKTOP popover */
-/* ================= DESKTOP POPUP CATEGORIES (BEAUTY) ================= */
-
-/* кнопка категорий когда открыто */
-.catpick-btn.on {
-  background: rgba(4, 0, 255, 0.08);
-  border-color: rgba(4, 0, 255, 0.22);
-  box-shadow: 0 10px 26px rgba(4, 0, 255, 0.1);
-}
-
-/* сам поповер — центрируем под поиском */
-.catpop {
-  position: absolute;
-  top: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(980px, calc(100vw - 24px));
-  max-height: min(560px, 70vh);
-
-  border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: rgba(255, 255, 255, 0.92);
-
-  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.18);
-  overflow: hidden;
-  z-index: 260;
-
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  animation: catpopIn 0.14s ease-out;
-}
-
-@keyframes catpopIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* стрелочка */
-.catpop::before {
-  content: "";
-  position: absolute;
-  top: -8px;
-  left: 84px; /* визуально ближе к кнопке, но не обязательно */
-  width: 16px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  border-left: 1px solid rgba(15, 23, 42, 0.1);
-  border-top: 1px solid rgba(15, 23, 42, 0.1);
-  transform: rotate(45deg);
-}
-
-/* шапка — сделать “дороже” и липкой */
-.catpop-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.96),
-    rgba(255, 255, 255, 0.88)
-  );
-}
-
-.catpop-title {
-  font-size: 13px;
-  font-weight: 950;
-  letter-spacing: 0.02em;
-  color: var(--text-main);
-}
-
-.catpop-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    border-color 0.12s ease;
-}
-.catpop-close:hover {
-  transform: translateY(-1px);
-  border-color: rgba(4, 0, 255, 0.22);
-  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.12);
-}
-
-/* колонки */
-.catpop-cols{
-  display:flex;
-  height: min(520px, 62vh);   /* ✅ фиксируем высоту */
-  overflow-x: auto;           /* ✅ горизонталь */
-  overflow-y: hidden;         /* ✅ вертикаль не тут */
-}
-
-
-
-
-/* красивый скролл */
-.catpop-cols::-webkit-scrollbar {
-  height: 12px;
-  width: 12px;
-}
-.catpop-cols::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.18);
-  border-radius: 999px;
-  border: 3px solid rgba(255, 255, 255, 0.9);
-}
-.catpop-cols::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.catpop-col {
-    height: 100%;               /* ✅ */
-  overflow-y: auto;   
-  width: 280px;
-  flex: 0 0 280px;
-  padding: 12px;
-  border-right: 1px solid rgba(15, 23, 42, 0.08);
-  background: radial-gradient(
-      600px 220px at 50% -140px,
-      rgba(4, 0, 255, 0.08),
-      transparent 60%
-    ),
-    rgba(255, 255, 255, 0.86);
-}
-.catpop-col:last-child {
-  border-right: none;
-}
-
-/* элементы */
-.catpop-item {
-  width: 100%;
-  text-align: left;
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 14px;
-  padding: 10px 10px;
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-    margin-bottom: 0; /* убрать */
-
-  gap: 10px;
-
-  color: var(--text-main);
-  font-weight: 900;
-
-  transition: background 0.12s ease, border-color 0.12s ease,
-    transform 0.12s ease, box-shadow 0.12s ease;
-}
-
-.catpop-item:hover {
-  background: rgba(4, 0, 255, 0.06);
-  border-color: rgba(4, 0, 255, 0.14);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.1);
-}
-
-/* активная ветка (prefix) */
-.catpop-item.active {
-  background: rgba(4, 0, 255, 0.08);
-  border-color: rgba(4, 0, 255, 0.18);
-}
-
-/* выбранная (exact) */
-.catpop-item.picked {
-  color: var(--accent);
-  background: rgba(4, 0, 255, 0.1);
-  border-color: rgba(4, 0, 255, 0.26);
-}
-
-/* текст */
-.catpop-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* стрелка вправо */
-.catpop-chev {
-  opacity: 0.35;
-  font-size: 12px;
-}
-
-.search-clear {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.search-clear:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
 .search-meta {
   font-size: 12px;
   color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-.search-meta .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--accent);
-  opacity: 0.7;
 }
 
 /* ========================= HEADING ========================= */
@@ -2307,7 +1532,7 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
   box-shadow: var(--shadow-md);
 }
 
-/* ========================= MOBILE OVERLAY (filters + cats) ========================= */
+/* ========================= MOBILE OVERLAY (filters) ========================= */
 .moverlay-overlay {
   position: fixed;
   inset: 0;
@@ -2400,7 +1625,6 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
   cursor: pointer;
 }
 
-/* mobile filters list */
 .mfil-list {
   display: flex;
   flex-direction: column;
@@ -2426,73 +1650,11 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
   gap: 8px;
 }
 
-/* mobile cats */
-.mcat-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mcat-item {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  gap: 10px;
-  align-items: center;
-
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  border-radius: 14px;
-  padding: 10px 10px;
-}
-
-.mcat-check {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.mcat-check.on {
-  border-color: rgba(4, 0, 255, 0.25);
-  background: rgba(4, 0, 255, 0.08);
-  color: var(--accent);
-}
-.mcat-name {
-  font-weight: 900;
-  color: var(--text-main);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  cursor: pointer;
-}
-.mcat-next {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.8;
-}
-.mcat-empty {
-  padding: 14px 8px;
-  text-align: center;
-  color: var(--text-muted);
-  font-weight: 900;
-}
 .categories-landing {
   width: 100%;
   display: flex;
   justify-content: center;
 }
-
-/* убираем лишние отступы у HomeCatalogEntry внутри CatalogV2 */
 .categories-landing :deep(.home-entry) {
   width: min(1120px, 100%);
   padding: 0;
@@ -2539,8 +1701,7 @@ watch([showMobileFilters, showMobileCats], ([f, c]) => {
 }
 input,
 input[type="checkbox"],
-input[type="number"],
-.search-input {
+input[type="number"] {
   user-select: auto;
 }
 </style>

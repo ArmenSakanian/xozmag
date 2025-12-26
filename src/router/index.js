@@ -32,6 +32,10 @@ const routes = [
     path: "/admin",
     component: () => import("@/admin/AdminPanel.vue"),
   },
+    {
+    path: "/admin/barcode",
+    component: () => import("@/admin/BarcodeLabelSizesPage.vue"),
+  },
   {
     path: "/admin/categories",
     component: () => import("@/admin/AdminCategoriesPage.vue"),

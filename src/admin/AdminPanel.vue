@@ -149,13 +149,9 @@
 
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
-  color: var(--text-main);
-}
-
-.ico i{
-  font-size: 18px;
   color: var(--accent);
 }
+
 
 /* Текст */
 .t{

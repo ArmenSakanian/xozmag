@@ -17,10 +17,10 @@
           <!-- Адрес -->
           <div class="info-block">
             <p class="label">Адрес</p>
-            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text"
-              >Москва, <br />
-              Улица Героев Панфиловцев, дом 3</a
-            >
+            <a href="https://yandex.ru/maps/-/CLgkAIiy" class="value-text">
+              Москва, <br />
+              Улица Героев Панфиловцев, дом 3
+            </a>
           </div>
 
           <!-- Время работы -->
@@ -35,7 +35,31 @@
 
         <!-- Правая часть: карта -->
         <div class="contact-map">
-<iframe src="https://yandex.ru/map-widget/v1/?z=12&ol=biz&oid=1728338739" width="560" height="400" frameborder="0"></iframe>
+          <!-- Заглушка до клика -->
+          <div v-if="!showMap" class="map-placeholder">
+            <button class="map-btn" type="button" @click="showMap = true">
+              Показать карту
+            </button>
+
+            <a
+              class="map-link"
+              href="https://yandex.ru/maps/-/CLgkAIiy"
+              target="_blank"
+              rel="noopener"
+            >
+              Открыть в Яндекс.Картах
+            </a>
+          </div>
+
+          <!-- Карта после клика -->
+          <iframe
+            v-else
+            :src="mapUrl"
+            loading="lazy"
+            width="1051"
+            height="608"
+            frameborder="0"
+          ></iframe>
         </div>
       </div>
     </div>
@@ -43,7 +67,13 @@
 </template>
 
 <script setup>
-// логика не нужна
+import { ref } from "vue";
+
+const showMap = ref(false);
+
+// ТВОЙ constructor iframe:
+const mapUrl =
+  "https://yandex.ru/map-widget/v1/?um=constructor%3A620efd7c99bc91020f789a56c6f0e55bd29c1a6a5f3cb8a86aa31e52f6d1242e&source=constructor";
 </script>
 
 <style scoped>
@@ -161,6 +191,33 @@ a.value-text:active{
   border-radius: 0; /* уже обрезается контейнером */
 }
 
+/* Заглушка вместо карты до клика */
+.map-placeholder{
+  height: 420px;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-panel);
+}
+
+.map-btn{
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-soft);
+  color: var(--text-main);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.map-link{
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px){
   .contact-container{
@@ -168,6 +225,10 @@ a.value-text:active{
   }
 
   .contact-map iframe{
+    height: 380px;
+  }
+
+  .map-placeholder{
     height: 380px;
   }
 }
@@ -195,6 +256,10 @@ a.value-text:active{
   }
 
   .contact-map iframe{
+    height: 320px;
+  }
+
+  .map-placeholder{
     height: 320px;
   }
 }
