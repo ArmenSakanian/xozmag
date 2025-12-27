@@ -31,6 +31,7 @@
         >
           Характеристики ({{ selectedProducts.length }})
         </button>
+
         <button
           v-if="selectedProducts.length > 0"
           class="save-btn danger-clear"
@@ -47,12 +48,14 @@
     <div class="table-shell">
       <div ref="tableRef" class="product-table"></div>
     </div>
+
     <div class="goods_counter">
       <p>
         Выбранные товары:
         <span class="number">({{ selectedProducts.length }})</span>
       </p>
     </div>
+
     <!-- ================== CATEGORY MODAL ================== -->
     <div
       v-if="categoryModal.open"
@@ -70,8 +73,7 @@
               }}
             </div>
             <div v-if="!categoryModal.bulk" class="modal-sub">
-              #{{ categoryModal.product.id }} ·
-              {{ categoryModal.product.name }}
+              #{{ categoryModal.product.id }} · {{ categoryModal.product.name }}
             </div>
           </div>
           <button class="icon-btn" @click="closeCategory">✕</button>
@@ -109,8 +111,7 @@
       </div>
     </div>
 
-    <!-- ================== ATTR MODALS ================== -->
-    <!-- ⚠️ ОСТАВЛЕНЫ БЕЗ ИЗМЕНЕНИЙ (твой код) -->
+    <!-- ================== ATTR MODAL (SINGLE) ================== -->
     <div v-if="attrsModal.open" class="modal-backdrop" @click.self="closeAttrs">
       <div class="modal">
         <div class="modal-head">
@@ -151,9 +152,7 @@
               </option>
             </select>
 
-            <button class="danger-btn" @click="attrsDraft.splice(i, 1)">
-              ✕
-            </button>
+            <button class="danger-btn" @click="removeAttrRow(i)">✕</button>
           </div>
 
           <button
@@ -165,11 +164,19 @@
         </div>
 
         <div class="modal-foot">
-          <button class="ghost-btn" @click="closeAttrs">Отмена</button>
-          <button class="save-btn" @click="saveAttrs">Сохранить</button>
+          <button class="ghost-btn danger-clear" @click="deleteAllAttrsSingle">
+            Удалить все характеристики
+          </button>
+
+          <div style="display: flex; gap: 10px">
+            <button class="ghost-btn" @click="closeAttrs">Отмена</button>
+            <button class="save-btn" @click="saveAttrs">Сохранить</button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- ================== ATTR MODAL (BULK) ================== -->
     <div
       v-if="bulkAttrsModal"
       class="modal-backdrop"
@@ -184,7 +191,6 @@
         </div>
 
         <div class="modal-body">
-          <!-- ⬇️ ТВОЙ СТАРЫЙ КОД (НЕ МЕНЯЕМ) -->
           <div v-for="(row, i) in bulkAttrsDraft" :key="i" class="attr-row">
             <select
               v-model="row.attribute_id"
@@ -212,20 +218,17 @@
               </option>
             </select>
 
-            <button class="danger-btn" @click="bulkAttrsDraft.splice(i, 1)">
-              ✕
-            </button>
+            <button class="danger-btn" @click="removeBulkAttrRow(i)">✕</button>
           </div>
 
           <button
             class="ghost-btn"
-            @click="
-              bulkAttrsDraft.push({ attribute_id: null, option_id: null })
-            "
+            @click="bulkAttrsDraft.push({ attribute_id: null, option_id: null })"
           >
             + Добавить
           </button>
-          <!-- ✅ НОВЫЙ БЛОК: ИНФОРМАЦИЯ О ВЫБРАННЫХ ТОВАРАХ -->
+
+          <!-- INFO ABOUT SELECTED PRODUCTS -->
           <div class="bulk-info">
             <div class="bulk-label">Выбранные товары:</div>
             <div v-for="p in selectedProducts" :key="p.id" class="bulk-product">
@@ -255,12 +258,18 @@
         </div>
 
         <div class="modal-foot">
-          <button class="ghost-btn" @click="bulkAttrsModal = false">
-            Отмена
+          <button class="ghost-btn danger-clear" @click="deleteAllAttrsBulk">
+            Удалить все характеристики
           </button>
-          <button class="save-btn" @click="saveBulkAttrs">
-            Применить ко всем
-          </button>
+
+          <div style="display: flex; gap: 10px">
+            <button class="ghost-btn" @click="bulkAttrsModal = false">
+              Отмена
+            </button>
+            <button class="save-btn" @click="saveBulkAttrs">
+              Применить ко всем
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -273,18 +282,23 @@ import Swal from "sweetalert2";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
 import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 
+/* ===== TABLE/COMMON ===== */
 const tableRef = ref(null);
 let table;
+
 const categories = ref([]);
 const selectedProducts = ref([]);
+
 const isMobile = window.innerWidth <= 768;
 const showRotateOverlay = ref(false);
 
-const checkOrientation = () => {
-  const isMobile = window.innerWidth <= 768;
-  const isPortrait = window.innerHeight > window.innerWidth;
+let lastSelectedRow = null;
 
-  showRotateOverlay.value = isMobile && isPortrait;
+/* ===== MOBILE ORIENTATION ===== */
+const checkOrientation = () => {
+  const isMob = window.innerWidth <= 768;
+  const isPortrait = window.innerHeight > window.innerWidth;
+  showRotateOverlay.value = isMob && isPortrait;
 };
 
 onMounted(() => {
@@ -302,9 +316,9 @@ const categoryModal = ref({
 });
 
 const loadCategories = async () => {
-  categories.value = await fetch(
-    "/api/admin/product/get_categories_flat.php"
-  ).then((r) => r.json());
+  categories.value = await fetch("/api/admin/product/get_categories_flat.php").then(
+    (r) => r.json()
+  );
 };
 
 const openCategory = (product) => {
@@ -351,8 +365,11 @@ const saveCategory = async () => {
     : [categoryModal.value.product.id];
 
   closeCategory();
-  table.deselectRow();
-  selectedProducts.value = [];
+
+  if (categoryModal.value.bulk) {
+    table?.deselectRow();
+    selectedProducts.value = [];
+  }
 
   await loadProducts();
   highlightRows(ids);
@@ -384,64 +401,16 @@ const removeCategory = async () => {
     body: JSON.stringify(payload),
   });
 
+  const ids = categoryModal.value.bulk
+    ? selectedProducts.value.map((p) => p.id)
+    : [categoryModal.value.product.id];
+
   closeCategory();
-  loadProducts();
-};
 
-/* ===== ATTRIBUTES (ТВОЯ ЛОГИКА) ===== */
-const attrsModal = ref({ open: false, product: null });
-const attrsDraft = ref([]);
-const bulkAttrsModal = ref(false);
-const bulkAttrsDraft = ref([{ attribute_id: null, option_id: null }]);
-const allAttributes = ref([]);
-const attributeOptions = ref({});
-
-const loadAllAttributes = async () => {
-  allAttributes.value = await fetch(
-    "/api/admin/attribute/get_attributes.php"
-  ).then((r) => r.json());
-};
-
-const openBulkAttrs = () => {
-  const common = getCommonAttributes(selectedProducts.value);
-
-  bulkAttrsDraft.value = common.length
-    ? common.map((a) => ({ ...a }))
-    : [{ attribute_id: null, option_id: null }];
-
-  // подгружаем options для найденных атрибутов
-  bulkAttrsDraft.value.forEach((r) => {
-    if (r.attribute_id) {
-      loadOptions(r.attribute_id);
-    }
-  });
-
-  bulkAttrsModal.value = true;
-};
-
-const clearSelection = () => {
-  table.deselectRow();
-  selectedProducts.value = [];
-};
-
-
-const saveBulkAttrs = async () => {
-  await fetch("/api/admin/attribute/save_attributes_bulk.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      product_ids: selectedProducts.value.map((p) => p.id),
-      attributes: bulkAttrsDraft.value.filter(
-        (r) => r.attribute_id && r.option_id
-      ), // ← может быть []
-    }),
-  });
-
-  const ids = selectedProducts.value.map((p) => p.id);
-
-  bulkAttrsModal.value = false;
-  table.deselectRow();
-  selectedProducts.value = [];
+  if (categoryModal.value.bulk) {
+    table?.deselectRow();
+    selectedProducts.value = [];
+  }
 
   await loadProducts();
   highlightRows(ids);
@@ -450,24 +419,52 @@ const saveBulkAttrs = async () => {
     toast: true,
     position: "bottom",
     icon: "success",
-    title: "Характеристики обновлены",
+    title: "Категория убрана",
     showConfirmButton: false,
     timer: 1400,
   });
 };
 
+/* ===== ATTRIBUTES ===== */
+const attrsModal = ref({ open: false, product: null });
+const attrsDraft = ref([]);
+const bulkAttrsModal = ref(false);
+const bulkAttrsDraft = ref([{ attribute_id: null, option_id: null }]);
+
+const allAttributes = ref([]);
+const attributeOptions = ref({});
+
+// ✅ удалённые attribute_id
+const attrsDeleted = ref([]); // single
+const bulkDeleted = ref([]); // bulk
+
+const loadAllAttributes = async () => {
+  allAttributes.value = await fetch("/api/admin/attribute/get_attributes.php").then(
+    (r) => r.json()
+  );
+};
+
 const loadOptions = async (attributeId) => {
-  if (!attributeId || attributeOptions.value[attributeId]) return;
-  attributeOptions.value[attributeId] = await fetch(
-    `/api/admin/attribute/get_options.php?attribute_id=${attributeId}`
+  if (!attributeId) return;
+  const id = Number(attributeId);
+  if (!id || attributeOptions.value[id]) return;
+
+  attributeOptions.value[id] = await fetch(
+    `/api/admin/attribute/get_options.php?attribute_id=${id}`
   ).then((r) => r.json());
 };
 
+const onAttributeChange = (row) => {
+  row.option_id = null;
+  loadOptions(row.attribute_id);
+};
+
+/* ---- single open ---- */
 const openAttrs = async (p) => {
   attrsModal.value = { open: true, product: p };
   attrsDraft.value = [];
+  attrsDeleted.value = [];
 
-  // 🔥 ВСЕГДА грузим с сервера
   const attrs = await fetch(
     `/api/admin/attribute/get_product_attributes.php?product_id=${p.id}`
   ).then((r) => r.json());
@@ -478,12 +475,10 @@ const openAttrs = async (p) => {
       option_id: a.option_id,
     }));
 
-    // подгружаем options
     attrsDraft.value.forEach((r) => {
       if (r.attribute_id) loadOptions(r.attribute_id);
     });
   } else {
-    // если у товара вообще нет характеристик
     attrsDraft.value = [{ attribute_id: null, option_id: null }];
   }
 };
@@ -492,13 +487,64 @@ const closeAttrs = () => {
   attrsModal.value.open = false;
 };
 
-const onAttributeChange = (row) => {
-  row.option_id = null;
-  loadOptions(row.attribute_id);
+/* ---- single remove row ---- */
+const removeAttrRow = (i) => {
+  const row = attrsDraft.value[i];
+  const attrId = Number(row?.attribute_id);
+  if (attrId) {
+    attrsDeleted.value.push(attrId);
+    attrsDeleted.value = [...new Set(attrsDeleted.value)];
+  }
+
+  attrsDraft.value.splice(i, 1);
+
+  if (!attrsDraft.value.length) {
+    attrsDraft.value.push({ attribute_id: null, option_id: null });
+  }
 };
 
+/* ---- single delete all ---- */
+const deleteAllAttrsSingle = async () => {
+  const ids = [
+    ...new Set([
+      ...attrsDeleted.value,
+      ...attrsDraft.value.map((r) => Number(r.attribute_id)).filter(Boolean),
+    ]),
+  ];
+
+  await fetch("/api/admin/attribute/save_attributes.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_id: attrsModal.value.product.id,
+      attributes: [],
+      deleted: ids,
+    }),
+  });
+
+  const id = attrsModal.value.product.id;
+
+  closeAttrs();
+  await loadProducts();
+  highlightRows([id]);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Все характеристики удалены",
+    showConfirmButton: false,
+    timer: 1400,
+  });
+};
+
+/* ---- single save ---- */
 const saveAttrs = async () => {
   const clean = attrsDraft.value.filter((r) => r.attribute_id && r.option_id);
+
+  const deleted = [...new Set(attrsDeleted.value)].filter(
+    (id) => !clean.some((r) => Number(r.attribute_id) === Number(id))
+  );
 
   await fetch("/api/admin/attribute/save_attributes.php", {
     method: "POST",
@@ -506,6 +552,7 @@ const saveAttrs = async () => {
     body: JSON.stringify({
       product_id: attrsModal.value.product.id,
       attributes: clean,
+      deleted,
     }),
   });
 
@@ -525,46 +572,10 @@ const saveAttrs = async () => {
   });
 };
 
-/* ===== PRODUCTS ===== */
-const loadProducts = async () => {
-  const data = await fetch("/api/admin/product/get_products.php").then((r) =>
-    r.json()
-  );
-
-  data.forEach((p) => {
-    p.__selected = false;
-    p.attributes = p.attributes || [];
-    p.__has_attrs = p.attributes.length > 0;
-    p.attributes_text = p.attributes
-      .map((a) => `${a.name}: ${a.value}`)
-      .join(" · ");
-  });
-
-  table.setData(data);
-};
-
-const copyBarcode = async (code) => {
-  try {
-    await navigator.clipboard.writeText(code);
-
-    // опционально: визуальный фидбек
-    Swal.fire({
-      toast: true,
-      position: "bottom",
-      icon: "success",
-      title: "Штрихкод скопирован",
-      showConfirmButton: false,
-      timer: 1200,
-    });
-  } catch (e) {
-    console.error("Не удалось скопировать", e);
-  }
-};
-
+/* ---- bulk open ---- */
 function getCommonAttributes(products) {
   if (!products.length) return [];
 
-  // Берём атрибуты первого товара как основу
   const baseAttrs = products[0].attributes || [];
   const result = [];
 
@@ -587,6 +598,158 @@ function getCommonAttributes(products) {
   return result;
 }
 
+const openBulkAttrs = () => {
+  bulkDeleted.value = [];
+
+  const common = getCommonAttributes(selectedProducts.value);
+
+  bulkAttrsDraft.value = common.length
+    ? common.map((a) => ({ ...a }))
+    : [{ attribute_id: null, option_id: null }];
+
+  bulkAttrsDraft.value.forEach((r) => {
+    if (r.attribute_id) loadOptions(r.attribute_id);
+  });
+
+  bulkAttrsModal.value = true;
+};
+
+/* ---- bulk remove row ---- */
+const removeBulkAttrRow = (i) => {
+  const row = bulkAttrsDraft.value[i];
+  const attrId = Number(row?.attribute_id);
+  if (attrId) {
+    bulkDeleted.value.push(attrId);
+    bulkDeleted.value = [...new Set(bulkDeleted.value)];
+  }
+
+  bulkAttrsDraft.value.splice(i, 1);
+
+  if (!bulkAttrsDraft.value.length) {
+    bulkAttrsDraft.value.push({ attribute_id: null, option_id: null });
+  }
+};
+
+/* ---- bulk delete all (even if different attrs) ---- */
+const getUnionAttributeIds = (products) => {
+  return [
+    ...new Set(
+      (products || []).flatMap((p) =>
+        (p.attributes || [])
+          .map((a) => Number(a.attribute_id))
+          .filter(Boolean)
+      )
+    ),
+  ];
+};
+
+const deleteAllAttrsBulk = async () => {
+  const unionIds = getUnionAttributeIds(selectedProducts.value);
+
+  await fetch("/api/admin/attribute/save_attributes_bulk.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_ids: selectedProducts.value.map((p) => p.id),
+      attributes: [],
+      deleted: unionIds,
+    }),
+  });
+
+  const ids = selectedProducts.value.map((p) => p.id);
+
+  bulkAttrsModal.value = false;
+  table.deselectRow();
+  selectedProducts.value = [];
+
+  await loadProducts();
+  highlightRows(ids);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Все характеристики удалены (bulk)",
+    showConfirmButton: false,
+    timer: 1400,
+  });
+};
+
+/* ---- bulk save ---- */
+const saveBulkAttrs = async () => {
+  const clean = bulkAttrsDraft.value.filter((r) => r.attribute_id && r.option_id);
+
+  const deleted = [...new Set(bulkDeleted.value)].filter(
+    (id) => !clean.some((r) => Number(r.attribute_id) === Number(id))
+  );
+
+  await fetch("/api/admin/attribute/save_attributes_bulk.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_ids: selectedProducts.value.map((p) => p.id),
+      attributes: clean,
+      deleted,
+    }),
+  });
+
+  const ids = selectedProducts.value.map((p) => p.id);
+
+  bulkAttrsModal.value = false;
+  table.deselectRow();
+  selectedProducts.value = [];
+
+  await loadProducts();
+  highlightRows(ids);
+
+  Swal.fire({
+    toast: true,
+    position: "bottom",
+    icon: "success",
+    title: "Характеристики обновлены",
+    showConfirmButton: false,
+    timer: 1400,
+  });
+};
+
+/* ===== PRODUCTS ===== */
+const loadProducts = async () => {
+  const data = await fetch("/api/admin/product/get_products.php").then((r) =>
+    r.json()
+  );
+
+  data.forEach((p) => {
+    p.__selected = false;
+    p.attributes = p.attributes || [];
+    p.__has_attrs = p.attributes.length > 0;
+    p.attributes_text = p.attributes.map((a) => `${a.name}: ${a.value}`).join(" · ");
+  });
+
+  table.setData(data);
+};
+
+const copyBarcode = async (code) => {
+  try {
+    await navigator.clipboard.writeText(code);
+
+    Swal.fire({
+      toast: true,
+      position: "bottom",
+      icon: "success",
+      title: "Штрихкод скопирован",
+      showConfirmButton: false,
+      timer: 1200,
+    });
+  } catch (e) {
+    console.error("Не удалось скопировать", e);
+  }
+};
+
+const clearSelection = () => {
+  table.deselectRow();
+  selectedProducts.value = [];
+};
+
 const highlightRows = (ids) => {
   setTimeout(() => {
     ids.forEach((id) => {
@@ -600,14 +763,15 @@ const highlightRows = (ids) => {
         el.classList.remove("row-updated");
       }, 1800);
     });
-  }, 150); // ждём, пока table.setData отработает
+  }, 150);
 };
 
+/* ===== COLUMNS ===== */
 const desktopColumns = [
   {
     formatter: "rowSelection",
     titleFormatter: "rowSelection",
-    titleFormatterParams: { rowRange: "active" }, // выбирает только отфильтрованные строки
+    titleFormatterParams: { rowRange: "active" },
     headerSort: false,
     hozAlign: "center",
     headerHozAlign: "center",
@@ -615,7 +779,6 @@ const desktopColumns = [
     resizable: false,
     cellClick: (e) => e.stopPropagation(),
   },
-
   {
     title: "ID",
     field: "id",
@@ -631,11 +794,11 @@ const desktopColumns = [
     formatter: (cell) => {
       const value = cell.getValue() || "";
       return `
-      <div class="name-edit">
-        <span class="name-text">${value}</span>
-        <button class="mini-btn edit-name">Изменить</button>
-      </div>
-    `;
+        <div class="name-edit">
+          <span class="name-text">${value}</span>
+          <button class="mini-btn edit-name">Изменить</button>
+        </div>
+      `;
     },
     cellClick: (e, cell) => {
       if (!e.target.classList.contains("edit-name")) return;
@@ -646,14 +809,14 @@ const desktopColumns = [
       const oldValue = data.name || "";
 
       el.innerHTML = `
-      <div class="name-edit">
-        <input class="input name-input" value="${oldValue}" />
-        <div class="button-save-canc">
-          <button class="mini-btn save-name">Сохранить</button>
-          <button class="mini-btn cancel-name">Отмена</button>
+        <div class="name-edit">
+          <input class="input name-input" value="${oldValue}" />
+          <div class="button-save-canc">
+            <button class="mini-btn save-name">Сохранить</button>
+            <button class="mini-btn cancel-name">Отмена</button>
+          </div>
         </div>
-      </div>
-    `;
+      `;
 
       const input = el.querySelector(".name-input");
       const saveBtn = el.querySelector(".save-name");
@@ -711,13 +874,11 @@ const desktopColumns = [
     formatter: (cell) => {
       const p = cell.getRow().getData();
       return `
-            <div class="cat-edit">
-              <span class="cat-text">${
-                p.category_path || "— Без категории —"
-              }</span>
-              <button class="mini-btn edit-cat">Изменить</button>
-            </div>
-          `;
+        <div class="cat-edit">
+          <span class="cat-text">${p.category_path || "— Без категории —"}</span>
+          <button class="mini-btn edit-cat">Изменить</button>
+        </div>
+      `;
     },
     cellClick: (e, cell) => {
       if (e.target.classList.contains("edit-cat")) {
@@ -741,15 +902,11 @@ const desktopColumns = [
     headerFilter: "input",
     formatter: (cell) =>
       cell.getValue()
-        ? `<span class="t-barcode" title="Нажмите, чтобы скопировать">
-           ${cell.getValue()}
-         </span>`
+        ? `<span class="t-barcode" title="Нажмите, чтобы скопировать">${cell.getValue()}</span>`
         : `<span class="t-empty">—</span>`,
-
     cellClick: (e, cell) => {
       const value = cell.getValue();
       if (!value) return;
-
       copyBarcode(value);
     },
   },
@@ -757,31 +914,26 @@ const desktopColumns = [
     title: "Бренд",
     field: "brand",
     headerFilter: "input",
-    formatter: (cell) =>
-      `<span class="t-brand">${cell.getValue() || "—"}</span>`,
+    formatter: (cell) => `<span class="t-brand">${cell.getValue() || "—"}</span>`,
   },
   {
     title: "Тип",
     field: "type",
     headerFilter: "input",
-    formatter: (cell) =>
-      `<span class="t-type">${cell.getValue() || "—"}</span>`,
+    formatter: (cell) => `<span class="t-type">${cell.getValue() || "—"}</span>`,
   },
 ];
+
 const mobileColumns = [
   {
     title: "",
     width: 50,
     hozAlign: "center",
     headerSort: false,
-
     titleFormatter: desktopColumns[0].titleFormatter,
-    headerClick: desktopColumns[0].headerClick,
-
     formatter: desktopColumns[0].formatter,
     cellClick: desktopColumns[0].cellClick,
   },
-
   {
     title: "Название",
     field: "name",
@@ -789,18 +941,9 @@ const mobileColumns = [
     formatter: desktopColumns[2].formatter,
     cellClick: desktopColumns[2].cellClick,
   },
-  {
-    title: "Цена",
-    field: "price",
-  },
-  {
-    title: "Характеристики",
-    field: "attributes_text",
-  },
-  {
-    title: "Штрихкод",
-    field: "barcode",
-  },
+  { title: "Цена", field: "price" },
+  { title: "Характеристики", field: "attributes_text" },
+  { title: "Штрихкод", field: "barcode" },
 ];
 
 /* ===== INIT TABLE ===== */
@@ -815,7 +958,6 @@ onMounted(async () => {
     selectableRows: true,
     selectableRowsRangeMode: "click",
     selectableRowsPersistence: false,
-
     columns: isMobile ? mobileColumns : desktopColumns,
 
     rowClick: (e, row) => {
@@ -826,7 +968,7 @@ onMounted(async () => {
       )
         return;
 
-      const rows = visibleRows;
+      const rows = table.getRows("active"); // ✅ вместо visibleRows
 
       if (e.shiftKey && lastSelectedRow) {
         const start = rows.indexOf(lastSelectedRow);
@@ -844,13 +986,15 @@ onMounted(async () => {
       row.reformat();
     },
   });
+
   table.on("rowSelectionChanged", (data) => {
-  selectedProducts.value = data;
-});
+    selectedProducts.value = data;
+  });
 
   loadProducts();
 });
 </script>
+
 
 <style scoped>
 /* ================================================= */

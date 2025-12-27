@@ -14,22 +14,32 @@
             </div>
           </div>
 
-          <div class="rating-pill" aria-label="Рейтинг Яндекс" data-aos="fade-left" data-aos-delay="80">
-            <span class="rp-star">★</span>
+          <div
+            class="rating-pill"
+            aria-label="Рейтинг Яндекс"
+            data-aos="fade-left"
+            data-aos-delay="80"
+          >
+            <span class="rp-star"><Fa :icon="['fas', 'star']" /></span>
             <span class="rp-score">{{ yandexRating }}</span>
             <span class="rp-meta">{{ yandexReviews }} отзывов</span>
           </div>
         </div>
 
-        <h1 class="page-title" data-aos="fade-up" data-aos-delay="120">О нас</h1>
+        <h1 class="page-title" data-aos="fade-up" data-aos-delay="120">
+          О нас
+        </h1>
 
         <p class="lead" data-aos="fade-up" data-aos-delay="160">
-          Магазин «Всё для дома» — розничный магазин хозяйственных и строительных товаров.
-          Работаем <b>более 10 лет</b>. В ассортименте — товары для ремонта, монтажа и повседневных бытовых задач.
+          Магазин «Всё для дома» — розничный магазин хозяйственных и
+          строительных товаров. Работаем <b>более 10 лет</b>. В ассортименте —
+          товары для ремонта, монтажа и повседневных бытовых задач.
         </p>
 
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="210">
-          <RouterLink class="btn primary" to="/catalogv2">Открыть каталог</RouterLink>
+          <RouterLink class="btn primary" to="/catalogv2"
+            >Открыть каталог</RouterLink
+          >
           <a class="btn ghost" href="#contact">Контакты</a>
         </div>
 
@@ -42,9 +52,7 @@
           </div>
           <div class="fact" data-aos="fade-up" data-aos-delay="140">
             <div class="fact-title">Оплата</div>
-            <div class="fact-text">
-              Наличные • карта • QR-код.
-            </div>
+            <div class="fact-text">Наличные • карта • QR-код.</div>
           </div>
           <div class="fact" data-aos="fade-up" data-aos-delay="200">
             <div class="fact-title">Парковка</div>
@@ -55,7 +63,8 @@
         </div>
 
         <div class="hero-note" data-aos="fade-up" data-aos-delay="240">
-          Адрес и режим работы указаны в разделе <a href="#contact">«Контакты»</a>.
+          Адрес и режим работы указаны в разделе
+          <a href="#contact">«Контакты»</a>.
         </div>
       </header>
 
@@ -70,7 +79,8 @@
           <div class="range-card" data-aos="fade-up" data-aos-delay="40">
             <div class="rc-title">Сантехника</div>
             <div class="rc-text">
-              Смесители, сифоны, подводки, арматура, фитинги и сопутствующие товары.
+              Смесители, сифоны, подводки, арматура, фитинги и сопутствующие
+              товары.
             </div>
           </div>
 
@@ -113,7 +123,8 @@
         <div class="callout" data-aos="zoom-in" data-aos-delay="140">
           <div class="callout-title">Нужна консультация по выбору</div>
           <div class="callout-text">
-            Если вы не уверены в подборе или совместимости товара, свяжитесь с нами — поможем уточнить подходящий вариант.
+            Если вы не уверены в подборе или совместимости товара, свяжитесь с
+            нами — поможем уточнить подходящий вариант.
           </div>
         </div>
       </section>
@@ -129,32 +140,35 @@
           <details class="faq-item" open data-aos="fade-up" data-aos-delay="60">
             <summary>
               <span class="faq-q">Доставка</span>
-              <span class="faq-badge">по согласованию</span>
+              <span class="faq-badge">по согласованию <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
             </summary>
             <div class="faq-a">
-              Доставка <b>возможна</b>, но не всегда и не везде — зависит от товара и адреса.
-              Рекомендуем уточнить по телефону: сообщим возможность и условия.
+              Доставка <b>возможна</b>, но не всегда и не везде — зависит от
+              товара и адреса. Рекомендуем уточнить по телефону: сообщим
+              возможность и условия.
             </div>
           </details>
 
           <details class="faq-item" data-aos="fade-up" data-aos-delay="120">
             <summary>
               <span class="faq-q">Оплата</span>
-              <span class="faq-badge">наличные / карта / QR</span>
+              <span class="faq-badge">наличные / карта / QR <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
             </summary>
             <div class="faq-a">
-              Принимаем оплату <b>наличными</b>, <b>картой</b> и по <b>QR-коду</b>.
+              Принимаем оплату <b>наличными</b>, <b>картой</b> и по
+              <b>QR-коду</b>.
             </div>
           </details>
 
           <details class="faq-item" data-aos="fade-up" data-aos-delay="180">
             <summary>
               <span class="faq-q">Возврат и обмен</span>
-              <span class="faq-badge">по закону</span>
+              <span class="faq-badge">по закону <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
             </summary>
             <div class="faq-a">
-              Возврат и обмен осуществляются <b>в соответствии с законодательством</b>.
-              Возможность возврата зависит от категории товара, состояния упаковки и комплектности.
+              Возврат и обмен осуществляются
+              <b>в соответствии с законодательством</b>. Возможность возврата
+              зависит от категории товара, состояния упаковки и комплектности.
               Есть товары, которые не подлежат возврату — уточняйте при покупке.
             </div>
           </details>
@@ -162,10 +176,11 @@
           <details class="faq-item" data-aos="fade-up" data-aos-delay="240">
             <summary>
               <span class="faq-q">Дополнительно</span>
-              <span class="faq-badge">удобства</span>
+              <span class="faq-badge">удобства <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
             </summary>
             <div class="faq-a">
-              Посещение с <b>животными</b> допускается. Wi-Fi доступен при необходимости (по запросу).
+              Посещение с <b>животными</b> допускается. Wi-Fi доступен при
+              необходимости (по запросу).
             </div>
           </details>
         </div>
@@ -181,10 +196,12 @@
         <div class="yandex-rating" data-aos="fade-up" data-aos-delay="90">
           <div class="yr-left">
             <div class="yr-score-line">
-              <span class="yr-stars">★</span>
+              <span class="yr-stars"><Fa :icon="['fas', 'star']" /></span>
               <span class="yr-score">{{ yandexRating }}</span>
             </div>
-            <div class="yr-count">{{ yandexReviews }} отзывов • {{ yandexGrades }} оценок</div>
+            <div class="yr-count">
+              {{ yandexReviews }} отзывов • {{ yandexGrades }} оценок
+            </div>
           </div>
 
           <a :href="yandexLink" target="_blank" rel="noopener" class="yr-btn">
@@ -193,7 +210,8 @@
         </div>
 
         <p class="closing" data-aos="fade-up" data-aos-delay="140">
-          Благодарим за доверие. Мы ценим обратную связь и поддерживаем качество обслуживания.
+          Благодарим за доверие. Мы ценим обратную связь и поддерживаем качество
+          обслуживания.
         </p>
       </section>
     </div>
@@ -214,12 +232,12 @@ const yandexLink =
 </script>
 
 <style scoped>
-.about-page{
+.about-page {
   padding: 18px 14px 34px;
   color: var(--text-main);
 }
 
-.wrap{
+.wrap {
   width: min(1120px, 100%);
   margin: 0 auto;
   display: grid;
@@ -227,10 +245,17 @@ const yandexLink =
 }
 
 /* HERO */
-.hero{
-  background:
-    radial-gradient(900px 360px at 15% 0%, rgba(4,0,255,0.10), transparent 60%),
-    radial-gradient(700px 320px at 85% 20%, rgba(22,163,74,0.10), transparent 60%),
+.hero {
+  background: radial-gradient(
+      900px 360px at 15% 0%,
+      rgba(4, 0, 255, 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 320px at 85% 20%,
+      rgba(22, 163, 74, 0.1),
+      transparent 60%
+    ),
     var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
@@ -238,7 +263,7 @@ const yandexLink =
   padding: 18px 18px 16px;
 }
 
-.hero-top{
+.hero-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -246,70 +271,78 @@ const yandexLink =
   flex-wrap: wrap;
 }
 
-.brand{
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.brand-dot{
+.brand-dot {
   width: 12px;
   height: 12px;
   border-radius: 999px;
   background: var(--accent);
-  box-shadow: 0 0 0 5px rgba(4,0,255,0.10);
+  box-shadow: 0 0 0 5px rgba(4, 0, 255, 0.1);
 }
 
-.brand-name{
+.brand-name {
   font-weight: 950;
   letter-spacing: -0.02em;
   font-size: 16px;
 }
 
-.brand-sub{
+.brand-sub {
   color: var(--text-muted);
   font-size: 12.5px;
   margin-top: 1px;
 }
 
-.rating-pill{
+.rating-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
   border-radius: 999px;
-  background: rgba(22,163,74,0.10);
-  border: 1px solid rgba(22,163,74,0.22);
+  background: var(--secondary-accent);
   box-shadow: var(--shadow-sm);
   font-weight: 900;
+  color: var(--text-main);
 }
 
-.rp-star{ color: var(--accent-2); }
-.rp-score{ font-size: 14px; }
-.rp-meta{ color: var(--text-muted); font-size: 12.5px; font-weight: 800; }
+.rp-star {
+  color: var(--accent-2);
+}
+.rp-score {
+  font-size: 14px;
+}
+.rp-meta {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 800;
+}
 
-.page-title{
+.page-title {
   margin: 12px 0 8px;
   font-size: 30px;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
-.lead{
+.lead {
   margin: 0;
   color: var(--text-main);
   line-height: 1.7;
   font-size: 16.5px;
 }
 
-.hero-actions{
+.hero-actions {
   display: flex;
   gap: 10px;
   margin-top: 14px;
   flex-wrap: wrap;
 }
 
-.btn{
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -319,32 +352,36 @@ const yandexLink =
   font-weight: 950;
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-sm);
-  transition: transform .18s ease, filter .18s ease, background .18s ease;
+  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease;
   white-space: nowrap;
 }
 
-.btn:hover{ transform: translateY(-1px); }
-.btn:active{ transform: translateY(0px); }
-
-.btn.primary{
-  background: var(--accent);
-  color: #fff;
-  border-color: rgba(0,0,0,0.08);
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0px);
 }
 
-.btn.ghost{
+.btn.primary {
+  background: var(--secondary-accent);
+  color: var(--text-main);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.btn.ghost {
   background: var(--bg-panel);
   color: var(--text-main);
 }
 
-.facts{
+.facts {
   margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
-.fact{
+.fact {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -352,18 +389,18 @@ const yandexLink =
   padding: 10px 12px;
 }
 
-.fact-title{
+.fact-title {
   font-weight: 950;
   margin-bottom: 4px;
 }
 
-.fact-text{
+.fact-text {
   color: var(--text-muted);
   line-height: 1.55;
   font-size: 13.5px;
 }
 
-.hero-note{
+.hero-note {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border-soft);
@@ -372,14 +409,14 @@ const yandexLink =
   line-height: 1.55;
 }
 
-.hero-note a{
+.hero-note a {
   color: var(--accent);
   text-decoration: none;
   font-weight: 900;
 }
 
 /* SECTION */
-.section{
+.section {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
@@ -387,7 +424,7 @@ const yandexLink =
   padding: 16px 16px;
 }
 
-.section-head{
+.section-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -396,27 +433,27 @@ const yandexLink =
   margin-bottom: 10px;
 }
 
-.h2{
+.h2 {
   margin: 0;
   font-size: 18px;
   letter-spacing: -0.01em;
   font-weight: 950;
 }
 
-.section-hint{
+.section-hint {
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 800;
 }
 
 /* range grid */
-.range-grid{
+.range-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.range-card{
+.range-card {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -426,53 +463,55 @@ const yandexLink =
   overflow: hidden;
 }
 
-.range-card::before{
-  content:"";
-  position:absolute;
-  left:0; top:0; bottom:0;
+.range-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 4px;
   background: var(--accent);
-  opacity: .9;
+  opacity: 0.9;
 }
 
-.rc-title{
+.rc-title {
   font-weight: 950;
   margin-bottom: 6px;
   padding-left: 6px;
 }
 
-.rc-text{
+.rc-text {
   color: var(--text-muted);
   line-height: 1.6;
   font-size: 14px;
   padding-left: 6px;
 }
 
-.callout{
+.callout {
   margin-top: 12px;
-  background: rgba(4,0,255,0.06);
-  border: 1px solid rgba(4,0,255,0.14);
+  background: rgba(4, 0, 255, 0.06);
+  border: 1px solid rgba(4, 0, 255, 0.14);
   border-radius: var(--radius-lg);
   padding: 12px 12px;
 }
 
-.callout-title{
+.callout-title {
   font-weight: 950;
   margin-bottom: 4px;
 }
 
-.callout-text{
+.callout-text {
   color: var(--text-muted);
   line-height: 1.6;
 }
 
 /* FAQ */
-.faq{
+.faq {
   display: grid;
   gap: 10px;
 }
 
-.faq-item{
+.faq-item {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -481,7 +520,7 @@ const yandexLink =
   overflow: hidden;
 }
 
-.faq-item summary{
+.faq-item summary {
   cursor: pointer;
   list-style: none;
   padding: 12px 12px;
@@ -492,28 +531,46 @@ const yandexLink =
   font-weight: 950;
 }
 
-.faq-item summary::-webkit-details-marker{ display:none; }
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
 
-.faq-badge{
+.faq-badge {
   font-size: 12px;
   font-weight: 950;
   color: var(--text-main);
-  background: rgba(22,163,74,0.10);
-  border: 1px solid rgba(22,163,74,0.22);
+  background: var(--secondary-accent);
   padding: 6px 10px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.faq-a{
+.faq-a {
   padding: 0 12px 12px;
   color: var(--text-muted);
   line-height: 1.65;
   font-size: 14px;
 }
+/* badge + иконка */
+.faq-badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* сама иконка */
+.faq-badge :deep(.faq-chev){
+  transition: transform .18s ease;
+  transform-origin: 50% 50%;
+}
+
+/* когда details открыт — поворачиваем вниз->вверх */
+.faq-item[open] .faq-badge :deep(.faq-chev){
+  transform: rotate(-180deg);
+}
 
 /* Yandex block */
-.yandex-rating{
+.yandex-rating {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -526,36 +583,35 @@ const yandexLink =
   box-shadow: var(--shadow-sm);
 }
 
-.yr-left{
+.yr-left {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 
-.yr-score-line{
+.yr-score-line {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.yr-stars{
+.yr-stars {
   font-size: 18px;
   line-height: 1;
-  color: var(--accent-2);
-  background: rgba(22, 163, 74, 0.12);
-  border: 1px solid rgba(22, 163, 74, 0.22);
+  color: var(--text-main);
+  background: var(--secondary-accent);
   padding: 6px 10px;
   border-radius: 999px;
 }
 
-.yr-score{
+.yr-score {
   font-size: 22px;
   font-weight: 950;
   letter-spacing: -0.02em;
 }
 
-.yr-count{
+.yr-count {
   font-size: 13px;
   color: var(--text-muted);
   white-space: nowrap;
@@ -564,56 +620,72 @@ const yandexLink =
   max-width: 100%;
 }
 
-.yr-btn{
+.yr-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent);
-  color: #fff;
+  background: var(--secondary-accent);
+  color: var(--text-main);
   text-decoration: none;
   font-weight: 950;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: var(--shadow-sm);
-  transition: transform .18s ease, filter .18s ease;
+  transition: transform 0.18s ease, filter 0.18s ease;
   white-space: nowrap;
 }
 
-.yr-btn:hover{
+.yr-btn:hover {
   transform: translateY(-1px);
   filter: brightness(1.06);
 }
 
-.yr-btn:active{
+.yr-btn:active {
   transform: translateY(0px);
   filter: brightness(0.98);
 }
 
-.closing{
+.closing {
   margin: 12px 0 0;
   color: var(--text-muted);
   line-height: 1.65;
 }
 
 /* responsive */
-@media (max-width: 820px){
-  .facts{ grid-template-columns: 1fr; }
-  .range-grid{ grid-template-columns: 1fr; }
+@media (max-width: 820px) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
+  .range-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (max-width: 600px){
-  .about-page{ padding: 14px 12px 26px; }
-  .page-title{ font-size: 26px; }
-  .hero{ padding: 16px 14px; }
-  .section{ padding: 14px 14px; }
+@media (max-width: 600px) {
+  .about-page {
+    padding: 14px 12px 26px;
+  }
+  .page-title {
+    font-size: 26px;
+  }
+  .hero {
+    padding: 16px 14px;
+  }
+  .section {
+    padding: 14px 14px;
+  }
 
-  .yandex-rating{
+  .yandex-rating {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
-  .yr-score-line{ justify-content: center; }
-  .yr-btn{ width: 100%; }
+  .yr-score-line {
+    justify-content: center;
+  }
+  .yr-btn {
+    width: 100%;
+  }
 }
 </style>

@@ -7,12 +7,26 @@
           <h1 class="title">Конвертер изображений</h1>
           <p class="subtitle">.jpg, .png, .jpeg → WEBP</p>
 
+          <div class="min-actions" style="margin-top: 0; margin-bottom: 10px">
+            <label class="min-check">
+              <input
+                type="checkbox"
+                v-model="convertDryRun"
+                :disabled="loadingConvert || loadingSync || loadingMin"
+              />
+              Проверить без записи (dry-run)
+            </label>
+          </div>
+
           <button
             class="main-btn"
             :disabled="loadingConvert || loadingSync || loadingMin"
             @click="start"
           >
-            {{ loadingConvert ? "Обработка…" : "Начать преобразование" }}
+            <span v-if="loadingConvert">Обработка…</span>
+            <span v-else>
+              {{ convertDryRun ? "Проверить (dry-run)" : "Начать преобразование" }}
+            </span>
           </button>
 
           <!-- CONVERT -->
@@ -89,9 +103,10 @@
           <!-- ===== CHANGES LISTS ===== -->
           <div class="changes" v-if="sync.hasResult">
             <div class="change-block" v-if="createdItems.length">
-<div class="change-title add">
-  Добавлено ({{ sync.inserted }}) <span class="muted">• показано: {{ createdItems.length }}</span>
-</div>
+              <div class="change-title add">
+                Добавлено ({{ sync.inserted }})
+                <span class="muted">• показано: {{ createdItems.length }}</span>
+              </div>
               <div class="change-list">
                 <div
                   class="change-line"
@@ -105,9 +120,10 @@
             </div>
 
             <div class="change-block" v-if="updatedItems.length">
-<div class="change-title upd">
-  Обновлено ({{ sync.updated }}) <span class="muted">• показано: {{ updatedItems.length }}</span>
-</div>
+              <div class="change-title upd">
+                Обновлено ({{ sync.updated }})
+                <span class="muted">• показано: {{ updatedItems.length }}</span>
+              </div>
               <div class="change-list">
                 <div
                   class="change-line"
@@ -127,9 +143,10 @@
             </div>
 
             <div class="change-block" v-if="deletedItems.length">
-<div class="change-title del">
-  Удалено ({{ sync.deleted }}) <span class="muted">• показано: {{ deletedItems.length }}</span>
-</div>
+              <div class="change-title del">
+                Удалено ({{ sync.deleted }})
+                <span class="muted">• показано: {{ deletedItems.length }}</span>
+              </div>
               <div class="change-list">
                 <div
                   class="change-line"
@@ -142,9 +159,17 @@
                     <span class="nm-title">{{ it.name }}</span>
 
                     <span class="nm-meta">
-фото: удалено {{ it.photos_deleted_count != null ? it.photos_deleted_count : (it.photos_deleted?.length || 0) }},
-не найдено {{ it.photos_missing_count != null ? it.photos_missing_count : (it.photos_missing?.length || 0) }}
-
+                      фото: удалено
+                      {{
+                        it.photos_deleted_count != null
+                          ? it.photos_deleted_count
+                          : it.photos_deleted?.length || 0
+                      }}, не найдено
+                      {{
+                        it.photos_missing_count != null
+                          ? it.photos_missing_count
+                          : it.photos_missing?.length || 0
+                      }}
                     </span>
                   </span>
                 </div>
@@ -179,7 +204,7 @@
               :disabled="loadingMin || loadingConvert || loadingSync"
               @click="downloadMinTemplate"
             >
-              <Fa :icon="['far','file-lines']" />
+              <Fa :icon="['far', 'file-lines']" />
               Скачать шаблон (CSV)
             </button>
           </div>
@@ -202,7 +227,7 @@
 
             <div class="min-drop-inner">
               <div class="min-icon">
-                <Fa :icon="['fas','cloud-arrow-up']" />
+                <Fa :icon="['fas', 'cloud-arrow-up']" />
               </div>
 
               <div class="min-txt">
@@ -221,7 +246,7 @@
 
               <div class="min-picked" v-if="minPickedName">
                 <div class="min-pname">
-                  <Fa :icon="['far','file-excel']" />
+                  <Fa :icon="['far', 'file-excel']" />
                   {{ minPickedName }}
                 </div>
                 <div class="min-pactions">
@@ -230,7 +255,7 @@
                     @click="clearMinFile"
                     :disabled="loadingMin || loadingConvert || loadingSync"
                   >
-                    <Fa :icon="['fas','xmark']" /> Убрать
+                    <Fa :icon="['fas', 'xmark']" /> Убрать
                   </button>
                 </div>
               </div>
@@ -253,8 +278,8 @@
                 "
                 @click="uploadMin"
               >
-                <Fa v-if="!loadingMin" :icon="['fas','upload']" />
-                <Fa v-else :icon="['fas','circle-notch']" />
+                <Fa v-if="!loadingMin" :icon="['fas', 'upload']" />
+                <Fa v-else :icon="['fas', 'circle-notch']" />
                 {{ minDryRun ? "Проверить" : "Импортировать" }}
               </button>
             </div>
@@ -262,7 +287,7 @@
 
           <div v-if="minError" class="min-state error">
             <div class="min-st-title">
-              <Fa :icon="['fas','triangle-exclamation']" /> Ошибка
+              <Fa :icon="['fas', 'triangle-exclamation']" /> Ошибка
             </div>
             <div class="min-st-text">{{ minError }}</div>
           </div>
@@ -270,7 +295,7 @@
           <div v-if="minResult" class="min-result">
             <div class="min-r-top">
               <div class="min-r-title">
-                <Fa :icon="['fas','circle-check']" />
+                <Fa :icon="['fas', 'circle-check']" />
                 Готово
                 <span v-if="minResult.dry_run" class="min-badge">dry-run</span>
               </div>
@@ -365,7 +390,7 @@
     </div>
 
     <div v-if="minToast" class="toast">
-      <Fa :icon="['fas','check']" /> {{ minToast }}
+      <Fa :icon="['fas', 'check']" /> {{ minToast }}
     </div>
   </div>
 </template>
@@ -393,6 +418,12 @@ const logs = ref([]);
 const convert = ref({ current: 0, total: 0 });
 const remove = ref({ current: 0, total: 0 });
 
+// ✅ добавили dry-run для конвертера
+const convertDryRun = ref(false);
+
+// можно увеличить для скорости (и логи всё равно будут)
+const CONVERT_BATCH = 10;
+
 const convertPercent = computed(() =>
   convert.value.total
     ? Math.round((convert.value.current / convert.value.total) * 100)
@@ -406,6 +437,24 @@ const removePercent = computed(() =>
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function prettyStatus(s) {
+  // коротко и понятно для логов
+  if (s === "converted_new") return "converted";
+  if (s === "converted_overwrite") return "overwrite";
+  if (s === "renamed") return "renamed";
+  if (s === "renamed_overwrite") return "rename+ow";
+  if (s === "would_convert") return "dry_conv";
+  if (s === "would_convert_overwrite") return "dry_ow";
+  if (s === "would_rename") return "dry_rnm";
+  if (s === "would_rename_overwrite") return "dry_rnow";
+  if (s === "bad") return "bad";
+  if (s === "missing") return "missing";
+  if (s === "unsupported") return "unsup";
+  if (s === "error") return "error";
+  if (s === "skip") return "skip";
+  return String(s || "unknown");
+}
+
 const start = async () => {
   loadingConvert.value = true;
   logs.value = [];
@@ -413,41 +462,71 @@ const start = async () => {
   remove.value = { current: 0, total: 0 };
 
   NProgress.start();
-  let index = 0;
 
   try {
-    while (true) {
-      const res = await fetch(
-        `/api/admin/functions/convert_images_step.php?index=${index}`,
-        {
-          cache: "no-store",
-        }
-      );
-      const data = await res.json();
+    // 1) init job
+    const initRes = await fetch(
+      `/api/admin/functions/convert_images_step.php?init=1&dry_run=${
+        convertDryRun.value ? 1 : 0
+      }`,
+      { cache: "no-store" }
+    );
 
-      if (data.done) {
-        convert.value.total = data.total;
-        remove.value.total = data.total;
-        break;
-      }
+    const initData = await initRes.json().catch(() => null);
+    if (!initRes.ok || !initData) {
+      throw new Error("Init failed: HTTP " + initRes.status);
+    }
+    if (initData?.error) throw new Error(initData.error);
 
-      convert.value.total = data.total;
-      convert.value.current = data.index;
-      remove.value.current = data.index;
-
-      index = data.index;
-
-      logs.value.unshift(
-        `${String(data.status || "")
-          .toUpperCase()
-          .padEnd(10)} | ${data.file}`
-      );
-      NProgress.set(convertPercent.value / 100);
-
-      await sleep(18);
+    // если сразу done (нет файлов)
+    if (initData.done) {
+      convert.value.total = 0;
+      remove.value.total = 0;
+      logs.value.unshift("✔ НЕТ ФАЙЛОВ ДЛЯ ОБРАБОТКИ");
+      return;
     }
 
-    logs.value.unshift("✔ ALL FILES PROCESSED");
+    const token = initData.token;
+    let index = initData.index ?? 0;
+
+    convert.value.total = initData.total ?? 0;
+    remove.value.total = initData.total ?? 0;
+
+    logs.value.unshift(
+      `→ init: total=${convert.value.total}, dry_run=${convertDryRun.value ? "1" : "0"}`
+    );
+
+    // 2) step loop
+    while (true) {
+      const res = await fetch(
+        `/api/admin/functions/convert_images_step.php?token=${token}&index=${index}&batch=${CONVERT_BATCH}`,
+        { cache: "no-store" }
+      );
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) throw new Error("Step failed: HTTP " + res.status);
+      if (data?.error) throw new Error(data.error);
+
+      const results = Array.isArray(data.results) ? data.results : [];
+      results.forEach((r) => {
+        const st = prettyStatus(r.status).toUpperCase().padEnd(10);
+        logs.value.unshift(`${st} | ${r.file}`);
+      });
+
+      index = Number(data.index ?? index);
+      convert.value.current = index;
+      remove.value.current = index;
+
+      NProgress.set(convertPercent.value / 100);
+
+      if (data.done) break;
+
+      await sleep(30);
+    }
+
+    logs.value.unshift(
+      convertDryRun.value ? "✔ DRY-RUN COMPLETE" : "✔ ALL FILES PROCESSED"
+    );
   } catch (e) {
     logs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
   } finally {
@@ -659,7 +738,6 @@ async function uploadMin() {
 }
 
 function downloadMinTemplate() {
-  // пример 1 строки: штрихкод;минимальный_остаток
   const csv = "\uFEFFШтрихкод;Минимальный остаток\n4607138899795;5\n";
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");

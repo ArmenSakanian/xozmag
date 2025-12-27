@@ -5,7 +5,6 @@
         <div class="catalog-search">
           <HomeSearch
             :show-category="true"
-            :categories="categories"
             :current-category="currentCategory"
             :sync-route="true"
             route-key="q"
@@ -26,23 +25,21 @@
           <div class="breadcrumbs">
             <span class="breadcrumb-home">Каталог</span>
             <span v-if="currentCategory" class="breadcrumb-separator">/</span>
-            <span v-if="currentCategory" class="breadcrumb-current">{{
-              currentCategoryName
-            }}</span>
+            <span v-if="currentCategory" class="breadcrumb-current">
+              {{ currentCategoryName }}
+            </span>
           </div>
 
           <h1 class="catalog-title">
             <template v-if="!hasActiveCategory && !searchQ">Категории</template>
-            <template v-else-if="searchQ && !hasActiveCategory"
-              >Результаты поиска</template
-            >
+            <template v-else-if="searchQ && !hasActiveCategory">Результаты поиска</template>
             <template v-else>{{ currentCategoryName || "Каталог" }}</template>
           </h1>
         </div>
 
         <!-- ===== FILTERS BAR (DESKTOP) ===== -->
         <div v-if="hasActiveCategory && !isMobile" class="filters-bar">
-          <!-- PRICE -->
+          <!-- PRICE (всегда) -->
           <div class="filter-block filter-price">
             <div class="filter-label">Цена</div>
             <div class="price-inputs">
@@ -61,7 +58,62 @@
             </div>
           </div>
 
-          <!-- BRAND -->
+          <!-- ✅ TYPE (только если выбрана категория 1 уровня) -->
+          <div
+            v-if="isRootCategorySelected === true"
+            class="filter-block filter-type"
+            :class="{ open: openFilters.type }"
+          >
+            <div class="filter-label">Тип товара</div>
+
+            <div class="filter-dropdown">
+              <div class="filter-dropdown-head" @click="toggleFilter('type')">
+                <span class="filter-head-text">{{ typeHeadText }}</span>
+                <span class="arrow" :class="{ open: openFilters.type }">▾</span>
+              </div>
+
+              <div
+                v-show="openFilters.type"
+                class="filter-dropdown-body"
+                :class="{ scrollable: (typeOptions.length || 0) > 6 }"
+              >
+                <label class="filter-checkbox filter-all">
+                  <input
+                    type="checkbox"
+                    :checked="!typeModel.length"
+                    @change="
+                      typeModel = [];
+                      applyFilters();
+                    "
+                  />
+                  <span>Все</span>
+                </label>
+
+                <label
+                  v-for="c in typeOptions"
+                  :key="c.id"
+                  class="filter-checkbox typeopt"
+                  :class="{ parent: c.hasChildren }"
+                  :style="{ '--indent': (c.depth - 1) * 14 + 'px' }"
+                >
+                  <input
+                    type="checkbox"
+                    :value="String(c.code)"
+                    v-model="typeModel"
+                    @change="applyFilters"
+                  />
+
+                  <span class="typeopt-text">
+                    <span class="typeopt-name">{{ c.name }}</span>
+                  </span>
+                </label>
+
+                <div v-if="!typeOptions.length" class="dd-empty">Нет подкатегорий</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ BRAND (всегда) -->
           <div
             class="filter-block filter-brand"
             :class="{ open: openFilters.brand }"
@@ -78,15 +130,13 @@
                       : " Все"
                   }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters.brand }"
-                  >▾</span
-                >
+                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
               </div>
 
               <div
                 v-show="openFilters.brand"
                 class="filter-dropdown-body"
-                :class="{ scrollable: !isMobile && brands.length > 6 }"
+                :class="{ scrollable: brands.length > 6 }"
               >
                 <label class="filter-checkbox filter-all">
                   <input
@@ -113,7 +163,7 @@
             </div>
           </div>
 
-          <!-- PHOTO -->
+          <!-- ✅ PHOTO (всегда, НЕ зависит от типа) -->
           <div
             class="filter-block filter-photo"
             :class="{ open: openFilters.photo }"
@@ -123,13 +173,11 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('photo')">
                 <span class="filter-head-text">{{ photoHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.photo }"
-                  >▾</span
-                >
+                <span class="arrow" :class="{ open: openFilters.photo }">▾</span>
               </div>
 
               <div v-show="openFilters.photo" class="filter-dropdown-body">
-                <label class="filter-checkbox filter-all">
+                <label class="filter-checkbox">
                   <input
                     type="radio"
                     value="all"
@@ -162,67 +210,63 @@
             </div>
           </div>
 
-          <!-- ATTRIBUTES -->
-          <div
-            class="filter-block filter-attribute"
-            :class="{ open: openFilters[attr] }"
-            v-for="(block, attr) in attributeFilters"
-            :key="attr"
-          >
-            <div class="filter-label">{{ attr }}</div>
+          <!-- ✅ ATTRIBUTES: только если НЕ root или на root выбран хотя бы 1 тип -->
+          <template v-if="allowAttrFilters">
+            <div
+              class="filter-block filter-attribute"
+              :class="{ open: openFilters[attr] }"
+              v-for="(block, attr) in attributeFilters"
+              :key="attr"
+            >
+              <div class="filter-label">{{ attr }}</div>
 
-            <div class="filter-dropdown">
-              <div class="filter-dropdown-head" @click="toggleFilter(attr)">
-                <span class="filter-head-text">{{
-                  attributeHeadText(attr)
-                }}</span>
-                <span class="arrow" :class="{ open: openFilters[attr] }"
-                  >▾</span
+              <div class="filter-dropdown">
+                <div class="filter-dropdown-head" @click="toggleFilter(attr)">
+                  <span class="filter-head-text">{{ attributeHeadText(attr) }}</span>
+                  <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
+                </div>
+
+                <div
+                  v-show="openFilters[attr]"
+                  class="filter-dropdown-body"
+                  :class="{ scrollable: (block.values?.length || 0) > 6 }"
                 >
-              </div>
+                  <label class="filter-checkbox filter-all">
+                    <input
+                      type="checkbox"
+                      :checked="isAttrAllSelected(attr)"
+                      @change="selectAttrAll(attr)"
+                    />
+                    <span>Все</span>
+                  </label>
 
-              <div
-                v-show="openFilters[attr]"
-                class="filter-dropdown-body"
-                :class="{
-                  scrollable: !isMobile && (block.values?.length || 0) > 6,
-                }"
-              >
-                <label class="filter-checkbox filter-all">
-                  <input
-                    type="checkbox"
-                    :checked="isAttrAllSelected(attr)"
-                    @change="selectAttrAll(attr)"
-                  />
-                  <span>Все</span>
-                </label>
+                  <label
+                    v-for="v in block.values"
+                    :key="v.value"
+                    class="filter-checkbox"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="v.value"
+                      v-model="attributeModels[attr]"
+                      @change="onAttrValueChange(attr)"
+                    />
 
-                <label
-                  v-for="v in block.values"
-                  :key="v.value"
-                  class="filter-checkbox"
-                >
-                  <input
-                    type="checkbox"
-                    :value="v.value"
-                    v-model="attributeModels[attr]"
-                    @change="onAttrValueChange(attr)"
-                  />
+                    <span class="filter-option">
+                      <span
+                        v-if="block.ui_render === 'color'"
+                        class="color-dot"
+                        :class="{ empty: !v.meta?.color }"
+                        :style="v.meta?.color ? { background: v.meta.color } : {}"
+                      ></span>
 
-                  <span class="filter-option">
-                    <span
-                      v-if="block.ui_render === 'color'"
-                      class="color-dot"
-                      :class="{ empty: !v.meta?.color }"
-                      :style="v.meta?.color ? { background: v.meta.color } : {}"
-                    ></span>
-
-                    <span class="filter-option-text">{{ v.value }}</span>
-                  </span>
-                </label>
+                      <span class="filter-option-text">{{ v.value }}</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- ================= MOBILE FILTER BAR ================= -->
@@ -268,56 +312,47 @@
             />
           </div>
 
-<div v-else class="products-grid">
-  <article v-for="p in visibleProducts" :key="p.id" class="product-card">
-    <div
-      class="product-image"
-      @click.stop
-      @pointerdown.stop
-      @mousedown.stop
-      @touchstart.stop
-    >
-      <ProductCardGallery :images="p.images" :alt="p.name" :compact="isMobile" />
-    </div>
+          <div v-else class="products-grid">
+            <article v-for="p in visibleProducts" :key="p.id" class="product-card">
+              <div
+                class="product-image"
+                @click.stop
+                @pointerdown.stop
+                @mousedown.stop
+                @touchstart.stop
+              >
+                <ProductCardGallery :images="p.images" :alt="p.name" :compact="isMobile" />
+              </div>
 
-    <div class="product-info">
-      <div class="product-name">{{ p.name }}</div>
+              <div class="product-info">
+                <div class="product-name">{{ p.name }}</div>
 
-      <div class="product-row">
-        <div class="product-price">{{ p.price }} ₽</div>
+                <div class="product-row">
+                  <div class="product-price">{{ p.price }} ₽</div>
+                  <div class="product-qty">Остаток: {{ p.quantity ?? "—" }}</div>
+                </div>
 
-        <div class="product-qty">
-          Остаток: {{ p.quantity ?? "—" }}
-        </div>
-      </div>
+                <div class="product-meta">
+                  <span v-if="p.barcode" class="product-chip product-barcode">{{ p.barcode }}</span>
+                  <span v-if="p.article" class="product-chip product-article">Арт: {{ p.article }}</span>
+                </div>
 
-      <div class="product-meta">
-        <span v-if="p.barcode" class="product-chip product-barcode">{{ p.barcode }}</span>
-        <span v-if="p.article" class="product-chip product-article">Арт: {{ p.article }}</span>
-      </div>
+                <div class="product-actions">
+                  <button class="product-open" type="button" @click.stop="openProduct(p)">
+                    Открыть
+                  </button>
+                </div>
+              </div>
+            </article>
 
-      <div class="product-actions">
-        <button class="product-open" type="button" @click.stop="openProduct(p)">
-          Открыть
-        </button>
-      </div>
-    </div>
-  </article>
+            <div v-if="filteredProducts.length === 0" class="products-empty">
+              <div class="empty-title">Товары не найдены</div>
+              <div class="empty-text">Попробуйте изменить категорию, поиск или фильтры</div>
+            </div>
+          </div>
 
-  <div v-if="filteredProducts.length === 0" class="products-empty">
-    <div class="empty-title">Товары не найдены</div>
-    <div class="empty-text">Попробуйте изменить категорию, поиск или фильтры</div>
-  </div>
-</div>
-
-
-          <div
-            v-if="(hasActiveCategory || searchQ) && canLoadMore"
-            class="load-more"
-          >
-            <button class="load-more-btn" @click="loadMore">
-              Показать ещё
-            </button>
+          <div v-if="(hasActiveCategory || searchQ) && canLoadMore" class="load-more">
+            <button class="load-more-btn" @click="loadMore">Показать ещё</button>
           </div>
         </template>
       </div>
@@ -349,6 +384,8 @@
             {{
               mobileView === "root"
                 ? "Фильтры"
+                : mobileView === "type"
+                ? "Тип товара"
                 : mobileView === "brand"
                 ? "Бренд"
                 : mobileView === "photo"
@@ -371,28 +408,76 @@
         </div>
 
         <div class="moverlay-body">
+          <!-- ROOT MENU -->
           <div v-if="mobileView === 'root'" class="mfil-list">
+            <div
+              v-if="isRootCategorySelected === true"
+              class="mfil-item"
+              @click="mobileView = 'type'"
+            >
+              Тип товара
+              <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
+            </div>
+
             <div class="mfil-item" @click="mobileView = 'brand'">
               Бренд <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
             </div>
+
             <div class="mfil-item" @click="mobileView = 'photo'">
               Фото <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
             </div>
 
-            <div
-              v-for="(vals, attr) in attributeFilters"
-              :key="attr"
-              class="mfil-item"
-              @click="
-                activeMobileAttr = attr;
-                mobileView = 'attr';
-              "
-            >
-              {{ attr }}
-              <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
-            </div>
+            <template v-if="allowAttrFilters">
+              <div
+                v-for="(vals, attr) in attributeFilters"
+                :key="attr"
+                class="mfil-item"
+                @click="
+                  activeMobileAttr = attr;
+                  mobileView = 'attr';
+                "
+              >
+                {{ attr }}
+                <Fa class="mfil-arrow" :icon="['fas', 'chevron-right']" />
+              </div>
+            </template>
           </div>
 
+          <!-- MOBILE TYPE -->
+          <div v-if="mobileView === 'type'" class="mfil-values">
+            <label class="filter-checkbox filter-all">
+              <input
+                type="checkbox"
+                :checked="!typeModel.length"
+                @change="
+                  typeModel = [];
+                  applyFilters();
+                "
+              />
+              <span>Все</span>
+            </label>
+
+            <label
+              v-for="c in typeOptions"
+              :key="c.id"
+              class="filter-checkbox typeopt"
+              :class="{ parent: c.hasChildren }"
+              :style="{ '--indent': (c.depth - 1) * 14 + 'px' }"
+            >
+              <input
+                type="checkbox"
+                :value="String(c.code)"
+                v-model="typeModel"
+                @change="applyFilters"
+              />
+
+              <span class="typeopt-text">
+                <span class="typeopt-name">{{ c.name }}</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- MOBILE BRAND -->
           <div v-if="mobileView === 'brand'" class="mfil-values">
             <label class="filter-checkbox filter-all">
               <input
@@ -407,48 +492,30 @@
             </label>
 
             <label v-for="b in brands" :key="b" class="filter-checkbox">
-              <input
-                type="checkbox"
-                :value="b"
-                v-model="brandModel"
-                @change="applyFilters"
-              />
+              <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
               <span>{{ b }}</span>
             </label>
           </div>
 
+          <!-- MOBILE PHOTO -->
           <div v-if="mobileView === 'photo'" class="mfil-values">
             <label class="filter-checkbox">
-              <input
-                type="radio"
-                value="all"
-                v-model="photoModel"
-                @change="applyFilters"
-              />
+              <input type="radio" value="all" v-model="photoModel" @change="applyFilters" />
               <span>Все</span>
             </label>
 
             <label class="filter-checkbox">
-              <input
-                type="radio"
-                value="with"
-                v-model="photoModel"
-                @change="applyFilters"
-              />
+              <input type="radio" value="with" v-model="photoModel" @change="applyFilters" />
               <span>С фото</span>
             </label>
 
             <label class="filter-checkbox">
-              <input
-                type="radio"
-                value="without"
-                v-model="photoModel"
-                @change="applyFilters"
-              />
+              <input type="radio" value="without" v-model="photoModel" @change="applyFilters" />
               <span>Без фото</span>
             </label>
           </div>
 
+          <!-- MOBILE ATTR -->
           <div v-if="mobileView === 'attr'" class="mfil-values">
             <label class="filter-checkbox filter-all">
               <input
@@ -473,9 +540,7 @@
 
               <span class="filter-option">
                 <span
-                  v-if="
-                    attributeFilters[activeMobileAttr]?.ui_render === 'color'
-                  "
+                  v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
                   class="color-dot"
                   :class="{ empty: !v.meta?.color }"
                   :style="v.meta?.color ? { background: v.meta.color } : {}"
@@ -499,11 +564,7 @@
             Готово
           </button>
 
-          <button
-            class="moverlay-ghost"
-            @click="resetAllFilters"
-            title="Сбросить все фильтры"
-          >
+          <button class="moverlay-ghost" @click="resetAllFilters" title="Сбросить все фильтры">
             Сбросить
           </button>
         </div>
@@ -531,11 +592,9 @@ const normalize = (s) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const toArr = (v) =>
-  v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
+const toArr = (v) => (v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)]);
 
-const hasImages = (p) =>
-  Array.isArray(p.images) && p.images.filter(Boolean).length > 0;
+const hasImages = (p) => Array.isArray(p.images) && p.images.filter(Boolean).length > 0;
 
 function getCatCodeOfProduct(p) {
   const v = p?.category_code ?? p?.categoryCode ?? p?.category ?? "";
@@ -545,6 +604,7 @@ function getCatCodeOfProduct(p) {
 /* ================= STATE ================= */
 const products = ref([]);
 const categories = ref([]);
+const catsLoadedOnce = ref(false);
 const catsLoading = ref(false);
 
 /* ✅ search hits from HomeSearch (PHP) */
@@ -564,21 +624,13 @@ const searchQ = computed(() => {
 
 const currentCategoryName = computed(() => {
   if (!currentCategory.value) return null;
-  const found = categories.value.find(
-    (c) => String(c.code) === String(currentCategory.value)
-  );
+  const found = categories.value.find((c) => String(c.code) === String(currentCategory.value));
   return found ? found.name : null;
 });
 
 /* ===== photo filter ===== */
 const photoModel = ref(
-  route.query.photo
-    ? String(
-        Array.isArray(route.query.photo)
-          ? route.query.photo[0]
-          : route.query.photo
-      )
-    : "all"
+  route.query.photo ? String(Array.isArray(route.query.photo) ? route.query.photo[0] : route.query.photo) : "all"
 );
 
 const photoHeadText = computed(() => {
@@ -589,20 +641,18 @@ const photoHeadText = computed(() => {
 
 /* ================= FILTER MODELS ================= */
 const brandModel = ref([]);
-const priceFromModel = ref(
-  route.query.price_from ? Number(route.query.price_from) : null
-);
-const priceToModel = ref(
-  route.query.price_to ? Number(route.query.price_to) : null
-);
+const priceFromModel = ref(route.query.price_from ? Number(route.query.price_from) : null);
+const priceToModel = ref(route.query.price_to ? Number(route.query.price_to) : null);
 const attributeModels = ref({});
+
+/* ✅ TYPE MODEL (для root категорий) */
+const typeModel = ref([]);
 
 /* ================= DATA LOAD (PRODUCTS ONLY WHEN CATEGORY) ================= */
 const productsLoading = ref(false);
 const productsLoaded = ref(false);
 let productsPromise = null;
 
-// ✅ товары грузим ТОЛЬКО когда выбрана категория
 async function ensureProductsOnlyWhenCategory() {
   if (productsLoaded.value) return;
   if (productsPromise) return productsPromise;
@@ -612,9 +662,7 @@ async function ensureProductsOnlyWhenCategory() {
   productsPromise = fetch("/api/admin/product/get_products.php")
     .then((r) => r.json())
     .then((baseProducts) => {
-      const list = Array.isArray(baseProducts)
-        ? baseProducts
-        : baseProducts.products || [];
+      const list = Array.isArray(baseProducts) ? baseProducts : baseProducts.products || [];
 
       products.value = (list || []).filter(Boolean).map((p) => {
         let images = [];
@@ -623,9 +671,8 @@ async function ensureProductsOnlyWhenCategory() {
           images = p.images.filter(Boolean);
         } else {
           const ph = p.photo ?? "";
-          if (Array.isArray(ph)) {
-            images = ph.filter(Boolean);
-          } else if (typeof ph === "string" && ph.trim()) {
+          if (Array.isArray(ph)) images = ph.filter(Boolean);
+          else if (typeof ph === "string" && ph.trim()) {
             try {
               const arr = JSON.parse(ph);
               if (Array.isArray(arr)) images = arr.filter(Boolean);
@@ -638,11 +685,7 @@ async function ensureProductsOnlyWhenCategory() {
         return {
           ...p,
           images,
-          _search: normalize(
-            `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${
-              p.barcode || ""
-            }`
-          ),
+          _search: normalize(`${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`),
         };
       });
 
@@ -659,7 +702,6 @@ async function ensureProductsOnlyWhenCategory() {
   return productsPromise;
 }
 
-// когда появляется cat — грузим товары (один раз)
 watch(
   hasActiveCategory,
   (hasCat) => {
@@ -668,48 +710,18 @@ watch(
   { immediate: true }
 );
 
-// loader теперь зависит от того, что реально грузим
-const loading = computed(
-  () => catsLoading.value || (hasActiveCategory.value && productsLoading.value)
-);
+const loading = computed(() => catsLoading.value || (hasActiveCategory.value && productsLoading.value));
 
 /* ================= GET CATEGORIES FROM HomeSearch ================= */
-function normalizeCat(c) {
-  const pid = c?.parent_id ?? c?.parent ?? null;
-  const parent =
-    pid === null ||
-    pid === undefined ||
-    String(pid) === "0" ||
-    String(pid) === ""
-      ? null
-      : String(pid);
-
-  return {
-    id: c.id,
-    name: c.name,
-    code: c.code,
-    parent,
-    photo:
-      c.photo_url_abs ||
-      c.photo_url ||
-      c.photo ||
-      (c.photo_categories
-        ? `/photo_categories_vitrina/${c.photo_categories}`
-        : null),
-  };
-}
-
 function onCategoriesLoaded(list) {
-  const arr = Array.isArray(list) ? list : [];
-  categories.value = arr.map(normalizeCat);
+  categories.value = Array.isArray(list) ? list : [];
+  catsLoadedOnce.value = true;
 }
 
 /* ================= TREE FROM FLAT ================= */
 const treeData = computed(() => {
   const byId = new Map();
-  categories.value.forEach((c) =>
-    byId.set(String(c.id), { ...c, children: [] })
-  );
+  categories.value.forEach((c) => byId.set(String(c.id), { ...c, children: [] }));
 
   const roots = [];
   categories.value.forEach((c) => {
@@ -720,15 +732,11 @@ const treeData = computed(() => {
   });
 
   const sortNode = (n) => {
-    n.children.sort((a, b) =>
-      a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
-    );
+    n.children.sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
     n.children.forEach(sortNode);
   };
 
-  roots.sort((a, b) =>
-    a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
-  );
+  roots.sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
   roots.forEach(sortNode);
 
   const byCode = new Map();
@@ -738,6 +746,62 @@ const treeData = computed(() => {
 });
 
 const topCats = computed(() => treeData.value.roots);
+
+const selectedCatNode = computed(() => {
+  if (!currentCategory.value) return null;
+  return treeData.value.byCode.get(String(currentCategory.value)) || null;
+});
+
+/* ✅ root? (null пока категории не загрузились — чтобы не мигало) */
+const isRootCategorySelected = computed(() => {
+  if (!hasActiveCategory.value) return false;
+  if (!catsLoadedOnce.value) return null;
+  const n = selectedCatNode.value;
+  if (!n) return false;
+  return !n.parent;
+});
+
+/* ✅ атрибуты: только если НЕ root или root + выбран хотя бы 1 type */
+const allowAttrFilters = computed(() => {
+  if (!hasActiveCategory.value) return false;
+  if (isRootCategorySelected.value === null) return false;
+  return isRootCategorySelected.value === false || typeModel.value.length > 0;
+});
+
+/* ✅ TYPE options = ВСЕ потомки root категории (1.1, 1.1.1, ...) */
+const typeOptions = computed(() => {
+  if (isRootCategorySelected.value !== true) return [];
+  const root = selectedCatNode.value;
+  if (!root) return [];
+
+  const res = [];
+  const walk = (node, depth) => {
+    res.push({
+      id: node.id,
+      code: node.code,
+      name: node.name,
+      depth,
+      hasChildren: (node.children || []).length > 0,
+    });
+    (node.children || []).forEach((ch) => walk(ch, depth + 1));
+  };
+
+  (root.children || []).forEach((ch) => walk(ch, 1));
+  return res;
+});
+
+const typeCodeToName = computed(() => {
+  const m = new Map();
+  (typeOptions.value || []).forEach((c) => m.set(String(c.code), c.name));
+  return m;
+});
+
+const typeHeadText = computed(() => {
+  if (!typeModel.value.length) return "Все";
+  const names = typeModel.value.map((code) => typeCodeToName.value.get(String(code)) || String(code));
+  if (names.length <= 2) return names.join(" · ");
+  return `Выбрано: ${names.length}`;
+});
 
 /* ================= MOBILE detect ================= */
 const isMobile = ref(false);
@@ -757,36 +821,46 @@ function pickCategoryFromGrid(cat) {
   const code = String(cat?.code || "");
   if (!code) return;
 
-  router.push({
-    path: "/catalogv2",
-    query: { cat: code },
-  });
+  router.push({ path: "/catalogv2", query: { cat: code } });
 }
 
-/* ================= BRANDS / ATTRS / FILTERS ================= */
-const categoryProducts = computed(() => {
+/* ================= PRODUCTS SCOPE ================= */
+const productsInCurrentCat = computed(() => {
   if (!currentCategory.value) return [];
   const pref = String(currentCategory.value);
   return products.value.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
 });
 
+const productsInTypeScope = computed(() => {
+  let list = productsInCurrentCat.value;
+
+  if (isRootCategorySelected.value === true && typeModel.value.length) {
+    const sel = typeModel.value.map(String);
+    list = list.filter((p) => {
+      const cc = getCatCodeOfProduct(p);
+      return sel.some((code) => cc.startsWith(code));
+    });
+  }
+
+  return list;
+});
+
+/* ================= BRANDS / ATTRS ================= */
 const brands = computed(() => {
   const set = new Set();
-  categoryProducts.value.forEach((p) => p.brand && set.add(p.brand));
-  return Array.from(set).sort((a, b) =>
-    a.localeCompare(b, "ru", { sensitivity: "base" })
-  );
+  productsInTypeScope.value.forEach((p) => p.brand && set.add(p.brand));
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "ru", { sensitivity: "base" }));
 });
 
 const attributeFilters = computed(() => {
-  const temp = {};
+  if (!allowAttrFilters.value) return {};
 
-  categoryProducts.value.forEach((p) => {
+  const temp = {};
+  productsInTypeScope.value.forEach((p) => {
     (p.attributes || []).forEach((a) => {
       if (!a?.name || !a?.value) return;
 
-      if (!temp[a.name])
-        temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
+      if (!temp[a.name]) temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
       if (a.ui_render === "color") temp[a.name].ui_render = "color";
 
       let metaObj = a.meta ?? null;
@@ -799,8 +873,7 @@ const attributeFilters = computed(() => {
       }
 
       const existed = temp[a.name].map.get(a.value);
-      if (!existed)
-        temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
+      if (!existed) temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
       else if (!existed.meta?.color && metaObj?.color) existed.meta = metaObj;
     });
   });
@@ -810,16 +883,15 @@ const attributeFilters = computed(() => {
     res[k] = {
       ui_render: temp[k].ui_render,
       values: Array.from(temp[k].map.values()).sort((x, y) =>
-        String(x.value).localeCompare(String(y.value), "ru", {
-          sensitivity: "base",
-        })
+        String(x.value).localeCompare(String(y.value), "ru", { sensitivity: "base" })
       ),
     };
   }
   return res;
 });
 
-const openFilters = ref({});
+/* ================= UI open/close ================= */
+const openFilters = ref({ type: false, brand: false, photo: false });
 
 watch(
   attributeFilters,
@@ -831,17 +903,24 @@ watch(
     attributeModels.value = nextAttrs;
 
     const nextOpen = {
+      type: openFilters.value.type ?? false,
       brand: openFilters.value.brand ?? false,
       photo: openFilters.value.photo ?? false,
     };
-    Object.keys(attributeFilters.value).forEach(
-      (k) => (nextOpen[k] = openFilters.value[k] ?? false)
-    );
+    Object.keys(attributeFilters.value).forEach((k) => (nextOpen[k] = openFilters.value[k] ?? false));
     openFilters.value = nextOpen;
   },
   { immediate: true }
 );
 
+function toggleFilter(key) {
+  const next = {};
+  Object.keys(openFilters.value).forEach((k) => (next[k] = false));
+  if (!openFilters.value[key]) next[key] = true;
+  openFilters.value = next;
+}
+
+/* ================= attrs helpers ================= */
 function attributeHeadText(attr) {
   const selected = attributeModels.value[attr] || [];
   if (!selected.length) return "Все";
@@ -861,13 +940,6 @@ function onAttrValueChange() {
   applyFilters();
 }
 
-function toggleFilter(key) {
-  const next = {};
-  Object.keys(openFilters.value).forEach((k) => (next[k] = false));
-  if (!openFilters.value[key]) next[key] = true;
-  openFilters.value = next;
-}
-
 /* ================= APPLY FILTERS (router.replace) ================= */
 const syncingFromRoute = ref(false);
 
@@ -884,15 +956,26 @@ function applyFilters() {
   const query = {
     cat: currentCategory.value || undefined,
     q: qRaw || undefined,
+
+    // ✅ type только на root
+    type: isRootCategorySelected.value === true && typeModel.value.length ? typeModel.value : undefined,
+
+    // ✅ brand всегда
     brand: brandModel.value.length ? brandModel.value : undefined,
-    price_from:
-      priceFromModel.value !== null ? priceFromModel.value : undefined,
-    photo: photoModel.value !== "all" ? photoModel.value : undefined,
+
+    // ✅ цена всегда
+    price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
     price_to: priceToModel.value !== null ? priceToModel.value : undefined,
+
+    // ✅ photo всегда (НЕ зависит от типа)
+    photo: photoModel.value !== "all" ? photoModel.value : undefined,
   };
 
-  for (const [k, v] of Object.entries(attributeModels.value)) {
-    if (Array.isArray(v) && v.length) query[`attr_${k}`] = v;
+  // ✅ attrs только если разрешены
+  if (allowAttrFilters.value) {
+    for (const [k, v] of Object.entries(attributeModels.value)) {
+      if (Array.isArray(v) && v.length) query[`attr_${k}`] = v;
+    }
   }
 
   router.replace({ query });
@@ -904,6 +987,7 @@ watch(
   (q) => {
     syncingFromRoute.value = true;
 
+    typeModel.value = toArr(q.type);
     brandModel.value = toArr(q.brand);
 
     priceFromModel.value =
@@ -924,40 +1008,42 @@ watch(
     });
     attributeModels.value = nextAttrs;
 
-    photoModel.value = q.photo
-      ? String(Array.isArray(q.photo) ? q.photo[0] : q.photo)
-      : "all";
+    photoModel.value = q.photo ? String(Array.isArray(q.photo) ? q.photo[0] : q.photo) : "all";
 
     syncingFromRoute.value = false;
   },
   { immediate: true }
 );
 
-/* ================= reset filters helper ================= */
-const showMobileFilters = ref(false);
-const mobileView = ref("root");
-const activeMobileAttr = ref(null);
+/* если ушли с root на подкатегорию — typeModel очищаем и выкидываем из URL */
+watch(isRootCategorySelected, (isRoot) => {
+  if (isRoot === false && typeModel.value.length) {
+    typeModel.value = [];
+    applyFilters();
+  }
+});
 
-function resetAllFilters() {
-  brandModel.value = [];
-  priceFromModel.value = null;
-  priceToModel.value = null;
-  photoModel.value = "all";
+/* если запретили attrs — сбрасываем ТОЛЬКО атрибуты (фото НЕ трогаем) */
+watch(allowAttrFilters, (ok, prev) => {
+  if (prev && !ok) {
+    let changed = false;
 
-  const next = { ...attributeModels.value };
-  Object.keys(next).forEach((k) => (next[k] = []));
-  attributeModels.value = next;
+    const next = { ...attributeModels.value };
+    Object.keys(next).forEach((k) => {
+      if (Array.isArray(next[k]) && next[k].length) {
+        next[k] = [];
+        changed = true;
+      }
+    });
+    attributeModels.value = next;
 
-  openFilters.value = {};
-  showMobileFilters.value = false;
-  mobileView.value = "root";
-  activeMobileAttr.value = null;
-
-  applyFilters();
-}
+    if (changed) applyFilters();
+  }
+});
 
 /* при смене категории — сбрасываем фильтры (поиск остаётся в URL) */
 watch(currentCategory, () => {
+  typeModel.value = [];
   brandModel.value = [];
   priceFromModel.value = null;
   priceToModel.value = null;
@@ -986,9 +1072,7 @@ const mergedSearchProducts = computed(() => {
     .map((hit) => {
       const full = map.get(String(hit.id));
 
-      const hitImages = Array.isArray(hit.images)
-        ? hit.images.filter(Boolean)
-        : [];
+      const hitImages = Array.isArray(hit.images) ? hit.images.filter(Boolean) : [];
       const hitThumb = hit.thumb ? [hit.thumb] : [];
       const fromHit = hitImages.length ? hitImages : hitThumb;
 
@@ -1013,14 +1097,13 @@ const mergedSearchProducts = computed(() => {
         images: fromHit,
         attributes: [],
         category_code: "",
-        _search: normalize(
-          `${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`
-        ),
+        _search: normalize(`${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`),
       };
     })
     .filter((p) => p?.id != null && p?.name);
 });
 
+/* ================= FILTERED PRODUCTS ================= */
 const filteredProducts = computed(() => {
   let list = [];
 
@@ -1028,31 +1111,43 @@ const filteredProducts = computed(() => {
   const hasQ = !!qRaw;
 
   if (hasQ) list = mergedSearchProducts.value;
-  else if (hasActiveCategory.value) list = categoryProducts.value;
+  else if (hasActiveCategory.value) list = productsInCurrentCat.value;
   else list = [];
 
+  // ✅ если есть cat — ограничиваем в пределах выбранной категории
   if (hasActiveCategory.value) {
     const pref = String(currentCategory.value);
     list = list.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
   }
 
-  if (brandModel.value.length)
+  // ✅ TYPE (root)
+  if (isRootCategorySelected.value === true && typeModel.value.length) {
+    const sel = typeModel.value.map(String);
+    list = list.filter((p) => {
+      const cc = getCatCodeOfProduct(p);
+      return sel.some((code) => cc.startsWith(code));
+    });
+  }
+
+  // ✅ BRAND (всегда)
+  if (brandModel.value.length) {
     list = list.filter((p) => brandModel.value.includes(p.brand));
+  }
 
-  if (priceFromModel.value !== null)
-    list = list.filter((p) => Number(p.price) >= priceFromModel.value);
-  if (priceToModel.value !== null)
-    list = list.filter((p) => Number(p.price) <= priceToModel.value);
+  // ✅ цена всегда
+  if (priceFromModel.value !== null) list = list.filter((p) => Number(p.price) >= priceFromModel.value);
+  if (priceToModel.value !== null) list = list.filter((p) => Number(p.price) <= priceToModel.value);
 
+  // ✅ фото — ВСЕГДА (НЕ зависит от типа)
   if (photoModel.value === "with") list = list.filter((p) => hasImages(p));
-  else if (photoModel.value === "without")
-    list = list.filter((p) => !hasImages(p));
+  else if (photoModel.value === "without") list = list.filter((p) => !hasImages(p));
 
-  for (const [k, arr] of Object.entries(attributeModels.value)) {
-    if (!Array.isArray(arr) || !arr.length) continue;
-    list = list.filter((p) =>
-      p.attributes?.some((a) => a.name === k && arr.includes(a.value))
-    );
+  // ✅ атрибуты — только когда разрешено
+  if (allowAttrFilters.value) {
+    for (const [k, arr] of Object.entries(attributeModels.value)) {
+      if (!Array.isArray(arr) || !arr.length) continue;
+      list = list.filter((p) => p.attributes?.some((a) => a.name === k && arr.includes(a.value)));
+    }
   }
 
   return list;
@@ -1069,15 +1164,35 @@ watch(
   }
 );
 
-const visibleProducts = computed(() =>
-  filteredProducts.value.slice(0, displayLimit.value)
-);
-const canLoadMore = computed(
-  () => filteredProducts.value.length > displayLimit.value
-);
+const visibleProducts = computed(() => filteredProducts.value.slice(0, displayLimit.value));
+const canLoadMore = computed(() => filteredProducts.value.length > displayLimit.value);
 
 function loadMore() {
   displayLimit.value += step.value;
+}
+
+/* ================= mobile modal helpers ================= */
+const showMobileFilters = ref(false);
+const mobileView = ref("root");
+const activeMobileAttr = ref(null);
+
+function resetAllFilters() {
+  typeModel.value = [];
+  brandModel.value = [];
+  priceFromModel.value = null;
+  priceToModel.value = null;
+  photoModel.value = "all";
+
+  const next = { ...attributeModels.value };
+  Object.keys(next).forEach((k) => (next[k] = []));
+  attributeModels.value = next;
+
+  openFilters.value = { type: false, brand: false, photo: false };
+  showMobileFilters.value = false;
+  mobileView.value = "root";
+  activeMobileAttr.value = null;
+
+  applyFilters();
 }
 
 /* ================= navigation ================= */
@@ -1115,6 +1230,7 @@ watch(showMobileFilters, (open) => {
 });
 </script>
 
+
 <style scoped>
 /* ====== shared small ui ====== */
 .color-dot {
@@ -1138,6 +1254,13 @@ watch(showMobileFilters, (open) => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.dd-empty {
+  padding: 10px 10px;
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--text-muted);
 }
 
 /* ========================= PAGE ========================= */
@@ -1233,6 +1356,11 @@ watch(showMobileFilters, (open) => {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
   z-index: 1;
+}
+
+.filter-type {
+  grid-column: span 2;
+  min-width: 320px;
 }
 .filter-block:hover {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
@@ -1340,6 +1468,52 @@ watch(showMobileFilters, (open) => {
   accent-color: var(--accent);
   cursor: pointer;
   margin-top: 2px;
+}
+.typeopt-text {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  /* КЛЮЧ: чтобы текст не пропадал на мобиле */
+  flex: 1;
+  min-width: 0;
+
+  /* отступ по уровню дерева */
+  padding-left: calc(var(--indent) + 14px);
+}
+.typeopt-text::before {
+  content: "";
+  position: absolute;
+  left: var(--indent);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 1px;
+  background: rgba(15, 23, 42, 0.18);
+}
+.typeopt-text::after {
+  content: "";
+  position: absolute;
+  left: var(--indent);
+  top: -10px;
+  bottom: -10px;
+  width: 1px;
+  background: rgba(15, 23, 42, 0.12);
+}
+.typeopt-mark {
+  opacity: 0.55;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.typeopt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.typeopt.parent .typeopt-name {
+  font-weight: 900;
 }
 
 .filter-all {
@@ -1494,9 +1668,8 @@ watch(showMobileFilters, (open) => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  cursor: default; /* больше не кликается вся карточка */
-    flex: 1;
-
+  cursor: default;
+  flex: 1;
 }
 
 .product-name {
@@ -1520,7 +1693,7 @@ watch(showMobileFilters, (open) => {
 
 .product-price {
   font-size: 18px;
-  font-weight: 800; /* чуть мягче чем было */
+  font-weight: 800;
   color: var(--accent);
   letter-spacing: -0.01em;
 }
@@ -1534,7 +1707,7 @@ watch(showMobileFilters, (open) => {
 .product-meta {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap; /* чтобы чипы красиво переносились */
+  flex-wrap: wrap;
   align-items: center;
 }
 
@@ -1792,6 +1965,12 @@ watch(showMobileFilters, (open) => {
   }
   .product-price {
     font-size: 17px;
+  }
+  .typeopt-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
   }
 }
 

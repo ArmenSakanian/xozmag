@@ -1066,7 +1066,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   width: 280px;
   flex: 0 0 280px;
-  padding: 12px;
+  padding: 10px 10px 30px 12px;
   border-right: 1px solid rgba(15, 23, 42, 0.08);
   background: radial-gradient(
       600px 220px at 50% -140px,

@@ -30,15 +30,6 @@
                 Москва, <br />
                 Улица Героев Панфиловцев, дом 3
               </a>
-
-              <a
-                class="sub-link"
-                :href="mapsLink"
-                target="_blank"
-                rel="noopener"
-              >
-                Открыть в Яндекс.Картах
-              </a>
             </div>
           </div>
 
@@ -229,15 +220,7 @@ onBeforeUnmount(() => {
   color: var(--accent);
 }
 
-/* под-ссылка под адресом */
-.sub-link{
-  display: inline-block;
-  margin-top: 8px;
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 13.5px;
-}
+
 
 /* Правая часть: карта */
 .contact-map{

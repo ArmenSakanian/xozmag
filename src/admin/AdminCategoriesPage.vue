@@ -705,12 +705,12 @@ onMounted(loadCategories);
   background: transparent;
 }
 
-.twisty i{
+.twisty svg {
   transition: transform .15s ease;
   color: var(--text-main);
   font-size: 13px;
 }
-.twisty i.open{
+.twisty svg.open{
   transform: rotate(90deg);
 }
 

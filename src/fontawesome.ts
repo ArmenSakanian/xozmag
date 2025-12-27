@@ -43,8 +43,7 @@ import {
   faTruck,
   faUpload,
   faXmark,
-
-  // ✅ add
+  faStar,
   faPhone,
   faLocationDot,
   faClock,
@@ -102,8 +101,7 @@ library.add(
   faTruck,
   faUpload,
   faXmark,
-
-  // ✅ add
+  faStar,
   faPhone,
   faLocationDot,
   faClock,

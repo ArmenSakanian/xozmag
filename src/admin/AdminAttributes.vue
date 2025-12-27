@@ -612,10 +612,6 @@ onMounted(loadAttributes);
 
 .ghost-btn:active{ transform: translateY(1px); }
 
-.ghost-btn i,
-.save-btn i{
-  margin-right: 8px;
-}
 
 /* ===== Icon buttons ===== */
 .icon-btn{
