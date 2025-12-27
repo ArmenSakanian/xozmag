@@ -48,14 +48,28 @@ function safe_rel_from_url_or_path($p) {
   $p = (string)$p;
   $p = trim($p);
   if ($p === "") return "";
+
+  // URL -> path
   if (preg_match('~^https?://~i', $p)) {
     $u = parse_url($p);
-    return !empty($u["path"]) ? $u["path"] : "";
+    $p = !empty($u["path"]) ? $u["path"] : "";
   }
+
+  // убрать query/fragment если вдруг прилетело без parse_url
+  $p = preg_replace('~[?#].*$~', '', $p);
+
+  $p = trim((string)$p);
   return $p;
 }
 
-function normalize_images($v) {
+/**
+ * Нормализация путей строго под /photo_product_vitrina/
+ * - приводим URL/путь к path
+ * - гарантируем ведущий "/"
+ * - принимаем только то, что лежит в /photo_product_vitrina/
+ * - уникализация + сортировка
+ */
+function normalize_images_vitrina_strict($v) {
   $arr = [];
 
   if (is_array($v)) {
@@ -72,7 +86,15 @@ function normalize_images($v) {
   foreach ($arr as $p) {
     $p = safe_rel_from_url_or_path($p);
     $p = trim((string)$p);
-    if ($p !== "") $out[] = $p;
+    if ($p === "") continue;
+
+    // ведущий слэш
+    if ($p !== "" && $p[0] !== "/") $p = "/" . $p;
+
+    // строго только витрина
+    if (strpos($p, "/photo_product_vitrina/") !== 0) continue;
+
+    $out[] = $p;
   }
 
   $out = array_values(array_unique($out));
@@ -84,6 +106,8 @@ function safe_delete_file_in_vitrina($relPath, &$deletedList, &$missingList) {
   $relPath = safe_rel_from_url_or_path($relPath);
 
   if ($relPath === "") return;
+  if ($relPath[0] !== "/") $relPath = "/" . $relPath;
+
   if (strpos($relPath, "/photo_product_vitrina/") !== 0) return;
 
   $folderAbs = rtrim($_SERVER["DOCUMENT_ROOT"], "/") . "/photo_product_vitrina/";
@@ -108,9 +132,8 @@ function collect_photos_for_barcode($barcode, $photoColumn) {
   $barcode = trim((string)$barcode);
   if ($barcode === "") return [];
 
-  // 1) если в БД в photo уже есть JSON массив путей — используем его
-  $paths = normalize_images($photoColumn);
-  $paths = array_values(array_filter($paths, fn($p) => strpos($p, "/photo_product_vitrina/") === 0));
+  // 1) если в БД в photo уже есть JSON массив путей — используем его (строго витрина)
+  $paths = normalize_images_vitrina_strict($photoColumn);
   if (!empty($paths)) return $paths;
 
   // 2) иначе ищем по имени файла:
@@ -182,13 +205,14 @@ foreach ($products as $p) {
   $name        = (string)($p["name"] ?? "");
   $article     = (string)($p["article"] ?? "");
   $brand       = (string)($p["brandName"] ?? "");
-  $type        = (string)($p["typeName"] ?? ""); // если хочешь полностью убрать type — скажешь, сделаем
+  $type        = (string)($p["typeName"] ?? "");
   $price       = $p["price"] ?? 0;
   $quantity    = $p["quantity"] ?? 0;
   $description = (string)($p["description"] ?? "");
 
-  $imagesArr   = normalize_images($p["images"] ?? []);
-  $imagesJson  = json_encode($imagesArr, JSON_UNESCAPED_UNICODE);
+  // ✅ строго: записываем в БД ровно то, что дал Evotor (после нормализации путей витрины)
+  $imagesArr  = normalize_images_vitrina_strict($p["images"] ?? []);
+  $imagesJson = json_encode($imagesArr, JSON_UNESCAPED_UNICODE);
 
   $sqlSelect->execute([$barcode]);
   $row = $sqlSelect->fetch(PDO::FETCH_ASSOC);
@@ -204,7 +228,8 @@ foreach ($products as $p) {
     if (norm_num($row["quantity"] ?? 0)     !== norm_num($quantity))    $changed[] = "quantity";
     if (norm_str($row["description"] ?? "") !== norm_str($description)) $changed[] = "description";
 
-    $dbImagesArr = normalize_images($row["photo"] ?? "");
+    // ✅ сравниваем фото строго по нормализованным путям витрины
+    $dbImagesArr = normalize_images_vitrina_strict($row["photo"] ?? "");
     if ($dbImagesArr !== $imagesArr) $changed[] = "photo";
 
     if (!empty($changed)) {
@@ -243,6 +268,9 @@ foreach ($products as $p) {
   }
 }
 
+/* =========================
+   2) DELETE товаров, которых нет в API
+========================= */
 if (!empty($apiBarcodes)) {
 
   $pdo->exec("DROP TEMPORARY TABLE IF EXISTS tmp_api_barcodes");
