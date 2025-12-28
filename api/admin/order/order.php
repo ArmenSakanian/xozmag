@@ -1,5 +1,5 @@
 <?php
-// /api/admin/order/order.php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
 
 $mode = isset($_GET["mode"]) ? trim((string)$_GET["mode"]) : "list";
 

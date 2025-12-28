@@ -289,7 +289,7 @@ const props = defineProps({
   syncRoute: { type: Boolean, default: false },
   routeKey: { type: String, default: "q" },
 
-  catalogPath: { type: String, default: "/catalogv2" },
+  catalogPath: { type: String, default: "/Catalog" },
 
   placeholder: {
     type: String,
@@ -303,7 +303,7 @@ const props = defineProps({
 const emit = defineEmits([
   "search-hits",
   "categories-loaded",   // ✅ отдаём наверх
-  "categories-loading",  // ✅ чтобы CatalogV2 мог показывать loader если надо
+  "categories-loading",  // ✅ чтобы Catalog мог показывать loader если надо
 ]);
 
 /* ================== LOCAL CATS (WHEN NOT PASSED) ================== */
@@ -883,7 +883,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* ===== input как в CatalogV2 ===== */
+/* ===== input как в Catalog ===== */
 .search-box {
   width: 100%;
   display: flex;

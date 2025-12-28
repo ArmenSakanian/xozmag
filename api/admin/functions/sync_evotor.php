@@ -1,22 +1,38 @@
 <?php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
+
 header("Content-Type: application/json; charset=utf-8");
 require_once __DIR__ . "/../../db.php";
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/vitrina/evotor_catalog_core.php";
 
-$url = "https://xozmag.ru/api/vitrina/evotor_catalog.php";
-$json = @file_get_contents($url);
+// Можно прокинуть nocache=1 в sync, если хочешь
+$nocache = isset($_GET["nocache"]) && $_GET["nocache"] === "1";
 
-if (!$json) {
-  echo json_encode(["success" => false, "error" => "Не удалось загрузить evotor_catalog"], JSON_UNESCAPED_UNICODE);
+$result = evotor_catalog_build([
+  "nocache" => $nocache,
+  "debug" => false,
+  "cache_ttl" => 1,
+]);
+
+if (empty($result["ok"])) {
+  echo json_encode([
+    "success" => false,
+    "error" => "Не удалось загрузить evotor_catalog",
+    "details" => $result["error"] ?? null
+  ], JSON_UNESCAPED_UNICODE);
   exit;
 }
 
-$data = json_decode($json, true);
+$data = $result["payload"];
 if (!is_array($data) || empty($data["products"]) || !is_array($data["products"])) {
   echo json_encode(["success" => false, "error" => "Неверный формат данных"], JSON_UNESCAPED_UNICODE);
   exit;
 }
 
 $products = $data["products"];
+
+// дальше оставляешь твою логику INSERT/UPDATE/DELETE как есть
+
 
 $inserted = 0;
 $updated  = 0;

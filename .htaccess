@@ -1,3 +1,25 @@
+# ================= CANONICAL: https + no-www (без петли за nginx) =================
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # www -> без www (сразу на https)
+  RewriteCond %{HTTP_HOST} ^www\.xozmag\.ru$ [NC]
+  RewriteRule ^ https://xozmag.ru%{REQUEST_URI} [R=301,L]
+  RewriteRule ^jp(/|$) - [G,L]
+  # http -> https (учитываем, что SSL может быть на nginx, поэтому проверяем X-Forwarded-Proto)
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+  RewriteRule ^ https://xozmag.ru%{REQUEST_URI} [R=301,L]
+
+  # ✅ помечаем admin/barcode как noindex
+  RewriteRule ^(admin|barcode)(/|$) - [E=NOINDEX:1]
+</IfModule>
+
+# ================= NOINDEX HEADER for admin + barcode =================
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow" env=NOINDEX
+</IfModule>
+
 # ================= CACHE FOR STATIC =================
 <IfModule mod_headers.c>
   <FilesMatch "\.(webp|png|jpe?g|gif|svg|css|js|woff2?|ttf)$">
@@ -17,6 +39,7 @@
   ExpiresByType font/woff2 "access plus 1 year"
   ExpiresByType font/woff  "access plus 1 year"
 </IfModule>
+
 <IfModule mod_headers.c>
   # Хэшированные ассеты сборки
   <If "%{REQUEST_URI} =~ m#^/assets/#">
@@ -36,8 +59,18 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # не трогаем сами html файлы
   RewriteRule ^index\.html$ - [L]
+  RewriteRule ^index-noindex\.html$ - [L]
+
+  # ✅ admin и barcode -> отдаём index-noindex.html (с meta noindex)
+  RewriteCond %{REQUEST_URI} ^/(admin|barcode)(/|$) [NC]
+  RewriteRule . /index-noindex.html [L]
+
+  # обычные SPA-роуты -> index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
+

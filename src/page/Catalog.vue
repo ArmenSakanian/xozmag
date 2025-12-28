@@ -8,7 +8,7 @@
             :current-category="currentCategory"
             :sync-route="true"
             route-key="q"
-            catalog-path="/catalogv2"
+            catalog-path="/Catalog"
             :server-limit="30"
             :dropdown-limit="12"
             @search-hits="searchHits = $event"
@@ -820,7 +820,7 @@ function pickCategoryFromGrid(cat) {
   const code = String(cat?.code || "");
   if (!code) return;
 
-  router.push({ path: "/catalogv2", query: { cat: code } });
+  router.push({ path: "/Catalog", query: { cat: code } });
 }
 
 /* ================= PRODUCTS SCOPE ================= */

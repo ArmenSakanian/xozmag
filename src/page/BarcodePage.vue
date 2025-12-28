@@ -1,67 +1,73 @@
 <template>
   <div class="page" @mousedown="dragStart">
     <!-- ===== Bottom panel для выбранных ===== -->
-    <div v-if="selectedIds.length >= 2" class="selected-controls">
-      <div class="bulk-row bulk-size-row">
-        <div class="bulk-block">
-          <div class="bulk-head">
-            <div class="bulk-title">Размер этикетки</div>
-            <div class="bulk-sub">Применится ко всем выбранным</div>
-          </div>
+    <transition name="slide-up">
+      <div v-if="selectedIds.length >= 2" class="selected-controls">
+        <div class="bulk-row bulk-size-row">
+          <div class="bulk-block">
+            <div class="bulk-head">
+              <div class="bulk-title">Размер этикетки</div>
+              <div class="bulk-sub">Применится ко всем выбранным</div>
+            </div>
 
-          <div class="select-wrap">
-            <select v-model="bulkSize" @change="applyBulkSize" class="label-size-select">
-              <option v-for="s in labelSizes" :key="s.value" :value="s.value">
-                {{ s.text }}
-              </option>
-            </select>
-            <Fa aria-hidden="true" class="select-arrow" :icon="['fas','chevron-down']" />
+            <div class="select-wrap">
+              <select v-model="bulkSize" @change="applyBulkSize" class="label-size-select">
+                <option v-for="s in labelSizes" :key="s.value" :value="s.value">
+                  {{ s.text }}
+                </option>
+              </select>
+              <Fa aria-hidden="true" class="select-arrow" :icon="['fas','chevron-down']" />
+            </div>
           </div>
         </div>
+
+        <div class="bulk-row bulk-flags-row">
+          <label class="param-row bulk-flag">
+            <input type="checkbox" v-model="bulkWithName" @change="applyBulkName" />
+            Печатать название
+          </label>
+
+          <label class="param-row bulk-flag">
+            <input type="checkbox" v-model="bulkWithPrice" @change="applyBulkPrice" />
+            Печатать цену
+          </label>
+        </div>
+
+        <div class="bulk-row bulk-actions-row">
+          <button class="btn primary" @click="printSelected">
+            <Fa :icon="['fas','print']" />
+            Печать ({{ selectedIds.length }})
+          </button>
+
+          <button class="btn ghost" @click="exportSelected">
+            <Fa :icon="['fas','file-excel']" />
+            Экспорт
+          </button>
+
+          <button class="btn danger" @click="deleteSelected">
+            <Fa :icon="['fas','trash']" />
+            Удалить
+          </button>
+
+          <button class="btn soft" @click="clearSelected">
+            <Fa :icon="['fas','xmark']" />
+            Снять выделение
+          </button>
+        </div>
       </div>
+    </transition>
 
-      <div class="bulk-row bulk-flags-row">
-        <label class="param-row bulk-flag">
-          <input type="checkbox" v-model="bulkWithName" @change="applyBulkName" />
-          Печатать название
-        </label>
-
-        <label class="param-row bulk-flag">
-          <input type="checkbox" v-model="bulkWithPrice" @change="applyBulkPrice" />
-          Печатать цену
-        </label>
+    <!-- ===== Toast ===== -->
+    <transition name="toast">
+      <div v-if="message" :class="['toast', messageType]">
+        <div class="toast-dot" aria-hidden="true"></div>
+        <div class="toast-text">{{ message }}</div>
       </div>
-
-      <div class="bulk-row bulk-actions-row">
-        <button class="btn primary" @click="printSelected">
-          <Fa :icon="['fas','print']" />
-          Печать ({{ selectedIds.length }})
-        </button>
-
-        <button class="btn ghost" @click="exportSelected">
-          <Fa :icon="['fas','file-excel']" />
-          Экспорт
-        </button>
-
-        <button class="btn danger" @click="deleteSelected">
-          <Fa :icon="['fas','trash']" />
-          Удалить
-        </button>
-
-        <button class="btn soft" @click="clearSelected">
-          <Fa :icon="['fas','xmark']" />
-          Снять выделение
-        </button>
-      </div>
-    </div>
+    </transition>
 
     <!-- ===== LEFT (create + search) ===== -->
     <section class="left">
       <div class="card-box">
-        <div v-if="message" :class="['toast', messageType]">
-          {{ message }}
-        </div>
-
         <div class="card-head">
           <h2 class="title">
             {{ editMode ? "Редактировать штрихкод" : "Создать штрихкод" }}
@@ -119,35 +125,46 @@
             </button>
           </div>
 
-          <div v-if="manualMode" class="manual">
-            <label class="field">
-              <span class="label">Штрихкод вручную</span>
-              <input v-model="manualBarcode" placeholder="Введите штрихкод вручную" />
-            </label>
-          </div>
+          <transition name="fade">
+            <div v-if="manualMode" class="manual">
+              <label class="field">
+                <span class="label">Штрихкод вручную</span>
+                <input v-model="manualBarcode" placeholder="Введите штрихкод вручную" />
+              </label>
+            </div>
+          </transition>
 
           <!-- Фото -->
-          <div class="photo">
-            <div v-if="!photoPreview" class="photo-btn" @click="openCameraModal">
-              <Fa :icon="['fas','camera']" />
-              Сделать фото
-            </div>
+<!-- Фото -->
+<div class="photo">
+  <transition name="fade" mode="out-in">
+    <div
+      v-if="!photoPreview"
+      key="no-photo"
+      class="photo-btn"
+      @click="openCameraModal"
+    >
+      <Fa :icon="['fas','camera']" />
+      Сделать фото
+    </div>
 
-            <div v-else class="photo-preview">
-              <img :src="photoPreview" class="thumb" />
+    <div v-else key="has-photo" class="photo-preview">
+      <img :src="photoPreview" class="thumb" />
 
-              <div class="photo-actions">
-                <div class="photo-btn" @click="openCameraModal">
-                  <Fa :icon="['fas','camera-rotate']" />
-                  Переснять
-                </div>
+      <div class="photo-actions">
+        <div class="photo-btn" @click="openCameraModal">
+          <Fa :icon="['fas','camera-rotate']" />
+          Переснять
+        </div>
 
-                <div class="photo-del" @click="removePhoto" title="Удалить фото">
-                  <Fa :icon="['fas','trash']" />
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="photo-del" @click="removePhoto" title="Удалить фото">
+          <Fa :icon="['fas','trash']" />
+        </div>
+      </div>
+    </div>
+  </transition>
+</div>
+
         </div>
       </div>
 
@@ -185,13 +202,14 @@
         </div>
       </div>
 
-      <div class="grid">
+      <TransitionGroup name="cards" tag="div" class="grid">
         <div
           class="card"
-          v-for="item in barcodes"
+          v-for="(item, idx) in barcodes"
           :key="item.id"
           :data-id="item.id"
           :class="{ selected: selectedIds.includes(item.id) }"
+          :style="{ animationDelay: (idx * 18) + 'ms' }"
           @click="cardClick($event, item.id)"
         >
           <!-- tools -->
@@ -206,7 +224,7 @@
 
           <!-- LEFT barcode -->
           <div class="col leftcol">
-            <svg :id="'g-' + item.id"></svg>
+<svg :id="'g-' + item.id" class="barcode-svg"></svg>
 
             <div class="code-row">
               <div class="code" v-html="highlight(item.barcode, search)"></div>
@@ -269,19 +287,20 @@
                 <div class="v" v-html="highlight(item.sku, search)"></div>
               </div>
 
-              <div class="row">
-                <div class="k">Остаток</div>
-                <div class="v">{{ item.stock }}</div>
+              <div class="row two">
+                <div class="kv">
+                  <div class="k">Остаток</div>
+                  <div class="v">{{ item.stock }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Цена</div>
+                  <div class="v" v-html="highlight(item.price, search)"></div>
+                </div>
               </div>
 
               <div class="row">
                 <div class="k">Контрагент</div>
                 <div class="v" v-html="highlight(item.contractor, search)"></div>
-              </div>
-
-              <div class="row">
-                <div class="k">Цена</div>
-                <div class="v" v-html="highlight(item.price, search)"></div>
               </div>
             </div>
 
@@ -307,39 +326,45 @@
               {{ selectedIds.includes(item.id) ? "Выбрано" : "Выбрать" }}
             </button>
 
-            <input
-              type="checkbox"
-              :value="item.id"
-              v-model="selectedIds"
-              class="hidden-checkbox"
-            />
+            <input type="checkbox" :value="item.id" v-model="selectedIds" class="hidden-checkbox" />
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </section>
 
     <!-- ===== Camera modal ===== -->
-    <div v-if="cameraOpen" class="camera-overlay">
-      <div class="camera-window">
-        <video ref="video" autoplay playsinline class="cam-video"></video>
+    <transition name="modal">
+      <div v-if="cameraOpen" class="camera-overlay">
+        <div class="camera-window">
+          <div class="modal-top">
+            <div class="modal-title">Камера</div>
+            <button class="icon-x" @click="closeCameraModal" aria-label="Закрыть">
+              <Fa :icon="['fas','xmark']" />
+            </button>
+          </div>
 
-        <button class="btn-capture" @click="takePhoto">
-          <Fa :icon="['fas','camera']" />
-        </button>
+          <video ref="video" autoplay playsinline class="cam-video"></video>
 
-        <button class="btn-close" @click="closeCameraModal">Закрыть</button>
+          <button class="btn-capture" @click="takePhoto">
+            <Fa :icon="['fas','camera']" />
+          </button>
+
+          <button class="btn-close" @click="closeCameraModal">Закрыть</button>
+        </div>
       </div>
-    </div>
+    </transition>
 
     <!-- ===== Photo modal ===== -->
-    <div v-if="photoModalOpen" class="photo-modal-overlay" @click="closePhoto">
-      <div class="photo-modal-content" @click.stop>
-        <img :src="photoModalSrc" class="photo-modal-img" />
-        <button class="photo-modal-close" @click="closePhoto">
-          <Fa :icon="['fas','xmark']" />
-        </button>
+    <transition name="modal">
+      <div v-if="photoModalOpen" class="photo-modal-overlay" @click="closePhoto">
+        <div class="photo-modal-content" @click.stop>
+          <img :src="photoModalSrc" class="photo-modal-img" />
+          <button class="photo-modal-close" @click="closePhoto" aria-label="Закрыть фото">
+            <Fa :icon="['fas','xmark']" />
+          </button>
+        </div>
       </div>
-    </div>
+    </transition>
 
     <!-- drag rect -->
     <div v-if="drag.active" class="drag-rect" :style="dragStyle"></div>
@@ -369,11 +394,8 @@ async function loadLabelSizes() {
         text: String(x.text),
       }));
     }
-  } catch (e) {
-    // тихо, есть дефолты
-  }
+  } catch (e) {}
 
-  // гарантируем, что есть хотя бы 2 дефолта
   if (!labelSizes.value?.length) {
     labelSizes.value = [
       { value: "42x25", text: "42 × 25 мм" },
@@ -381,7 +403,6 @@ async function loadLabelSizes() {
     ];
   }
 
-  // bulkSize всегда валидный
   if (!labelSizes.value.some((s) => s.value === bulkSize.value)) {
     bulkSize.value = labelSizes.value[0].value;
   }
@@ -407,10 +428,8 @@ const drag = ref({
 });
 
 function dragStart(e) {
-  // не начинаем, если выделяют текст
   if (window.getSelection?.().toString().length > 0) return;
 
-  // не начинаем по интерактивным элементам
   const ignore = ["BUTTON", "INPUT", "LABEL", "I", "SVG", "SELECT", "OPTION"];
   if (ignore.includes(e.target.tagName)) return;
 
@@ -671,9 +690,7 @@ function closePhoto() {
 /** ====== API ====== */
 async function loadBarcodes() {
   try {
-    const r = await fetch(
-      "/api/barcode/get_barcodes.php?search=" + encodeURIComponent(search.value)
-    );
+    const r = await fetch("/api/barcode/get_barcodes.php?search=" + encodeURIComponent(search.value));
     const raw = await r.json();
     const defSize = labelSizes.value?.[0]?.value || "42x25";
 
@@ -745,11 +762,7 @@ async function createBarcode() {
   form.append("price", price.value);
   if (photoFile.value) form.append("photo", photoFile.value);
 
-  const res = await fetch("/api/barcode/create_barcode.php", {
-    method: "POST",
-    body: form,
-  });
-
+  const res = await fetch("/api/barcode/create_barcode.php", { method: "POST", body: form });
   const data = await res.json();
 
   if (data.status === "error") {
@@ -800,11 +813,7 @@ async function saveEdit() {
   if (photoFile.value) form.append("photo", photoFile.value);
   if (!photoPreview.value) form.append("remove_photo", "1");
 
-  const r = await fetch("/api/barcode/update_barcode.php", {
-    method: "POST",
-    body: form,
-  });
-
+  const r = await fetch("/api/barcode/update_barcode.php", { method: "POST", body: form });
   const d = await r.json();
 
   if (d.status === "success") {
@@ -839,7 +848,7 @@ async function deleteSelected() {
   const results = await Promise.all(
     ids.map(async (id) => {
       try {
-        const r = await fetch("/api/barcode/delete_barcode.php?id=" + id); // ✅ правильный путь
+        const r = await fetch("/api/barcode/delete_barcode.php?id=" + id);
         const d = await r.json().catch(() => null);
         return { id, ok: d?.status === "success" };
       } catch {
@@ -920,60 +929,69 @@ onMounted(async () => {
 
 <style scoped>
 /* =========================================================
-   BARCODE ADMIN PAGE — LIGHT UI (под твой :root)
+   BARCODE PAGE — PREMIUM LIGHT UI (под твой :root)
    ========================================================= */
 
 .page{
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: 18px;
+  padding: clamp(12px, 2vw, 18px);
   display: grid;
-  grid-template-columns: minmax(330px, 440px) 1fr;
-  gap: 18px;
+  grid-template-columns: minmax(320px, 460px) 1fr;
+  gap: clamp(12px, 2vw, 18px);
   align-items: start;
 
-  background: var(--bg-main);
+  background:
+    radial-gradient(1200px 700px at 10% -10%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%),
+    radial-gradient(1000px 600px at 110% 10%, color-mix(in srgb, var(--secondary-accent) 12%, transparent), transparent 55%),
+    var(--bg-main);
   color: var(--text-main);
 }
 
-/* ---------- Columns ---------- */
+/* ---------- columns ---------- */
 .left{
   display: grid;
   gap: 14px;
   position: sticky;
   top: calc(var(--site-header-h) + 14px);
+  align-self: start;
 }
 .right{ min-width: 0; }
 
-/* ---------- Card boxes ---------- */
+/* ---------- card ---------- */
 .card-box{
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   padding: 16px;
   box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card-box:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--text-light) 18%, var(--border-soft));
 }
 
-/* ---------- Headers / texts ---------- */
+/* ---------- headings ---------- */
 .card-head{ margin-bottom: 12px; }
-
 .title{
   margin: 0;
   font-size: 18px;
   line-height: 1.2;
-  font-weight: 800;
-  color: var(--text-main);
+  font-weight: 900;
+  letter-spacing: .2px;
 }
 .hint{
   margin-top: 6px;
   font-size: 13px;
   color: var(--text-muted);
 }
-
 .list-head{ padding: 6px 4px 14px; }
 .list-title{
-  color: var(--text-main);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 18px;
+  letter-spacing: .2px;
 }
 .list-sub{
   margin-top: 6px;
@@ -982,48 +1000,63 @@ onMounted(async () => {
 }
 .count{
   color: var(--text-light);
-  font-weight: 700;
+  font-weight: 800;
   margin-left: 6px;
 }
 
-/* ---------- Toast ---------- */
+/* ---------- toast ---------- */
 .toast{
   position: fixed;
-  top: calc(var(--site-header-h) + 10px);
-  left: 16px;
-  right: 16px;
+  top: calc(var(--site-header-h) + 12px);
+  left: 12px;
+  right: 12px;
   max-width: 560px;
   margin: 0 auto;
   z-index: 99999;
 
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 10px;
+
   padding: 12px 14px;
-  border-radius: var(--radius-md);
-  font-weight: 800;
+  border-radius: 18px;
+  font-weight: 900;
 
   background: var(--bg-panel);
   color: var(--text-main);
   border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+}
+.toast-dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  margin-top: 3px;
+  background: color-mix(in srgb, var(--accent) 80%, #fff);
 }
 .toast.success{
-  border-color: color-mix(in srgb, var(--accent-2) 55%, var(--border-soft));
+  border-color: color-mix(in srgb, var(--accent-2) 45%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-panel));
 }
+.toast.success .toast-dot{ background: var(--accent-2); }
 .toast.error{
-  border-color: color-mix(in srgb, var(--accent-danger) 55%, var(--border-soft));
+  border-color: color-mix(in srgb, var(--accent-danger) 50%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-danger) 10%, var(--bg-panel));
 }
+.toast.error .toast-dot{ background: var(--accent-danger); }
 
-/* ---------- Inputs / Selects ---------- */
+/* toast transitions */
+.toast-enter-active, .toast-leave-active{ transition: opacity .18s ease, transform .18s ease; }
+.toast-enter-from, .toast-leave-to{ opacity: 0; transform: translateY(-6px) scale(.98); }
+
+/* ---------- form ---------- */
 .form{ display: grid; gap: 10px; }
 .field{ display: grid; gap: 6px; }
-
 .label{
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
 }
-
 .field input,
 .search,
 .label-size-select{
@@ -1034,14 +1067,10 @@ onMounted(async () => {
   background: var(--bg-soft);
   color: var(--text-main);
   outline: none;
-  transition: 0.15s ease;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .15s ease;
 }
-
 .field input::placeholder,
-.search::placeholder{
-  color: var(--text-light);
-}
-
+.search::placeholder{ color: var(--text-light); }
 .field input:focus,
 .search:focus,
 .label-size-select:focus{
@@ -1050,16 +1079,65 @@ onMounted(async () => {
   background: var(--bg-panel);
 }
 
-/* select */
+/* buttons row */
+.buttons{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+/* ---------- buttons ---------- */
+.btn{
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease, filter .14s ease;
+  user-select: none;
+  box-shadow: var(--shadow-sm);
+}
+.btn:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--text-light) 25%, var(--border-soft));
+}
+.btn:active{ transform: translateY(0px); }
+
+.btn.primary{
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #fff), var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border-soft));
+  color: #fff;
+}
+.btn.primary:hover{ filter: brightness(1.04); }
+
+.btn.ghost{ background: transparent; }
+.btn.soft{ background: var(--bg-soft); }
+.btn.danger{
+  background: color-mix(in srgb, var(--accent-danger) 12%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--accent-danger) 45%, var(--border-soft));
+  color: var(--accent-danger);
+}
+.btn.mini{
+  padding: 10px 12px;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+
+/* ---------- select ---------- */
 .select-wrap{ position: relative; width: 100%; }
 .select-wrap.grow{ flex: 1; }
-
 .label-size-select{
   appearance: none;
   cursor: pointer;
   padding-right: 40px;
 }
-
 .select-arrow{
   position: absolute;
   right: 14px;
@@ -1069,161 +1147,104 @@ onMounted(async () => {
   pointer-events: none;
 }
 
-/* ---------- Buttons ---------- */
-.buttons{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-.btn{
-  border: 1px solid var(--border-soft);
-  background: var(--bg-panel);
-  color: var(--text-main);
-  border-radius: var(--radius-md);
-  padding: 11px 14px;
-  font-weight: 800;
-
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.15s ease;
-  user-select: none;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn:hover{
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn:active{ transform: translateY(0px); }
-
-.btn.primary{
-  background: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 65%, var(--border-soft));
-  color: #fff;
-}
-.btn.primary:hover{ filter: brightness(1.05); }
-
-.btn.ghost{
-  background: transparent;
-}
-
-.btn.soft{
-  background: var(--bg-soft);
-}
-
-.btn.danger{
-  background: color-mix(in srgb, var(--accent-danger) 12%, var(--bg-panel));
-  border-color: color-mix(in srgb, var(--accent-danger) 45%, var(--border-soft));
-  color: var(--accent-danger);
-}
-
-.btn.mini{
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  white-space: nowrap;
-}
-
-/* ---------- Photo UI (left form) ---------- */
+/* ---------- photo (left) ---------- */
 .photo{ margin-top: 6px; }
-
 .photo-btn{
   border: 1px dashed var(--border-soft);
   background: var(--bg-soft);
   color: var(--text-main);
-
   padding: 12px;
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   cursor: pointer;
-
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
-  transition: 0.15s ease;
+  font-weight: 900;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease;
 }
-
 .photo-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft));
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border-soft));
 }
-
 .photo-preview .thumb{
   width: 112px;
   height: 112px;
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   object-fit: cover;
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-md);
 }
-
 .photo-actions{
   margin-top: 10px;
   display: flex;
   gap: 10px;
   align-items: center;
 }
-
 .photo-del{
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-lg);
-
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--accent-danger) 40%, var(--border-soft));
   background: color-mix(in srgb, var(--accent-danger) 10%, var(--bg-panel));
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--accent-danger);
-
   cursor: pointer;
-  transition: 0.15s ease;
+  transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+  box-shadow: var(--shadow-sm);
 }
-.photo-del:hover{ filter: brightness(1.05); }
+.photo-del:hover{ transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
-/* ---------- Right grid list ---------- */
+/* ---------- grid/cards ---------- */
 .grid{ display: grid; gap: 14px; }
 
-/* ---------- Item card ---------- */
+/* TransitionGroup */
+.cards-enter-active, .cards-leave-active{ transition: opacity .18s ease, transform .18s ease; }
+.cards-enter-from, .cards-leave-to{ opacity: 0; transform: translateY(10px) scale(.985); }
+.cards-move{ transition: transform .18s ease; }
+
 .card{
   position: relative;
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 14px;
-
   display: grid;
   grid-template-columns: 310px 1fr;
   gap: 14px;
-
-  transition: 0.15s ease;
   box-shadow: var(--shadow-sm);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   overflow: visible;
-}
 
+  /* небольшая “премиум” анимация появления */
+  animation: cardPop .26s ease both;
+}
+@keyframes cardPop{
+  from{ opacity: 0; transform: translateY(10px) scale(.985); }
+  to{ opacity: 1; transform: translateY(0) scale(1); }
+}
 .card:hover{
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
-  border-color: color-mix(in srgb, var(--text-light) 25%, var(--border-soft));
+  border-color: color-mix(in srgb, var(--text-light) 22%, var(--border-soft));
 }
-
 .card.selected{
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border-soft));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent),
+    var(--shadow-md);
 }
 
 .col{ min-width: 0; }
-
 .leftcol{
   display: grid;
   align-content: start;
   justify-items: center;
   gap: 10px;
 }
-
 .rightcol{
   display: grid;
   grid-template-columns: 1fr 220px;
@@ -1231,8 +1252,8 @@ onMounted(async () => {
   align-items: start;
 }
 
-/* ---------- Barcode svg ---------- */
-svg{
+/* barcode svg */
+.barcode-svg{
   width: 100%;
   max-width: 290px;
   background: #fff; /* для читаемости штрихкода */
@@ -1242,43 +1263,41 @@ svg{
   box-shadow: var(--shadow-sm);
 }
 
-/* ---------- Code row ---------- */
+
+/* code row */
 .code-row{
   display: flex;
   width: 100%;
   align-items: center;
   gap: 8px;
 }
-
 .code{
   flex: 1;
-  color: var(--text-main);
-  font-weight: 800;
-  letter-spacing: 0.2px;
+  font-weight: 900;
+  letter-spacing: .2px;
   word-break: break-word;
 }
 
-/* copy */
+/* copy buttons */
 .copy{
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
   color: var(--text-main);
-
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   padding: 10px 12px;
   cursor: pointer;
-  transition: 0.15s ease;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease;
+  box-shadow: var(--shadow-sm);
 }
 .copy:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft));
   border-color: color-mix(in srgb, var(--accent) 25%, var(--border-soft));
 }
-.copy.mini{
-  padding: 6px 8px;
-  border-radius: var(--radius-md);
-}
+.copy.mini{ padding: 6px 8px; border-radius: 12px; }
 
-/* ---------- Print params ---------- */
+/* print params */
 .print-params{
   width: 100%;
   border-top: 1px solid var(--border-soft);
@@ -1286,93 +1305,84 @@ svg{
   display: grid;
   gap: 10px;
 }
-
 .flags{
   display: flex;
   justify-content: center;
   gap: 14px;
+  flex-wrap: wrap;
 }
-
 .param-row{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-main);
-  font-weight: 700;
+  font-weight: 800;
 }
-
 .param-row input[type="checkbox"]{
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
   cursor: pointer;
 }
-
 .print-row{
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-/* ---------- Info block ---------- */
+/* info rows */
 .info{ display: grid; gap: 10px; }
-
 .info .row{
   display: grid;
   gap: 6px;
   padding: 10px 10px;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
 }
-
+.info .row.two{
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
 .k{
   display: inline-flex;
   align-items: center;
   gap: 8px;
   color: var(--text-muted);
-  font-weight: 800;
+  font-weight: 900;
 }
-
 .v{
-  color: var(--text-main);
-  font-weight: 700;
+  font-weight: 800;
   word-break: break-word;
 }
+.kv{ display: grid; gap: 6px; }
 
-/* ---------- Photo on card ---------- */
+/* photo on card */
 .photo-box{ width: 100%; }
-
 .card-photo{
   width: 100%;
   height: 168px;
   object-fit: cover;
-
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   border: 1px solid var(--border-soft);
   cursor: pointer;
-
   box-shadow: var(--shadow-sm);
-  transition: 0.15s ease;
+  transition: transform .16s ease, box-shadow .16s ease;
 }
 .card-photo:hover{ transform: translateY(-1px); box-shadow: var(--shadow-md); }
-
 .no-photo{
   width: 100%;
   height: 168px;
-
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   border: 1px dashed var(--border-soft);
   background: var(--bg-soft);
-
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: 900;
 }
 
-/* ---------- Tools (edit/delete) ---------- */
+/* tools */
 .tools{
   position: absolute;
   top: 10px;
@@ -1380,55 +1390,43 @@ svg{
   display: flex;
   gap: 8px;
 }
-
 .tool{
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   border: 1px solid var(--border-soft);
   background: var(--bg-panel);
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  transition: 0.15s ease;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease;
   color: var(--text-main);
   box-shadow: var(--shadow-sm);
 }
-.tool:hover{
-  background: var(--bg-soft);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
+.tool:hover{ transform: translateY(-1px); box-shadow: var(--shadow-md); background: var(--bg-soft); }
 .tool.edit{ color: var(--accent); }
 .tool.del{ color: var(--accent-danger); }
 
-/* ---------- Select button ---------- */
+/* select */
 .selectbox{
   position: absolute;
   bottom: 12px;
   right: 12px;
   width: 150px;
 }
-
 .btn.select{
   width: 100%;
   justify-content: center;
   background: var(--bg-soft);
 }
-
 .btn.select.active{
   background: color-mix(in srgb, var(--accent-2) 14%, var(--bg-panel));
   border-color: color-mix(in srgb, var(--accent-2) 45%, var(--border-soft));
-  color: var(--text-main);
 }
-
-/* hidden checkbox */
 .hidden-checkbox{ display: none; }
 
-/* ---------- Search hint chips ---------- */
+/* chips */
 .sizes-hint{
   margin-top: 12px;
   display: flex;
@@ -1438,7 +1436,7 @@ svg{
 }
 .muted{
   color: var(--text-muted);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 13px;
 }
 .chip{
@@ -1446,31 +1444,30 @@ svg{
   background: var(--bg-soft);
   padding: 6px 10px;
   border-radius: 999px;
-  color: var(--text-main);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 12px;
 }
 
-/* ---------- Highlight ---------- */
+/* highlight */
 .highlight-row{
-  font-weight: 800;
+  font-weight: 900;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-soft));
   padding: 0 6px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
-/* ---------- Selected bulk controls (bottom fixed) ---------- */
+/* bottom bulk */
 .selected-controls{
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 99999;
 
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 14px;
 
   display: grid;
@@ -1478,36 +1475,28 @@ svg{
 
   box-shadow: var(--shadow-lg);
 }
-
 .bulk-row{ display: grid; gap: 10px; }
-
 .bulk-head{ display: grid; gap: 2px; }
-.bulk-title{ color: var(--text-main); font-weight: 900; }
-.bulk-sub{ color: var(--text-muted); font-size: 12px; font-weight: 700; }
+.bulk-title{ font-weight: 950; }
+.bulk-sub{ color: var(--text-muted); font-size: 12px; font-weight: 800; }
+.bulk-flags-row{ display: flex; gap: 14px; flex-wrap: wrap; }
+.bulk-actions-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-.bulk-flags-row{
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
+/* slide-up transition */
+.slide-up-enter-active, .slide-up-leave-active{ transition: opacity .18s ease, transform .18s ease; }
+.slide-up-enter-from, .slide-up-leave-to{ opacity: 0; transform: translateY(10px); }
 
-.bulk-actions-row{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-/* ---------- Drag selection rect ---------- */
+/* drag rect */
 .drag-rect{
   position: absolute;
   border: 2px dashed var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   pointer-events: none;
   z-index: 999999;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
 }
 
-/* ---------- Modals ---------- */
+/* modals */
 .photo-modal-overlay,
 .camera-overlay{
   position: fixed;
@@ -1518,7 +1507,6 @@ svg{
   align-items: center;
   z-index: 999999;
 }
-
 .photo-modal-content{
   position: relative;
   max-width: 86%;
@@ -1536,19 +1524,15 @@ svg{
   position: absolute;
   top: -12px;
   right: -12px;
-
   background: var(--accent);
   width: 44px;
   height: 44px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-size: 18px;
   color: #fff;
   box-shadow: var(--shadow-md);
 }
@@ -1557,20 +1541,42 @@ svg{
   background: var(--bg-panel);
   padding: 18px;
   border-radius: 22px;
-  max-width: 520px;
-  width: 94%;
-  text-align: center;
+  max-width: 560px;
+  width: min(94%, 560px);
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-lg);
 }
+.modal-top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.modal-title{
+  font-weight: 950;
+  letter-spacing: .2px;
+}
+.icon-x{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-soft);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .14s ease, box-shadow .14s ease;
+}
+.icon-x:hover{ transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 
 .cam-video{
   width: 100%;
   border-radius: 18px;
-  background: black;
+  background: #000;
   border: 1px solid var(--border-soft);
 }
-
 .btn-capture{
   width: 78px;
   height: 78px;
@@ -1578,17 +1584,16 @@ svg{
   border: none;
   background: var(--accent);
   font-size: 30px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   cursor: pointer;
   margin: 14px auto 0;
   color: #fff;
   box-shadow: var(--shadow-md);
+  transition: transform .14s ease, filter .14s ease;
 }
-.btn-capture:hover{ filter: brightness(1.05); }
+.btn-capture:hover{ transform: translateY(-1px); filter: brightness(1.05); }
 
 .btn-close{
   margin-top: 12px;
@@ -1597,19 +1602,22 @@ svg{
   border: 1px solid var(--border-soft);
   color: var(--text-main);
   padding: 12px;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   cursor: pointer;
+  transition: background .14s ease;
 }
-.btn-close:hover{
-  background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft));
-}
+.btn-close:hover{ background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft)); }
 
-/* ---------- Responsive ---------- */
+/* modal transitions */
+.modal-enter-active, .modal-leave-active{ transition: opacity .18s ease; }
+.modal-enter-from, .modal-leave-to{ opacity: 0; }
+
+.fade-enter-active, .fade-leave-active{ transition: opacity .16s ease, transform .16s ease; }
+.fade-enter-from, .fade-leave-to{ opacity: 0; transform: translateY(6px); }
+
+/* ---------- responsive ---------- */
 @media (max-width: 1100px){
-  .page{
-    grid-template-columns: 1fr;
-    padding: 14px;
-  }
+  .page{ grid-template-columns: 1fr; }
   .left{ position: static; }
   .card{ grid-template-columns: 1fr; }
   .rightcol{ grid-template-columns: 1fr; }
@@ -1620,15 +1628,15 @@ svg{
   }
   .bulk-actions-row{ grid-template-columns: 1fr; }
 }
-
 @media (max-width: 520px){
-  .page{ padding: 12px; }
   .card-box{ padding: 14px; }
   .btn{ width: 100%; justify-content: center; }
   .buttons .btn{ width: 100%; }
   .flags{ justify-content: flex-start; }
-  .tools{ top: 10px; right: 10px; }
+}
+
+/* reduce motion */
+@media (prefers-reduced-motion: reduce){
+  *{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 </style>
-
-

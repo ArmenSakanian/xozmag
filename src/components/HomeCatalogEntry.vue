@@ -65,7 +65,7 @@ function goCategory(cat) {
   emit("select-category", cat);
 
   if (props.navigateOnPick) {
-    router.push({ path: "/catalogv2", query: { cat: cat.code } });
+    router.push({ path: "/Catalog", query: { cat: cat.code } });
   }
 }
 

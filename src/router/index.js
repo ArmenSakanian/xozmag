@@ -7,7 +7,7 @@ import HomePage from "../page/HomePage.vue";
 const LoginPage   = () => import("../page/LoginPage.vue");
 const BarcodePage = () => import("../page/BarcodePage.vue");
 const ProductPage = () => import("../page/ProductPage.vue");
-const CatalogV2   = () => import("../page/CatalogV2.vue");
+const Catalog   = () => import("../page/Catalog.vue");
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
@@ -16,7 +16,7 @@ const routes = [
 
   { path: "/login", name: "login", component: LoginPage },
 
-  { path: "/catalogv2", name: "catalog", component: CatalogV2 },
+  { path: "/Catalog", name: "catalog", component: Catalog },
 
   {
     path: "/barcode",

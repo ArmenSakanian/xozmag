@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /barcode/
+
+Sitemap: https://xozmag.ru/sitemap.xml

@@ -38,7 +38,7 @@
     </div>
 
     <!-- ===== BOTTOM ROW (CENTER SEARCH) ===== -->
-    <!-- ❗️На CatalogV2 не показываем -->
+    <!-- ❗️На Catalog не показываем -->
     <div v-if="showHeaderSearch" class="header-bottom">
       <div class="header-bottom-container">
         <div class="header-search">
@@ -47,7 +47,7 @@
             :categories="categories"
             :current-category="null"
             :sync-route="false"
-            catalog-path="/catalogv2"
+            catalog-path="/Catalog"
             @categories-loaded="onCategoriesLoaded"
           />
         </div>
@@ -73,11 +73,11 @@ const route = useRoute();
 const mobileOpen = ref(false);
 
 /* =========================
-   HIDE SEARCH ON CATALOGV2
+   HIDE SEARCH ON Catalog
 ========================= */
 const showHeaderSearch = computed(() => {
-  // прячем на /catalogv2 и на вложенных типа /catalogv2/...
-  return !(route.path === "/catalogv2" || route.path.startsWith("/catalogv2/"));
+  // прячем на /Catalog и на вложенных типа /Catalog/...
+  return !(route.path === "/Catalog" || route.path.startsWith("/Catalog/"));
 });
 
 /* =========================

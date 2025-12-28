@@ -37,7 +37,7 @@
         </p>
 
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="210">
-          <RouterLink class="btn primary" to="/catalogv2"
+          <RouterLink class="btn primary" to="/Catalog"
             >Открыть каталог</RouterLink
           >
           <a class="btn ghost" href="#contact">Контакты</a>

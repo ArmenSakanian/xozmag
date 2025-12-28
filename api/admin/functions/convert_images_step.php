@@ -1,4 +1,5 @@
 <?php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
 header("Content-Type: application/json; charset=utf-8");
 
 // ✅ чтобы не останавливалось при закрытии вкладки
