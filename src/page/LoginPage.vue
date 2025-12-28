@@ -15,9 +15,10 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
+const route = useRoute();
 
 const login = ref("");
 const password = ref("");
@@ -30,26 +31,35 @@ async function submit() {
   form.append("username", login.value);
   form.append("password", password.value);
 
-  const res = await fetch("/api/login.php", {
+  const res = await fetch("/api/auth/login.php", {
     method: "POST",
-    body: form
+    body: form,
+    credentials: "same-origin",
+    headers: { "Accept": "application/json" },
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => null);
 
-  if (data.status === "success") {
-    localStorage.setItem("token", data.token);
-    router.push("/barcode");     // ← после входа открываем barcode
+  if (data?.status === "success") {
+    // редирект куда пытались зайти
+    const redirect = route.query.redirect;
+    if (typeof redirect === "string" && redirect.startsWith("/")) {
+      router.push(redirect);
+      return;
+    }
+
+    // если админ — на /admin, иначе на /barcode
+    if (data?.user?.role === "admin") router.push("/admin");
+    else router.push("/barcode");
   } else {
-    error.value = data.message;
+    error.value = data?.message || "Ошибка входа";
   }
 }
 </script>
 
-
 <style scoped>
+/* (твой CSS без изменений) */
 .login-wrap {
-  /* общий стиль как в админке */
   --bg: #0b1220;
   --panel: #0f1a2b;
   --stroke: rgba(148, 163, 184, 0.18);
@@ -151,10 +161,8 @@ async function submit() {
   line-height: 1.25;
 }
 
-/* mobile */
 @media (max-width: 520px) {
   .login-wrap { padding: 12px; }
   .login-box { padding: 14px; border-radius: 18px; }
 }
 </style>
-

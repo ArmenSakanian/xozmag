@@ -1,4 +1,5 @@
 <?php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . "/../db.php";
 
@@ -7,7 +8,7 @@ $search = trim($search);
 
 if ($search !== '') {
 
-    $stmt = $pdo->prepare("
+    $stmt = $pdoget_barcodes.php->prepare("
         SELECT *
         FROM barcodes
         WHERE LOWER(barcode)      LIKE LOWER(:s)

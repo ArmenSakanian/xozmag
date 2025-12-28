@@ -454,6 +454,7 @@ function prettyStatus(s) {
   if (s === "skip") return "skip";
   return String(s || "unknown");
 }
+let pollTimer = null;
 
 const start = async () => {
   loadingConvert.value = true;
@@ -464,76 +465,85 @@ const start = async () => {
   NProgress.start();
 
   try {
-    // 1) init job
+    // 1) init (запускает job и фон)
     const initRes = await fetch(
-      `/api/admin/functions/convert_images_step.php?init=1&dry_run=${
-        convertDryRun.value ? 1 : 0
-      }`,
+      `/api/admin/functions/convert_images_step.php?init=1&dry_run=${convertDryRun.value ? 1 : 0}`,
       { cache: "no-store" }
     );
 
     const initData = await initRes.json().catch(() => null);
-    if (!initRes.ok || !initData) {
-      throw new Error("Init failed: HTTP " + initRes.status);
-    }
+    if (!initRes.ok || !initData) throw new Error("Init failed: HTTP " + initRes.status);
     if (initData?.error) throw new Error(initData.error);
 
-    // если сразу done (нет файлов)
+    // уже запущено в другой вкладке/кем-то
+    if (initData.already_running) {
+      logs.value.unshift("⚠ Уже запущено (LOCK). Показываю прогресс…");
+    }
+
+    // если файлов нет
     if (initData.done) {
-      convert.value.total = 0;
-      remove.value.total = 0;
       logs.value.unshift("✔ НЕТ ФАЙЛОВ ДЛЯ ОБРАБОТКИ");
       return;
     }
 
     const token = initData.token;
-    let index = initData.index ?? 0;
-
-    convert.value.total = initData.total ?? 0;
-    remove.value.total = initData.total ?? 0;
+    convert.value.total = Number(initData.total ?? 0);
+    remove.value.total = Number(initData.total ?? 0);
 
     logs.value.unshift(
       `→ init: total=${convert.value.total}, dry_run=${convertDryRun.value ? "1" : "0"}`
     );
 
-    // 2) step loop
-    while (true) {
+    // 2) polling status
+    if (pollTimer) clearInterval(pollTimer);
+
+    const poll = async () => {
       const res = await fetch(
-        `/api/admin/functions/convert_images_step.php?token=${token}&index=${index}&batch=${CONVERT_BATCH}`,
+        `/api/admin/functions/convert_images_step.php?status=1&token=${token}`,
         { cache: "no-store" }
       );
-
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data) throw new Error("Step failed: HTTP " + res.status);
+      if (!res.ok || !data) throw new Error("Status failed: HTTP " + res.status);
       if (data?.error) throw new Error(data.error);
 
-      const results = Array.isArray(data.results) ? data.results : [];
-      results.forEach((r) => {
-        const st = prettyStatus(r.status).toUpperCase().padEnd(10);
-        logs.value.unshift(`${st} | ${r.file}`);
-      });
+      convert.value.current = Number(data.index ?? 0);
+      remove.value.current = Number(data.index ?? 0);
 
-      index = Number(data.index ?? index);
-      convert.value.current = index;
-      remove.value.current = index;
+      logs.value = Array.isArray(data.logs) ? data.logs : logs.value;
 
       NProgress.set(convertPercent.value / 100);
 
-      if (data.done) break;
+      if (data.done) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        NProgress.done();
+        loadingConvert.value = false;
+      }
+    };
 
-      await sleep(30);
-    }
+    await poll();
+    pollTimer = setInterval(() => {
+      poll().catch((e) => {
+        logs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
+        clearInterval(pollTimer);
+        pollTimer = null;
+        NProgress.done();
+        loadingConvert.value = false;
+      });
+    }, 450);
 
-    logs.value.unshift(
-      convertDryRun.value ? "✔ DRY-RUN COMPLETE" : "✔ ALL FILES PROCESSED"
-    );
   } catch (e) {
     logs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
   } finally {
-    NProgress.done();
-    loadingConvert.value = false;
+    // loadingConvert выключится в poll когда done,
+    // а если упали до poll — здесь.
+    if (!pollTimer) {
+      NProgress.done();
+      loadingConvert.value = false;
+    }
   }
 };
+
 
 /* =========================
    SYNC EVOTOR → DB

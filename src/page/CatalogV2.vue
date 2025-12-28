@@ -607,7 +607,6 @@ const categories = ref([]);
 const catsLoadedOnce = ref(false);
 const catsLoading = ref(false);
 
-/* ✅ search hits from HomeSearch (PHP) */
 const searchHits = ref([]);
 
 /* ================= URL SOURCE OF TRUTH ================= */
@@ -1056,7 +1055,6 @@ watch(currentCategory, () => {
   applyFilters();
 });
 
-/* ================= SEARCH MERGE (из PHP hits) ================= */
 const productsById = computed(() => {
   const m = new Map();
   products.value.forEach((p) => m.set(String(p.id), p));

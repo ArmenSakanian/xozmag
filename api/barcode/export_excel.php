@@ -1,4 +1,5 @@
 <?php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
 require_once __DIR__ . "/../db.php";
 
 header("Content-Type: text/csv; charset=utf-8");
