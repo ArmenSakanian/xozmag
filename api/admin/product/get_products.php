@@ -59,20 +59,22 @@ function buildCategoryPath($id, $map) {
 
 /* === 2. Товары === */
 $products = $pdo->query("
-  SELECT
-    p.id,
-    p.name,
-    p.article,
-    p.brand,
-    p.type,
-    p.price,
-    p.quantity,
-    p.barcode,
-    p.description,
-    p.photo,
-    p.category_id
-  FROM products p
-  ORDER BY p.id DESC
+SELECT
+  p.id,
+  p.name,
+  p.slug,
+  p.article,
+  p.brand,
+  p.type,
+  p.price,
+  p.quantity,
+  p.barcode,
+  p.description,
+  p.photo,
+  p.category_id
+FROM products p
+ORDER BY p.id DESC
+
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 /* === 3. Характеристики (с ui_render и meta) === */

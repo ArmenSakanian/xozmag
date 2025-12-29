@@ -13,6 +13,9 @@ import './assets/swiper-custom.css'
 import './fontawesome'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
+// ✅ @vueuse/head
+import { createHead } from '@vueuse/head'
+
 // ✅ AOS
 import AOS from 'aos'
 import 'aos/dist/aos.css'
@@ -22,6 +25,11 @@ const app = createApp(App)
 app.component('Fa', FontAwesomeIcon)
 
 app.use(createPinia())
+
+// ✅ подключаем head
+const head = createHead()
+app.use(head)
+
 app.use(router)
 
 /* ✅ ждём пока router подгрузит async-страницы */

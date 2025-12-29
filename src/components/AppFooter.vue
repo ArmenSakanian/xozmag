@@ -16,7 +16,7 @@
 
 
         <p class="footer-desc">
-          Магазин товаров для дома, ремонта и электрооборудования.<br>
+          Магазин Все Для Дома.<br>
           Более 5000 товаров в наличии.
         </p>
       </div>
@@ -25,7 +25,7 @@
       <div class="footer-col footer-nav">
         <h3 class="footer-title">Меню</h3>
 
-        <a href="/product" class="menu-link">Каталог</a>
+        <a href="/catalog" class="menu-link">Каталог</a>
 
         <a href="#about" class="menu-link"
            @click.prevent="scrollToSection('about')">

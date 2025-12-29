@@ -31,10 +31,34 @@
 </template>
 
 <script setup lang="ts">
+import { useHead } from "@vueuse/head";
+
 import PhotoGallery from "@/components/PhotoGallery.vue";
 import Aboutus from "@/components/Aboutus.vue";
 import Contact from "@/components/Contact.vue";
+
+useHead({
+  title: "Все для дома — Сходненская и Планерная | XOZMAG.RU",
+  meta: [
+    {
+      name: "description",
+      content:
+        "Хозтовары, сантехника, электрика, стройматериалы, крепеж и замки — большой выбор товаров для дома и ремонта. Магазин рядом с метро Сходненская и Планерная.",
+    },
+
+    // (не обязательно, но полезно для шаринга)
+    { property: "og:title", content: "Все для дома — Сходненская и Планерная" },
+    {
+      property: "og:description",
+      content:
+        "Хозтовары, сантехника, электрика, стройматериалы, крепеж и замки — большой выбор товаров для дома и ремонта.",
+    },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: "https://xozmag.ru/" },
+  ],
+});
 </script>
+
 
 <style scoped>
 .home-entry {

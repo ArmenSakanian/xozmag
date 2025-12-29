@@ -35,9 +35,9 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 // ✅ ВРУЧНУЮ укажи пути к фоткам из /public
 // Пример: public/img/photo-shop/Slide1.webp
 const slides = [
-  "/img/photo-shop/Slide1.png",
-  "/img/photo-shop/Slide1.png",
-    "/img/photo-shop/Slide1.png",
+  "/img/photo-shop/Slide1.webp",
+  "/img/photo-shop/Slide1.webp",
+    "/img/photo-shop/Slide1.webp",
 ];
 </script>
 

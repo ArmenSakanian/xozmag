@@ -12,7 +12,9 @@ $stmt = $pdo->query("
     SELECT
         id,
         parent_id,
+        parent_id AS parent,   -- ✅ чтобы фронт (tree) мог использовать c.parent
         name,
+        slug,                  -- ✅ самое важное для URL
         sort,
         level,
         code

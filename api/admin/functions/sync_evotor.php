@@ -33,7 +33,6 @@ $products = $data["products"];
 
 // дальше оставляешь твою логику INSERT/UPDATE/DELETE как есть
 
-
 $inserted = 0;
 $updated  = 0;
 $deleted  = 0;
@@ -48,6 +47,9 @@ $insertedItems = [];
 $updatedItems  = [];
 $deletedItems  = [];
 
+/* =========================
+   helpers
+========================= */
 function norm_str($v) {
   $v = (string)($v ?? "");
   $v = trim($v);
@@ -59,6 +61,76 @@ function norm_num($v) {
   if ($v === null || $v === "") return 0;
   return (float)$v;
 }
+
+/* ===== slug helpers ===== */
+
+function slugify_ru_en(string $s): string {
+  $s = trim($s);
+  if ($s === "") return "";
+
+  $map = [
+    'А'=>'a','Б'=>'b','В'=>'v','Г'=>'g','Д'=>'d','Е'=>'e','Ё'=>'e','Ж'=>'zh','З'=>'z','И'=>'i','Й'=>'y',
+    'К'=>'k','Л'=>'l','М'=>'m','Н'=>'n','О'=>'o','П'=>'p','Р'=>'r','С'=>'s','Т'=>'t','У'=>'u','Ф'=>'f',
+    'Х'=>'h','Ц'=>'c','Ч'=>'ch','Ш'=>'sh','Щ'=>'sch','Ъ'=>'','Ы'=>'y','Ь'=>'','Э'=>'e','Ю'=>'yu','Я'=>'ya',
+    'а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'e','ж'=>'zh','з'=>'z','и'=>'i','й'=>'y',
+    'к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f',
+    'х'=>'h','ц'=>'c','ч'=>'ch','ш'=>'sh','щ'=>'sch','ъ'=>'','ы'=>'y','ь'=>'','э'=>'e','ю'=>'yu','я'=>'ya',
+  ];
+
+  $s = strtr($s, $map);
+  $s = mb_strtolower($s, 'UTF-8');
+
+  // всё не [a-z0-9] -> "-"
+  $s = preg_replace('~[^a-z0-9]+~', '-', $s);
+  $s = preg_replace('~-+~', '-', $s);
+  $s = trim($s, '-');
+
+  if ($s === "") return "";
+
+  // лимит по длине (после транслита тут уже ASCII)
+  if (strlen($s) > 160) {
+    $s = substr($s, 0, 160);
+    $s = rtrim($s, '-');
+  }
+
+  return $s;
+}
+
+function slug_exists(PDO $pdo, string $slug, int $ignoreId = 0): bool {
+  if ($slug === "") return false;
+  if ($ignoreId > 0) {
+    $st = $pdo->prepare("SELECT id FROM products WHERE slug = ? AND id <> ? LIMIT 1");
+    $st->execute([$slug, $ignoreId]);
+  } else {
+    $st = $pdo->prepare("SELECT id FROM products WHERE slug = ? LIMIT 1");
+    $st->execute([$slug]);
+  }
+  return (bool)$st->fetch(PDO::FETCH_ASSOC);
+}
+
+function make_unique_product_slug(PDO $pdo, string $name, int $id): string {
+  $base = slugify_ru_en($name);
+  if ($base === "") $base = "product";
+
+  $candidate = $base;
+
+  if (!slug_exists($pdo, $candidate, $id)) return $candidate;
+
+  // если занято — добавляем -id (id уникален, почти всегда этого достаточно)
+  $candidate = $base . "-" . $id;
+  if (!slug_exists($pdo, $candidate, $id)) return $candidate;
+
+  // на всякий пожарный — добиваем счётчиком
+  for ($i = 2; $i <= 200; $i++) {
+    $try = $base . "-" . $id . "-" . $i;
+    if (!slug_exists($pdo, $try, $id)) return $try;
+  }
+
+  // fallback (очень маловероятно)
+  return $base . "-" . $id . "-" . time();
+}
+
+/* ===== paths/img helpers ===== */
 
 function safe_rel_from_url_or_path($p) {
   $p = (string)$p;
@@ -80,10 +152,6 @@ function safe_rel_from_url_or_path($p) {
 
 /**
  * Нормализация путей строго под /photo_product_vitrina/
- * - приводим URL/путь к path
- * - гарантируем ведущий "/"
- * - принимаем только то, что лежит в /photo_product_vitrina/
- * - уникализация + сортировка
  */
 function normalize_images_vitrina_strict($v) {
   $arr = [];
@@ -181,8 +249,12 @@ function collect_photos_for_barcode($barcode, $photoColumn) {
   return [];
 }
 
+/* =========================
+   SQL
+========================= */
+
 $sqlSelect = $pdo->prepare("
-  SELECT id, name, article, brand, type, price, quantity, description, photo
+  SELECT id, name, slug, article, brand, type, price, quantity, description, photo
   FROM products
   WHERE barcode = ?
   LIMIT 1
@@ -190,14 +262,15 @@ $sqlSelect = $pdo->prepare("
 
 $sqlInsert = $pdo->prepare("
   INSERT INTO products
-    (name, article, brand, type, price, barcode, description, photo, quantity, category_id)
+    (name, article, brand, type, price, barcode, description, photo, quantity, category_id, slug)
   VALUES
-    (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+    (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
 ");
 
 $sqlUpdate = $pdo->prepare("
   UPDATE products SET
     name = ?,
+    slug = ?,
     article = ?,
     brand = ?,
     type = ?,
@@ -207,6 +280,8 @@ $sqlUpdate = $pdo->prepare("
     quantity = ?
   WHERE barcode = ?
 ");
+
+$sqlUpdateSlugById = $pdo->prepare("UPDATE products SET slug = ? WHERE id = ?");
 
 /* =========================
    1) INSERT/UPDATE loop
@@ -236,7 +311,13 @@ foreach ($products as $p) {
   if ($row) {
     $changed = [];
 
-    if (norm_str($row["name"] ?? "")        !== norm_str($name))        $changed[] = "name";
+    $id = (int)($row["id"] ?? 0);
+    $oldName = (string)($row["name"] ?? "");
+    $oldSlug = trim((string)($row["slug"] ?? ""));
+
+    $nameChanged = (norm_str($oldName) !== norm_str($name));
+
+    if ($nameChanged) $changed[] = "name";
     if (norm_str($row["article"] ?? "")     !== norm_str($article))     $changed[] = "article";
     if (norm_str($row["brand"] ?? "")       !== norm_str($brand))       $changed[] = "brand";
     if (norm_str($row["type"] ?? "")        !== norm_str($type))        $changed[] = "type";
@@ -248,16 +329,34 @@ foreach ($products as $p) {
     $dbImagesArr = normalize_images_vitrina_strict($row["photo"] ?? "");
     if ($dbImagesArr !== $imagesArr) $changed[] = "photo";
 
+    // ✅ slug: обновляем если name изменился ИЛИ slug пустой
+    $newSlug = $oldSlug;
+    if ($id > 0 && ($oldSlug === "" || $nameChanged)) {
+      $newSlug = make_unique_product_slug($pdo, $name, $id);
+      if ($newSlug !== $oldSlug) $changed[] = "slug";
+    }
+
     if (!empty($changed)) {
       $sqlUpdate->execute([
-        $name, $article, $brand, $type, $price, $description, $imagesJson, $quantity, $barcode
+        $name,
+        $newSlug,
+        $article,
+        $brand,
+        $type,
+        $price,
+        $description,
+        $imagesJson,
+        $quantity,
+        $barcode
       ]);
+
       $updated++;
 
       if (count($updatedItems) < $LIMIT) {
         $updatedItems[] = [
           "barcode" => $barcode,
           "name"    => $name,
+          "slug"    => $newSlug,
           "fields"  => $changed
         ];
       } else {
@@ -268,15 +367,26 @@ foreach ($products as $p) {
     }
 
   } else {
+    // INSERT (slug пока NULL), потом поставим slug по id
     $sqlInsert->execute([
       $name, $article, $brand, $type, $price, $barcode, $description, $imagesJson, $quantity
     ]);
+
+    $newId = (int)$pdo->lastInsertId();
+
+    // ✅ ставим slug сразу после insert
+    $newSlug = ($newId > 0) ? make_unique_product_slug($pdo, $name, $newId) : null;
+    if ($newSlug && $newId > 0) {
+      $sqlUpdateSlugById->execute([$newSlug, $newId]);
+    }
+
     $inserted++;
 
     if (count($insertedItems) < $LIMIT) {
       $insertedItems[] = [
         "barcode" => $barcode,
-        "name"    => $name
+        "name"    => $name,
+        "slug"    => $newSlug
       ];
     } else {
       $truncated = true;

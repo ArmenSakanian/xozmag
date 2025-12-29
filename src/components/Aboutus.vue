@@ -1,210 +1,230 @@
 <template>
   <section class="about-page" id="about">
     <div class="wrap">
-      <!-- HERO -->
-      <header class="hero" data-aos="fade-up">
-        <div class="hero-top">
-          <div class="brand" data-aos="fade-right" data-aos-delay="50">
-            <div class="brand-dot"></div>
-            <div class="brand-text">
-              <div class="brand-name">{{ storeName }}</div>
-              <div class="brand-sub">
-                Москва • Северное Тушино • м. Сходненская / Планерная
+      <!-- HERO: новая композиция -->
+      <header class="stage" data-aos="fade-up">
+        <div class="stage-accent" aria-hidden="true"></div>
+
+        <div class="stage-grid">
+          <!-- LEFT: основной текст -->
+          <div class="stage-main" data-aos="fade-right" data-aos-delay="60">
+            <div class="brandline">
+              <div class="brand-dot" aria-hidden="true"></div>
+              <div class="brand-text">
+                <div class="brand-name">{{ storeName }}</div>
+                <div class="brand-sub">
+                  Москва • Северное Тушино • м. Сходненская / Планерная
+                </div>
               </div>
             </div>
-          </div>
 
-          <div
-            class="rating-pill"
-            aria-label="Рейтинг Яндекс"
-            data-aos="fade-left"
-            data-aos-delay="80"
-          >
-            <span class="rp-star"><Fa :icon="['fas', 'star']" /></span>
-            <span class="rp-score">{{ yandexRating }}</span>
-            <span class="rp-meta">{{ yandexReviews }} отзывов</span>
-          </div>
-        </div>
+            <h1 class="page-title" data-aos="fade-up" data-aos-delay="110">
+              О нас
+            </h1>
 
-        <h1 class="page-title" data-aos="fade-up" data-aos-delay="120">
-          О нас
-        </h1>
+            <p class="lead" data-aos="fade-up" data-aos-delay="140">
+              Магазин «Всё для дома» — розничный магазин хозяйственных и
+              строительных товаров. Работаем <b>более 10 лет</b>. В ассортименте —
+              товары для ремонта, монтажа и повседневных бытовых задач.
+            </p>
 
-        <p class="lead" data-aos="fade-up" data-aos-delay="160">
-          Магазин «Всё для дома» — розничный магазин хозяйственных и
-          строительных товаров. Работаем <b>более 10 лет</b>. В ассортименте —
-          товары для ремонта, монтажа и повседневных бытовых задач.
-        </p>
+            <div class="hero-actions" data-aos="fade-up" data-aos-delay="170">
+              <RouterLink class="btn btn-primary" to="/catalog">
+                Открыть каталог
+              </RouterLink>
+              <a class="btn btn-ghost" href="#contact">Контакты</a>
+            </div>
 
-        <div class="hero-actions" data-aos="fade-up" data-aos-delay="210">
-          <RouterLink class="btn primary" to="/Catalog"
-            >Открыть каталог</RouterLink
-          >
-          <a class="btn ghost" href="#contact">Контакты</a>
-        </div>
-
-        <div class="facts">
-          <div class="fact" data-aos="fade-up" data-aos-delay="80">
-            <div class="fact-title">Доставка</div>
-            <div class="fact-text">
-              Возможна по согласованию (зависит от товара и адреса).
+            <div class="hero-note" data-aos="fade-up" data-aos-delay="210">
+              Адрес и режим работы указаны в разделе
+              <a href="#contact">«Контакты»</a>.
             </div>
           </div>
-          <div class="fact" data-aos="fade-up" data-aos-delay="140">
-            <div class="fact-title">Оплата</div>
-            <div class="fact-text">Наличные • карта • QR-код.</div>
-          </div>
-          <div class="fact" data-aos="fade-up" data-aos-delay="200">
-            <div class="fact-title">Парковка</div>
-            <div class="fact-text">
-              Есть парковка со шлагбаумом — по звонку откроем.
-            </div>
-          </div>
-        </div>
 
-        <div class="hero-note" data-aos="fade-up" data-aos-delay="240">
-          Адрес и режим работы указаны в разделе
-          <a href="#contact">«Контакты»</a>.
+          <!-- RIGHT: мета-колонка -->
+          <aside class="stage-side" data-aos="fade-left" data-aos-delay="90">
+            <div class="rating-card" aria-label="Рейтинг Яндекс">
+              <div class="rating-top">
+                <span class="rating-star"><Fa :icon="['fas', 'star']" /></span>
+                <span class="rating-score">{{ yandexRating }}</span>
+              </div>
+              <div class="rating-meta">
+                {{ yandexReviews }} отзывов • {{ yandexGrades }} оценок
+              </div>
+            </div>
+
+            <div class="facts-stack">
+              <div class="fact">
+                <div class="fact-title">Доставка</div>
+                <div class="fact-text">
+                  Возможна по согласованию (зависит от товара и адреса).
+                </div>
+              </div>
+
+              <div class="fact">
+                <div class="fact-title">Оплата</div>
+                <div class="fact-text">Наличные • карта • QR-код.</div>
+              </div>
+
+              <div class="fact">
+                <div class="fact-title">Парковка</div>
+                <div class="fact-text">
+                  Есть парковка со шлагбаумом — по звонку откроем.
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </header>
 
-      <!-- ASSORTMENT -->
-      <section class="section" id="about-range" data-aos="fade-up">
+      <!-- ASSORTMENT: не карточки, а редакционная лента -->
+      <section class="section section-range" id="about-range" data-aos="fade-up">
         <div class="section-head">
           <h2 class="h2">Ассортимент</h2>
           <div class="section-hint">Основные направления</div>
         </div>
 
-        <div class="range-grid">
-          <div class="range-card" data-aos="fade-up" data-aos-delay="40">
-            <div class="rc-title">Сантехника</div>
-            <div class="rc-text">
-              Смесители, сифоны, подводки, арматура, фитинги и сопутствующие
-              товары.
+        <div class="range-list" role="list">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="40">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Сантехника</div>
+            <div class="range-text">
+              Смесители, сифоны, подводки, арматура, фитинги и сопутствующие товары.
             </div>
-          </div>
+          </article>
 
-          <div class="range-card" data-aos="fade-up" data-aos-delay="80">
-            <div class="rc-title">Вентиляция</div>
-            <div class="rc-text">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="80">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Вентиляция</div>
+            <div class="range-text">
               Воздуховоды, соединители, крепления, вентиляторы и комплектующие.
             </div>
-          </div>
+          </article>
 
-          <div class="range-card" data-aos="fade-up" data-aos-delay="120">
-            <div class="rc-title">Стройматериалы</div>
-            <div class="rc-text">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="120">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Стройматериалы</div>
+            <div class="range-text">
               Краски, колеры, шпатели, смеси и материалы для ремонта.
             </div>
-          </div>
+          </article>
 
-          <div class="range-card" data-aos="fade-up" data-aos-delay="160">
-            <div class="rc-title">Крепёж</div>
-            <div class="rc-text">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="160">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Крепёж</div>
+            <div class="range-text">
               Саморезы и крепёжные изделия для бытовых и ремонтных задач.
             </div>
-          </div>
+          </article>
 
-          <div class="range-card" data-aos="fade-up" data-aos-delay="200">
-            <div class="rc-title">Электрика</div>
-            <div class="rc-text">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="200">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Электрика</div>
+            <div class="range-text">
               Лампы, светильники, розетки, выключатели и аксессуары.
             </div>
-          </div>
+          </article>
 
-          <div class="range-card" data-aos="fade-up" data-aos-delay="240">
-            <div class="rc-title">Хозтовары и бытовая химия</div>
-            <div class="rc-text">
+          <article class="range-row" role="listitem" data-aos="fade-up" data-aos-delay="240">
+            <div class="range-kicker" aria-hidden="true"></div>
+            <div class="range-title">Хозтовары и бытовая химия</div>
+            <div class="range-text">
               Товары для дома, уборки и повседневного использования.
             </div>
-          </div>
+          </article>
         </div>
 
-        <div class="callout" data-aos="zoom-in" data-aos-delay="140">
-          <div class="callout-title">Нужна консультация по выбору</div>
-          <div class="callout-text">
-            Если вы не уверены в подборе или совместимости товара, свяжитесь с
-            нами — поможем уточнить подходящий вариант.
+        <div class="callout" data-aos="fade-up" data-aos-delay="140">
+          <div class="callout-left">
+            <div class="callout-title">Нужна консультация по выбору</div>
+            <div class="callout-text">
+              Если вы не уверены в подборе или совместимости товара, свяжитесь с
+              нами — поможем уточнить подходящий вариант.
+            </div>
           </div>
+          <div class="callout-mark" aria-hidden="true"></div>
         </div>
       </section>
 
-      <!-- TERMS / FAQ -->
-      <section class="section" id="about-terms" data-aos="fade-up">
+      <!-- TERMS: без details/summary, всё видно сразу -->
+      <section class="section section-terms" id="about-terms" data-aos="fade-up">
         <div class="section-head">
           <h2 class="h2">Условия обслуживания</h2>
           <div class="section-hint">Коротко и официально</div>
         </div>
 
-        <div class="faq">
-          <details class="faq-item" open data-aos="fade-up" data-aos-delay="60">
-            <summary>
-              <span class="faq-q">Доставка</span>
-              <span class="faq-badge">по согласованию <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
-            </summary>
-            <div class="faq-a">
-              Доставка <b>возможна</b>, но не всегда и не везде — зависит от
-              товара и адреса. Рекомендуем уточнить по телефону: сообщим
-              возможность и условия.
+        <div class="terms-grid">
+          <div class="term" data-aos="fade-up" data-aos-delay="60">
+            <div class="term-head">
+              <div class="term-title">Доставка</div>
+              <div class="term-tag">по согласованию</div>
             </div>
-          </details>
+            <div class="term-body">
+              Доставка <b>возможна</b>, но не всегда и не везде — зависит от товара и
+              адреса. Рекомендуем уточнить по телефону: сообщим возможность и условия.
+            </div>
+          </div>
 
-          <details class="faq-item" data-aos="fade-up" data-aos-delay="120">
-            <summary>
-              <span class="faq-q">Оплата</span>
-              <span class="faq-badge">наличные / карта / QR <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
-            </summary>
-            <div class="faq-a">
-              Принимаем оплату <b>наличными</b>, <b>картой</b> и по
-              <b>QR-коду</b>.
+          <div class="term" data-aos="fade-up" data-aos-delay="120">
+            <div class="term-head">
+              <div class="term-title">Оплата</div>
+              <div class="term-tag">наличные / карта / QR</div>
             </div>
-          </details>
+            <div class="term-body">
+              Принимаем оплату <b>наличными</b>, <b>картой</b> и по <b>QR-коду</b>.
+            </div>
+          </div>
 
-          <details class="faq-item" data-aos="fade-up" data-aos-delay="180">
-            <summary>
-              <span class="faq-q">Возврат и обмен</span>
-              <span class="faq-badge">по закону <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
-            </summary>
-            <div class="faq-a">
-              Возврат и обмен осуществляются
-              <b>в соответствии с законодательством</b>. Возможность возврата
-              зависит от категории товара, состояния упаковки и комплектности.
-              Есть товары, которые не подлежат возврату — уточняйте при покупке.
+          <div class="term" data-aos="fade-up" data-aos-delay="180">
+            <div class="term-head">
+              <div class="term-title">Возврат и обмен</div>
+              <div class="term-tag">по закону</div>
             </div>
-          </details>
+            <div class="term-body">
+              Возврат и обмен осуществляются <b>в соответствии с законодательством</b>.
+              Возможность возврата зависит от категории товара, состояния упаковки и
+              комплектности. Есть товары, которые не подлежат возврату — уточняйте при покупке.
+            </div>
+          </div>
 
-          <details class="faq-item" data-aos="fade-up" data-aos-delay="240">
-            <summary>
-              <span class="faq-q">Дополнительно</span>
-              <span class="faq-badge">удобства <Fa class="faq-chev" :icon="['fas','chevron-down']" /></span>
-            </summary>
-            <div class="faq-a">
-              Посещение с <b>животными</b> допускается. Wi-Fi доступен при
-              необходимости (по запросу).
+          <div class="term" data-aos="fade-up" data-aos-delay="240">
+            <div class="term-head">
+              <div class="term-title">Дополнительно</div>
+              <div class="term-tag">удобства</div>
             </div>
-          </details>
+            <div class="term-body">
+              Посещение с <b>животными</b> допускается.
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- REVIEWS -->
-      <section class="section" id="about-reviews" data-aos="fade-up">
+      <!-- REVIEWS: большой рейтинг + CTA -->
+      <section class="section section-reviews" id="about-reviews" data-aos="fade-up">
         <div class="section-head">
           <h2 class="h2">Отзывы</h2>
           <div class="section-hint">Яндекс.Карты</div>
         </div>
 
-        <div class="yandex-rating" data-aos="fade-up" data-aos-delay="90">
-          <div class="yr-left">
-            <div class="yr-score-line">
-              <span class="yr-stars"><Fa :icon="['fas', 'star']" /></span>
-              <span class="yr-score">{{ yandexRating }}</span>
+        <div class="reviews-stage">
+          <div class="reviews-left" data-aos="fade-right" data-aos-delay="90">
+            <div class="reviews-big">
+              <span class="reviews-star"><Fa :icon="['fas', 'star']" /></span>
+              <span class="reviews-score">{{ yandexRating }}</span>
             </div>
-            <div class="yr-count">
+            <div class="reviews-sub">
               {{ yandexReviews }} отзывов • {{ yandexGrades }} оценок
             </div>
           </div>
 
-          <a :href="yandexLink" target="_blank" rel="noopener" class="yr-btn">
+          <a
+            class="reviews-cta"
+            :href="yandexLink"
+            target="_blank"
+            rel="noopener"
+            data-aos="fade-left"
+            data-aos-delay="120"
+          >
             Читать на Яндекс.Картах
           </a>
         </div>
@@ -232,9 +252,11 @@ const yandexLink =
 </script>
 
 <style scoped>
+/* page */
 .about-page {
   padding: 18px 14px 34px;
   color: var(--text-main);
+  background: var(--bg-main);
 }
 
 .wrap {
@@ -244,178 +266,7 @@ const yandexLink =
   gap: 14px;
 }
 
-/* HERO */
-.hero {
-  background: radial-gradient(
-      900px 360px at 15% 0%,
-      rgba(4, 0, 255, 0.1),
-      transparent 60%
-    ),
-    radial-gradient(
-      700px 320px at 85% 20%,
-      rgba(22, 163, 74, 0.1),
-      transparent 60%
-    ),
-    var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 18px 18px 16px;
-}
-
-.hero-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--accent);
-  box-shadow: 0 0 0 5px rgba(4, 0, 255, 0.1);
-}
-
-.brand-name {
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  font-size: 16px;
-}
-
-.brand-sub {
-  color: var(--text-muted);
-  font-size: 12.5px;
-  margin-top: 1px;
-}
-
-.rating-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: var(--secondary-accent);
-  box-shadow: var(--shadow-sm);
-  font-weight: 900;
-  color: var(--text-main);
-}
-
-.rp-star {
-  color: var(--accent-2);
-}
-.rp-score {
-  font-size: 14px;
-}
-.rp-meta {
-  color: var(--text-muted);
-  font-size: 12.5px;
-  font-weight: 800;
-}
-
-.page-title {
-  margin: 12px 0 8px;
-  font-size: 30px;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-}
-
-.lead {
-  margin: 0;
-  color: var(--text-main);
-  line-height: 1.7;
-  font-size: 16.5px;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  font-weight: 950;
-  border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease;
-  white-space: nowrap;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-.btn:active {
-  transform: translateY(0px);
-}
-
-.btn.primary {
-  background: var(--secondary-accent);
-  color: var(--text-main);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.btn.ghost {
-  background: var(--bg-panel);
-  color: var(--text-main);
-}
-
-.facts {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.fact {
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 10px 12px;
-}
-
-.fact-title {
-  font-weight: 950;
-  margin-bottom: 4px;
-}
-
-.fact-text {
-  color: var(--text-muted);
-  line-height: 1.55;
-  font-size: 13.5px;
-}
-
-.hero-note {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-.hero-note a {
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 900;
-}
-
-/* SECTION */
+/* shared */
 .section {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
@@ -430,7 +281,7 @@ const yandexLink =
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .h2 {
@@ -443,222 +294,488 @@ const yandexLink =
 .section-hint {
   color: var(--text-muted);
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
-/* range grid */
-.range-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.range-card {
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 12px 12px;
+/* HERO / stage */
+.stage {
   position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
-.range-card::before {
-  content: "";
+.stage-accent {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--accent);
+  inset: 0 auto 0 0;
+  width: 10px;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 0, 255, 0.95),
+    rgba(4, 0, 255, 0.35)
+  );
   opacity: 0.9;
 }
 
-.rc-title {
+.stage-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  gap: 14px;
+  padding: 16px 16px 14px;
+  padding-left: 26px;
+}
+
+.stage-main {
+  display: grid;
+  gap: 12px;
+}
+
+.brandline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--secondary-accent);
+  box-shadow: 0 0 0 4px rgba(252, 200, 34, 0.25);
+}
+
+.brand-name {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 16px;
+}
+
+.brand-sub {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(28px, 2.4vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 950;
+}
+
+.lead {
+  margin: 0;
+  line-height: 1.75;
+  font-size: 16px;
+  color: var(--text-main);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 950;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+  outline: none;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow: var(--shadow-md);
+}
+.btn:active {
+  transform: translateY(0px);
+  filter: brightness(0.99);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--secondary-accent);
+  color: var(--text-main);
+}
+
+.btn-ghost {
+  background: var(--bg-panel);
+  color: var(--text-main);
+}
+
+.hero-note {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.hero-note a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 900;
+}
+.hero-note a:hover {
+  text-decoration: underline;
+}
+
+.stage-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.rating-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 12px;
+}
+
+.rating-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rating-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--secondary-accent);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  line-height: 1;
+}
+
+.rating-score {
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.rating-meta {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.facts-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.fact {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 12px;
+}
+
+.fact-title {
   font-weight: 950;
   margin-bottom: 6px;
-  padding-left: 6px;
+  letter-spacing: -0.01em;
 }
 
-.rc-text {
+.fact-text {
   color: var(--text-muted);
   line-height: 1.6;
-  font-size: 14px;
-  padding-left: 6px;
+  font-size: 13.5px;
 }
 
+/* ASSORTMENT: editorial list */
+.section-range {
+  padding-top: 14px;
+}
+
+.range-list {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.range-row {
+  display: grid;
+  grid-template-columns: 10px 220px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+}
+
+.range-row:nth-child(even) {
+  background: var(--bg-soft);
+}
+
+.range-row:last-child {
+  border-bottom: none;
+}
+
+.range-kicker {
+  width: 10px;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(4, 0, 255, 0.85);
+}
+
+.range-title {
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.range-text {
+  color: var(--text-muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+/* callout: отдельная плашка */
 .callout {
   margin-top: 12px;
-  background: rgba(4, 0, 255, 0.06);
-  border: 1px solid rgba(4, 0, 255, 0.14);
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 12px;
+  align-items: stretch;
+
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.callout-left {
   padding: 12px 12px;
 }
 
 .callout-title {
   font-weight: 950;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
 .callout-text {
   color: var(--text-muted);
-  line-height: 1.6;
-}
-
-/* FAQ */
-.faq {
-  display: grid;
-  gap: 10px;
-}
-
-.faq-item {
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 0;
-  overflow: hidden;
-}
-
-.faq-item summary {
-  cursor: pointer;
-  list-style: none;
-  padding: 12px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 950;
-}
-
-.faq-item summary::-webkit-details-marker {
-  display: none;
-}
-
-.faq-badge {
-  font-size: 12px;
-  font-weight: 950;
-  color: var(--text-main);
-  background: var(--secondary-accent);
-  padding: 6px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.faq-a {
-  padding: 0 12px 12px;
-  color: var(--text-muted);
   line-height: 1.65;
-  font-size: 14px;
-}
-/* badge + иконка */
-.faq-badge{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
-/* сама иконка */
-.faq-badge :deep(.faq-chev){
-  transition: transform .18s ease;
-  transform-origin: 50% 50%;
+.callout-mark {
+  background: linear-gradient(
+    135deg,
+    rgba(252, 200, 34, 0.85),
+    rgba(252, 200, 34, 0.35)
+  );
 }
 
-/* когда details открыт — поворачиваем вниз->вверх */
-.faq-item[open] .faq-badge :deep(.faq-chev){
-  transform: rotate(-180deg);
+/* TERMS: 2x2 official blocks */
+.section-terms {
+  padding-top: 14px;
 }
 
-/* Yandex block */
-.yandex-rating {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
+.terms-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
 
+.term {
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
   box-shadow: var(--shadow-sm);
+  padding: 12px 12px;
 }
 
-.yr-left {
+.term-head {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.yr-score-line {
-  display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(228, 231, 239, 0.85);
+  margin-bottom: 10px;
 }
 
-.yr-stars {
-  font-size: 18px;
-  line-height: 1;
-  color: var(--text-main);
+.term-title {
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.term-tag {
+  font-size: 12px;
+  font-weight: 950;
   background: var(--secondary-accent);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 6px 10px;
   border-radius: 999px;
-}
-
-.yr-score {
-  font-size: 22px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-}
-
-.yr-count {
-  font-size: 13px;
-  color: var(--text-muted);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
-.yr-btn {
+.term-body {
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* REVIEWS: big rating */
+.section-reviews {
+  padding-top: 14px;
+}
+
+.reviews-stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.reviews-left {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.reviews-big {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviews-star {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--secondary-accent);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  line-height: 1;
+}
+
+.reviews-score {
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.reviews-sub {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.reviews-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
   background: var(--secondary-accent);
   color: var(--text-main);
   text-decoration: none;
   font-weight: 950;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  padding: 14px 16px;
+
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: var(--shadow-sm);
-  transition: transform 0.18s ease, filter 0.18s ease;
-  white-space: nowrap;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+  outline: none;
 }
 
-.yr-btn:hover {
+.reviews-cta:hover {
   transform: translateY(-1px);
-  filter: brightness(1.06);
+  filter: brightness(1.03);
+  box-shadow: var(--shadow-md);
 }
-
-.yr-btn:active {
+.reviews-cta:active {
   transform: translateY(0px);
-  filter: brightness(0.98);
+  filter: brightness(0.99);
+}
+.reviews-cta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .closing {
   margin: 12px 0 0;
   color: var(--text-muted);
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 /* responsive */
-@media (max-width: 820px) {
-  .facts {
+@media (max-width: 980px) {
+  .stage-grid {
     grid-template-columns: 1fr;
   }
-  .range-grid {
+
+  .reviews-stage {
     grid-template-columns: 1fr;
+  }
+
+  .terms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .range-row {
+    grid-template-columns: 10px 1fr;
+    grid-template-areas:
+      "k title"
+      "k text";
+  }
+
+  .range-kicker {
+    grid-area: k;
+  }
+
+  .range-title {
+    grid-area: title;
+  }
+
+  .range-text {
+    grid-area: text;
+  }
+
+  .callout {
+    grid-template-columns: 1fr;
+  }
+
+  .callout-mark {
+    min-height: 10px;
   }
 }
 
@@ -666,26 +783,22 @@ const yandexLink =
   .about-page {
     padding: 14px 12px 26px;
   }
-  .page-title {
-    font-size: 26px;
-  }
-  .hero {
-    padding: 16px 14px;
-  }
+
   .section {
     padding: 14px 14px;
   }
 
-  .yandex-rating {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
+  .stage-grid {
+    padding: 14px 14px 12px;
+    padding-left: 22px;
   }
-  .yr-score-line {
-    justify-content: center;
-  }
-  .yr-btn {
-    width: 100%;
+}
+
+/* motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .reviews-cta {
+    transition: none !important;
   }
 }
 </style>

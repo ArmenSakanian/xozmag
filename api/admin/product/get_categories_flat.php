@@ -17,16 +17,18 @@ try {
     // пробуем с photo_categories
     try {
         $sql = "
-            SELECT
-                id,
-                name,
-                parent_id,
-                level,
-                code,
-                CONCAT(code, ' — ', name) AS full_name,
-                photo_categories
-            FROM categories
-            ORDER BY code ASC
+SELECT
+    id,
+    name,
+    slug,
+    parent_id,
+    level,
+    code,
+    CONCAT(code, ' — ', name) AS full_name,
+    photo_categories
+FROM categories
+ORDER BY code ASC
+
         ";
 
         $stmt = $pdo->query($sql);
@@ -49,15 +51,17 @@ try {
         // если колонки нет — не ломаем сайт
         if (strpos($e->getMessage(), "Unknown column") !== false || $e->getCode() === "42S22") {
             $sql = "
-                SELECT
-                    id,
-                    name,
-                    parent_id,
-                    level,
-                    code,
-                    CONCAT(code, ' — ', name) AS full_name
-                FROM categories
-                ORDER BY code ASC
+SELECT
+    id,
+    name,
+    slug,
+    parent_id,
+    level,
+    code,
+    CONCAT(code, ' — ', name) AS full_name
+FROM categories
+ORDER BY code ASC
+
             ";
 
             $stmt = $pdo->query($sql);

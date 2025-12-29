@@ -8,7 +8,7 @@
             :current-category="currentCategory"
             :sync-route="true"
             route-key="q"
-            catalog-path="/Catalog"
+            catalog-path="/catalog"
             :server-limit="30"
             :dropdown-limit="12"
             @search-hits="searchHits = $event"
@@ -32,7 +32,9 @@
 
           <h1 class="catalog-title">
             <template v-if="!hasActiveCategory && !searchQ">Категории</template>
-            <template v-else-if="searchQ && !hasActiveCategory">Результаты поиска</template>
+            <template v-else-if="searchQ && !hasActiveCategory"
+              >Результаты поиска</template
+            >
             <template v-else>{{ currentCategoryName || "Каталог" }}</template>
           </h1>
         </div>
@@ -108,7 +110,9 @@
                   </span>
                 </label>
 
-                <div v-if="!typeOptions.length" class="dd-empty">Нет подкатегорий</div>
+                <div v-if="!typeOptions.length" class="dd-empty">
+                  Нет подкатегорий
+                </div>
               </div>
             </div>
           </div>
@@ -130,7 +134,9 @@
                       : " Все"
                   }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters.brand }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.brand }"
+                  >▾</span
+                >
               </div>
 
               <div
@@ -173,7 +179,9 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('photo')">
                 <span class="filter-head-text">{{ photoHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.photo }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.photo }"
+                  >▾</span
+                >
               </div>
 
               <div v-show="openFilters.photo" class="filter-dropdown-body">
@@ -222,8 +230,12 @@
 
               <div class="filter-dropdown">
                 <div class="filter-dropdown-head" @click="toggleFilter(attr)">
-                  <span class="filter-head-text">{{ attributeHeadText(attr) }}</span>
-                  <span class="arrow" :class="{ open: openFilters[attr] }">▾</span>
+                  <span class="filter-head-text">{{
+                    attributeHeadText(attr)
+                  }}</span>
+                  <span class="arrow" :class="{ open: openFilters[attr] }"
+                    >▾</span
+                  >
                 </div>
 
                 <div
@@ -257,7 +269,9 @@
                         v-if="block.ui_render === 'color'"
                         class="color-dot"
                         :class="{ empty: !v.meta?.color }"
-                        :style="v.meta?.color ? { background: v.meta.color } : {}"
+                        :style="
+                          v.meta?.color ? { background: v.meta.color } : {}
+                        "
                       ></span>
 
                       <span class="filter-option-text">{{ v.value }}</span>
@@ -313,7 +327,11 @@
           </div>
 
           <div v-else class="products-grid">
-            <article v-for="p in visibleProducts" :key="p.id" class="product-card">
+            <article
+              v-for="p in visibleProducts"
+              :key="p.id"
+              class="product-card"
+            >
               <div
                 class="product-image"
                 @click.stop
@@ -321,7 +339,11 @@
                 @mousedown.stop
                 @touchstart.stop
               >
-                <ProductCardGallery :images="p.images" :alt="p.name" :compact="isMobile" />
+                <ProductCardGallery
+                  :images="p.images"
+                  :alt="p.name"
+                  :compact="isMobile"
+                />
               </div>
 
               <div class="product-info">
@@ -329,16 +351,26 @@
 
                 <div class="product-row">
                   <div class="product-price">{{ p.price }} ₽</div>
-                  <div class="product-qty">Остаток: {{ p.quantity ?? "—" }}</div>
+                  <div class="product-qty">
+                    Остаток: {{ p.quantity ?? "—" }}
+                  </div>
                 </div>
 
                 <div class="product-meta">
-                  <span v-if="p.barcode" class="product-chip product-barcode">{{ p.barcode }}</span>
-                  <span v-if="p.article" class="product-chip product-article">Арт: {{ p.article }}</span>
+                  <span v-if="p.barcode" class="product-chip product-barcode">{{
+                    p.barcode
+                  }}</span>
+                  <span v-if="p.article" class="product-chip product-article"
+                    >Арт: {{ p.article }}</span
+                  >
                 </div>
 
                 <div class="product-actions">
-                  <button class="product-open" type="button" @click.stop="openProduct(p)">
+                  <button
+                    class="product-open"
+                    type="button"
+                    @click.stop="openProduct(p)"
+                  >
                     Открыть
                   </button>
                 </div>
@@ -347,12 +379,19 @@
 
             <div v-if="filteredProducts.length === 0" class="products-empty">
               <div class="empty-title">Товары не найдены</div>
-              <div class="empty-text">Попробуйте изменить категорию, поиск или фильтры</div>
+              <div class="empty-text">
+                Попробуйте изменить категорию, поиск или фильтры
+              </div>
             </div>
           </div>
 
-          <div v-if="(hasActiveCategory || searchQ) && canLoadMore" class="load-more">
-            <button class="load-more-btn" @click="loadMore">Показать ещё</button>
+          <div
+            v-if="(hasActiveCategory || searchQ) && canLoadMore"
+            class="load-more"
+          >
+            <button class="load-more-btn" @click="loadMore">
+              Показать ещё
+            </button>
           </div>
         </template>
       </div>
@@ -492,7 +531,12 @@
             </label>
 
             <label v-for="b in brands" :key="b" class="filter-checkbox">
-              <input type="checkbox" :value="b" v-model="brandModel" @change="applyFilters" />
+              <input
+                type="checkbox"
+                :value="b"
+                v-model="brandModel"
+                @change="applyFilters"
+              />
               <span>{{ b }}</span>
             </label>
           </div>
@@ -500,17 +544,32 @@
           <!-- MOBILE PHOTO -->
           <div v-if="mobileView === 'photo'" class="mfil-values">
             <label class="filter-checkbox">
-              <input type="radio" value="all" v-model="photoModel" @change="applyFilters" />
+              <input
+                type="radio"
+                value="all"
+                v-model="photoModel"
+                @change="applyFilters"
+              />
               <span>Все</span>
             </label>
 
             <label class="filter-checkbox">
-              <input type="radio" value="with" v-model="photoModel" @change="applyFilters" />
+              <input
+                type="radio"
+                value="with"
+                v-model="photoModel"
+                @change="applyFilters"
+              />
               <span>С фото</span>
             </label>
 
             <label class="filter-checkbox">
-              <input type="radio" value="without" v-model="photoModel" @change="applyFilters" />
+              <input
+                type="radio"
+                value="without"
+                v-model="photoModel"
+                @change="applyFilters"
+              />
               <span>Без фото</span>
             </label>
           </div>
@@ -540,7 +599,9 @@
 
               <span class="filter-option">
                 <span
-                  v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
+                  v-if="
+                    attributeFilters[activeMobileAttr]?.ui_render === 'color'
+                  "
                   class="color-dot"
                   :class="{ empty: !v.meta?.color }"
                   :style="v.meta?.color ? { background: v.meta.color } : {}"
@@ -564,7 +625,11 @@
             Готово
           </button>
 
-          <button class="moverlay-ghost" @click="resetAllFilters" title="Сбросить все фильтры">
+          <button
+            class="moverlay-ghost"
+            @click="resetAllFilters"
+            title="Сбросить все фильтры"
+          >
             Сбросить
           </button>
         </div>
@@ -575,6 +640,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
+import { useHead } from "@vueuse/head";
 import { useRoute, useRouter } from "vue-router";
 import ProductCardGallery from "@/components/ProductCardGallery.vue";
 import HomeCatalogEntry from "@/components/HomeCatalogEntry.vue";
@@ -592,14 +658,22 @@ const normalize = (s) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const toArr = (v) => (v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)]);
+const toArr = (v) =>
+  v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
 
-const hasImages = (p) => Array.isArray(p.images) && p.images.filter(Boolean).length > 0;
+const hasImages = (p) =>
+  Array.isArray(p.images) && p.images.filter(Boolean).length > 0;
 
 function getCatCodeOfProduct(p) {
   const v = p?.category_code ?? p?.categoryCode ?? p?.category ?? "";
   return String(v || "");
 }
+// ✅ проверка "в этой ветке категорий", а не просто startsWith
+const inTree = (cc, code) => {
+  cc = String(cc || "");
+  code = String(code || "");
+  return cc === code || cc.startsWith(code + ".");
+};
 
 /* ================= STATE ================= */
 const products = ref([]);
@@ -610,11 +684,27 @@ const catsLoading = ref(false);
 const searchHits = ref([]);
 
 /* ================= URL SOURCE OF TRUTH ================= */
-const currentCategory = computed(() => {
+// cat в URL теперь SLUG (или старый code для совместимости)
+const currentCategoryParam = computed(() => {
   const v = route.query.cat;
-  return v ? String(Array.isArray(v) ? v[0] : v) : null;
+  return v ? String(Array.isArray(v) ? v[0] : v) : null; // slug или "1.2"
 });
-const hasActiveCategory = computed(() => !!currentCategory.value);
+
+// внутри страницы используем CODE (для фильтрации товаров по category_code)
+const currentCategory = computed(() => {
+  const raw = currentCategoryParam.value;
+  if (!raw) return null;
+
+  // старые ссылки: cat=1 или cat=1.2
+  if (/^[0-9.]+$/.test(raw)) return raw;
+
+  // новые ссылки: cat=santehnika...
+  const found = categories.value.find((c) => c.slug && String(c.slug) === raw);
+  return found ? String(found.code) : null;
+});
+
+// активность категории = есть cat в URL (даже если это slug и code ещё не вычислился)
+const hasActiveCategory = computed(() => !!currentCategoryParam.value);
 
 const searchQ = computed(() => {
   const v = route.query.q;
@@ -623,13 +713,66 @@ const searchQ = computed(() => {
 
 const currentCategoryName = computed(() => {
   if (!currentCategory.value) return null;
-  const found = categories.value.find((c) => String(c.code) === String(currentCategory.value));
+  const found = categories.value.find(
+    (c) => String(c.code) === String(currentCategory.value)
+  );
   return found ? found.name : null;
 });
+const SITE = "XOZMAG.RU";
+
+const headTitle = computed(() => {
+  const q = String(searchQ.value || "").trim();
+  const catName = currentCategoryName.value;
+
+  if (!hasActiveCategory.value && !q) return `Каталог товаров — ${SITE}`;
+  if (!hasActiveCategory.value && q) return `Поиск: ${q} — ${SITE}`;
+  if (hasActiveCategory.value && q && catName)
+    return `${catName}: поиск “${q}” — ${SITE}`;
+  if (hasActiveCategory.value && catName) return `${catName} купить — ${SITE}`;
+
+  return `Каталог — ${SITE}`;
+});
+
+const headDesc = computed(() => {
+  const q = String(searchQ.value || "").trim();
+  const catName = currentCategoryName.value;
+
+  if (!hasActiveCategory.value && !q) {
+    return "Каталог хозтоваров и товаров для дома: выберите категорию и найдите нужные товары по цене, бренду и наличию.";
+  }
+  if (!hasActiveCategory.value && q) {
+    return `Результаты поиска по запросу “${q}”. Фильтры по бренду, цене и наличию.`;
+  }
+  if (hasActiveCategory.value && q && catName) {
+    return `Результаты поиска “${q}” в категории “${catName}”. Фильтры по цене, бренду и наличию.`;
+  }
+  if (hasActiveCategory.value && catName) {
+    return `Категория “${catName}”: цены, наличие и фильтры по бренду, цене и характеристикам.`;
+  }
+
+  return "Каталог товаров для дома и хозтоваров.";
+});
+
+useHead(() => ({
+  title: headTitle.value,
+  meta: [
+    { name: "description", content: headDesc.value },
+    { property: "og:title", content: headTitle.value },
+    { property: "og:description", content: headDesc.value },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: `https://xozmag.ru${route.fullPath}` },
+  ],
+}));
 
 /* ===== photo filter ===== */
 const photoModel = ref(
-  route.query.photo ? String(Array.isArray(route.query.photo) ? route.query.photo[0] : route.query.photo) : "all"
+  route.query.photo
+    ? String(
+        Array.isArray(route.query.photo)
+          ? route.query.photo[0]
+          : route.query.photo
+      )
+    : "all"
 );
 
 const photoHeadText = computed(() => {
@@ -640,8 +783,12 @@ const photoHeadText = computed(() => {
 
 /* ================= FILTER MODELS ================= */
 const brandModel = ref([]);
-const priceFromModel = ref(route.query.price_from ? Number(route.query.price_from) : null);
-const priceToModel = ref(route.query.price_to ? Number(route.query.price_to) : null);
+const priceFromModel = ref(
+  route.query.price_from ? Number(route.query.price_from) : null
+);
+const priceToModel = ref(
+  route.query.price_to ? Number(route.query.price_to) : null
+);
 const attributeModels = ref({});
 
 /* ✅ TYPE MODEL (для root категорий) */
@@ -661,7 +808,9 @@ async function ensureProductsOnlyWhenCategory() {
   productsPromise = fetch("/api/admin/product/get_products.php")
     .then((r) => r.json())
     .then((baseProducts) => {
-      const list = Array.isArray(baseProducts) ? baseProducts : baseProducts.products || [];
+      const list = Array.isArray(baseProducts)
+        ? baseProducts
+        : baseProducts.products || [];
 
       products.value = (list || []).filter(Boolean).map((p) => {
         let images = [];
@@ -684,7 +833,11 @@ async function ensureProductsOnlyWhenCategory() {
         return {
           ...p,
           images,
-          _search: normalize(`${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`),
+          _search: normalize(
+            `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${
+              p.barcode || ""
+            }`
+          ),
         };
       });
 
@@ -709,18 +862,66 @@ watch(
   { immediate: true }
 );
 
-const loading = computed(() => catsLoading.value || (hasActiveCategory.value && productsLoading.value));
+const loading = computed(
+  () => catsLoading.value || (hasActiveCategory.value && productsLoading.value)
+);
 
 /* ================= GET CATEGORIES FROM HomeSearch ================= */
 function onCategoriesLoaded(list) {
-  categories.value = Array.isArray(list) ? list : [];
+  const arr = Array.isArray(list) ? list : [];
+  categories.value = arr.map((c) => ({
+    ...c,
+    parent: c.parent ?? c.parent_id ?? null, // важно для дерева
+    slug: c.slug ?? null, // важно для URL
+  }));
   catsLoadedOnce.value = true;
 }
+watch(
+  () => [catsLoadedOnce.value, currentCategoryParam.value, route.query.type],
+  () => {
+    if (!catsLoadedOnce.value) return;
+
+    const nextQuery = { ...route.query };
+    let changed = false;
+
+    // cat: code -> slug (у тебя уже есть)
+    const rawCat = currentCategoryParam.value;
+    if (rawCat && /^[0-9.]+$/.test(rawCat)) {
+      const f = categories.value.find((c) => String(c.code) === String(rawCat));
+      if (f?.slug && f.slug !== rawCat) {
+        nextQuery.cat = f.slug;
+        changed = true;
+      }
+    }
+
+    // type: code -> slug (добавляем)
+    const t = toArr(route.query.type);
+    if (t.length) {
+      const mapped = t.map((x) => {
+        const s = String(x);
+        if (!/^[0-9.]+$/.test(s)) return s;
+        const f = categories.value.find((c) => String(c.code) === s);
+        return f?.slug || s;
+      });
+
+      if (mapped.join("|") !== t.map(String).join("|")) {
+        nextQuery.type = mapped;
+        changed = true;
+      }
+    }
+
+    if (changed) router.replace({ query: nextQuery });
+  },
+  { immediate: true }
+);
+
 
 /* ================= TREE FROM FLAT ================= */
 const treeData = computed(() => {
   const byId = new Map();
-  categories.value.forEach((c) => byId.set(String(c.id), { ...c, children: [] }));
+  categories.value.forEach((c) =>
+    byId.set(String(c.id), { ...c, children: [] })
+  );
 
   const roots = [];
   categories.value.forEach((c) => {
@@ -731,11 +932,15 @@ const treeData = computed(() => {
   });
 
   const sortNode = (n) => {
-    n.children.sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
+    n.children.sort((a, b) =>
+      a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
+    );
     n.children.forEach(sortNode);
   };
 
-  roots.sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
+  roots.sort((a, b) =>
+    a.name.localeCompare(b.name, "ru", { sensitivity: "base" })
+  );
   roots.forEach(sortNode);
 
   const byCode = new Map();
@@ -797,7 +1002,9 @@ const typeCodeToName = computed(() => {
 
 const typeHeadText = computed(() => {
   if (!typeModel.value.length) return "Все";
-  const names = typeModel.value.map((code) => typeCodeToName.value.get(String(code)) || String(code));
+  const names = typeModel.value.map(
+    (code) => typeCodeToName.value.get(String(code)) || String(code)
+  );
   if (names.length <= 2) return names.join(" · ");
   return `Выбрано: ${names.length}`;
 });
@@ -820,14 +1027,16 @@ function pickCategoryFromGrid(cat) {
   const code = String(cat?.code || "");
   if (!code) return;
 
-  router.push({ path: "/Catalog", query: { cat: code } });
+  const slug = String(cat?.slug || "");
+  if (slug) router.push({ path: "/catalog", query: { cat: slug } });
+  else router.push({ path: "/catalog", query: { cat: code } }); // fallback
 }
 
 /* ================= PRODUCTS SCOPE ================= */
 const productsInCurrentCat = computed(() => {
   if (!currentCategory.value) return [];
   const pref = String(currentCategory.value);
-  return products.value.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
+  return products.value.filter((p) => inTree(getCatCodeOfProduct(p), pref));
 });
 
 const productsInTypeScope = computed(() => {
@@ -837,7 +1046,7 @@ const productsInTypeScope = computed(() => {
     const sel = typeModel.value.map(String);
     list = list.filter((p) => {
       const cc = getCatCodeOfProduct(p);
-      return sel.some((code) => cc.startsWith(code));
+      return sel.some((code) => inTree(cc, code));
     });
   }
 
@@ -848,7 +1057,9 @@ const productsInTypeScope = computed(() => {
 const brands = computed(() => {
   const set = new Set();
   productsInTypeScope.value.forEach((p) => p.brand && set.add(p.brand));
-  return Array.from(set).sort((a, b) => a.localeCompare(b, "ru", { sensitivity: "base" }));
+  return Array.from(set).sort((a, b) =>
+    a.localeCompare(b, "ru", { sensitivity: "base" })
+  );
 });
 
 const attributeFilters = computed(() => {
@@ -859,7 +1070,8 @@ const attributeFilters = computed(() => {
     (p.attributes || []).forEach((a) => {
       if (!a?.name || !a?.value) return;
 
-      if (!temp[a.name]) temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
+      if (!temp[a.name])
+        temp[a.name] = { ui_render: a.ui_render || "text", map: new Map() };
       if (a.ui_render === "color") temp[a.name].ui_render = "color";
 
       let metaObj = a.meta ?? null;
@@ -872,7 +1084,8 @@ const attributeFilters = computed(() => {
       }
 
       const existed = temp[a.name].map.get(a.value);
-      if (!existed) temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
+      if (!existed)
+        temp[a.name].map.set(a.value, { value: a.value, meta: metaObj });
       else if (!existed.meta?.color && metaObj?.color) existed.meta = metaObj;
     });
   });
@@ -882,7 +1095,9 @@ const attributeFilters = computed(() => {
     res[k] = {
       ui_render: temp[k].ui_render,
       values: Array.from(temp[k].map.values()).sort((x, y) =>
-        String(x.value).localeCompare(String(y.value), "ru", { sensitivity: "base" })
+        String(x.value).localeCompare(String(y.value), "ru", {
+          sensitivity: "base",
+        })
       ),
     };
   }
@@ -906,7 +1121,9 @@ watch(
       brand: openFilters.value.brand ?? false,
       photo: openFilters.value.photo ?? false,
     };
-    Object.keys(attributeFilters.value).forEach((k) => (nextOpen[k] = openFilters.value[k] ?? false));
+    Object.keys(attributeFilters.value).forEach(
+      (k) => (nextOpen[k] = openFilters.value[k] ?? false)
+    );
     openFilters.value = nextOpen;
   },
   { immediate: true }
@@ -953,17 +1170,39 @@ function applyFilters() {
   }
 
   const query = {
-    cat: currentCategory.value || undefined,
+    cat: (() => {
+      const raw = currentCategoryParam.value;
+      if (!raw) return undefined;
+
+      // если уже slug — оставляем
+      if (!/^[0-9.]+$/.test(raw)) return raw;
+
+      // если code — пытаемся заменить на slug
+      const found = categories.value.find(
+        (c) => String(c.code) === String(raw)
+      );
+      return found?.slug || raw;
+    })(),
     q: qRaw || undefined,
 
     // ✅ type только на root
-    type: isRootCategorySelected.value === true && typeModel.value.length ? typeModel.value : undefined,
+type:
+  isRootCategorySelected.value === true && typeModel.value.length
+    ? typeModel.value.map((code) => {
+        const found = categories.value.find(
+          (c) => String(c.code) === String(code)
+        );
+        return found?.slug || String(code); // fallback если slug нет
+      })
+    : undefined,
+
 
     // ✅ brand всегда
     brand: brandModel.value.length ? brandModel.value : undefined,
 
     // ✅ цена всегда
-    price_from: priceFromModel.value !== null ? priceFromModel.value : undefined,
+    price_from:
+      priceFromModel.value !== null ? priceFromModel.value : undefined,
     price_to: priceToModel.value !== null ? priceToModel.value : undefined,
 
     // ✅ photo всегда (НЕ зависит от типа)
@@ -986,7 +1225,18 @@ watch(
   (q) => {
     syncingFromRoute.value = true;
 
-    typeModel.value = toArr(q.type);
+typeModel.value = toArr(q.type)
+  .map((v) => {
+    const s = String(v || "");
+
+    // старые ссылки: type=1.2
+    if (/^[0-9.]+$/.test(s)) return s;
+
+    // новые ссылки: type=slug
+    const found = categories.value.find((c) => String(c.slug) === s);
+    return found ? String(found.code) : null;
+  })
+  .filter(Boolean);
     brandModel.value = toArr(q.brand);
 
     priceFromModel.value =
@@ -1007,7 +1257,9 @@ watch(
     });
     attributeModels.value = nextAttrs;
 
-    photoModel.value = q.photo ? String(Array.isArray(q.photo) ? q.photo[0] : q.photo) : "all";
+    photoModel.value = q.photo
+      ? String(Array.isArray(q.photo) ? q.photo[0] : q.photo)
+      : "all";
 
     syncingFromRoute.value = false;
   },
@@ -1041,7 +1293,7 @@ watch(allowAttrFilters, (ok, prev) => {
 });
 
 /* при смене категории — сбрасываем фильтры (поиск остаётся в URL) */
-watch(currentCategory, () => {
+watch(currentCategoryParam, () => {
   typeModel.value = [];
   brandModel.value = [];
   priceFromModel.value = null;
@@ -1070,7 +1322,9 @@ const mergedSearchProducts = computed(() => {
     .map((hit) => {
       const full = map.get(String(hit.id));
 
-      const hitImages = Array.isArray(hit.images) ? hit.images.filter(Boolean) : [];
+      const hitImages = Array.isArray(hit.images)
+        ? hit.images.filter(Boolean)
+        : [];
       const hitThumb = hit.thumb ? [hit.thumb] : [];
       const fromHit = hitImages.length ? hitImages : hitThumb;
 
@@ -1095,7 +1349,9 @@ const mergedSearchProducts = computed(() => {
         images: fromHit,
         attributes: [],
         category_code: "",
-        _search: normalize(`${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`),
+        _search: normalize(
+          `${hit.name || ""} ${hit.brand || ""} ${hit.barcode || ""}`
+        ),
       };
     })
     .filter((p) => p?.id != null && p?.name);
@@ -1115,7 +1371,7 @@ const filteredProducts = computed(() => {
   // ✅ если есть cat — ограничиваем в пределах выбранной категории
   if (hasActiveCategory.value) {
     const pref = String(currentCategory.value);
-    list = list.filter((p) => getCatCodeOfProduct(p).startsWith(pref));
+    list = list.filter((p) => inTree(getCatCodeOfProduct(p), pref));
   }
 
   // ✅ TYPE (root)
@@ -1123,7 +1379,7 @@ const filteredProducts = computed(() => {
     const sel = typeModel.value.map(String);
     list = list.filter((p) => {
       const cc = getCatCodeOfProduct(p);
-      return sel.some((code) => cc.startsWith(code));
+      return sel.some((code) => inTree(cc, code));
     });
   }
 
@@ -1133,18 +1389,23 @@ const filteredProducts = computed(() => {
   }
 
   // ✅ цена всегда
-  if (priceFromModel.value !== null) list = list.filter((p) => Number(p.price) >= priceFromModel.value);
-  if (priceToModel.value !== null) list = list.filter((p) => Number(p.price) <= priceToModel.value);
+  if (priceFromModel.value !== null)
+    list = list.filter((p) => Number(p.price) >= priceFromModel.value);
+  if (priceToModel.value !== null)
+    list = list.filter((p) => Number(p.price) <= priceToModel.value);
 
   // ✅ фото — ВСЕГДА (НЕ зависит от типа)
   if (photoModel.value === "with") list = list.filter((p) => hasImages(p));
-  else if (photoModel.value === "without") list = list.filter((p) => !hasImages(p));
+  else if (photoModel.value === "without")
+    list = list.filter((p) => !hasImages(p));
 
   // ✅ атрибуты — только когда разрешено
   if (allowAttrFilters.value) {
     for (const [k, arr] of Object.entries(attributeModels.value)) {
       if (!Array.isArray(arr) || !arr.length) continue;
-      list = list.filter((p) => p.attributes?.some((a) => a.name === k && arr.includes(a.value)));
+      list = list.filter((p) =>
+        p.attributes?.some((a) => a.name === k && arr.includes(a.value))
+      );
     }
   }
 
@@ -1162,8 +1423,12 @@ watch(
   }
 );
 
-const visibleProducts = computed(() => filteredProducts.value.slice(0, displayLimit.value));
-const canLoadMore = computed(() => filteredProducts.value.length > displayLimit.value);
+const visibleProducts = computed(() =>
+  filteredProducts.value.slice(0, displayLimit.value)
+);
+const canLoadMore = computed(
+  () => filteredProducts.value.length > displayLimit.value
+);
 
 function loadMore() {
   displayLimit.value += step.value;
@@ -1195,7 +1460,8 @@ function resetAllFilters() {
 
 /* ================= navigation ================= */
 function openProduct(p) {
-  router.push({ name: "product", params: { id: p.id } });
+  router.push({ name: "product", params: { slug: p.slug || String(p.id) } });
+
 }
 
 /* ================= BODY LOCK (only filters modal) ================= */
@@ -1227,7 +1493,6 @@ watch(showMobileFilters, (open) => {
   else unlockBody();
 });
 </script>
-
 
 <style scoped>
 /* ====== shared small ui ====== */

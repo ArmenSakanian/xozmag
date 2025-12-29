@@ -4,7 +4,15 @@
       <div class="cats-title">Категории</div>
       <div class="cats-sub">Только первый уровень</div>
     </div>
-
+<div class="cats-note">
+  <span class="cats-note-ic" aria-hidden="true">
+    <Fa :icon="['fas','circle-info']" />
+  </span>
+  <span>
+    Пока что показаны не все категории. Но вы можете найти любой товар через поиск —
+    по поиску отображается весь ассортимент магазина.
+  </span>
+</div>
     <div class="cats-grid" v-if="topCats.length">
       <button
         v-for="c in topCats"
@@ -65,7 +73,7 @@ function goCategory(cat) {
   emit("select-category", cat);
 
   if (props.navigateOnPick) {
-    router.push({ path: "/Catalog", query: { cat: cat.code } });
+router.push({ path: "/catalog", query: { cat: cat.slug || cat.code } });
   }
 }
 
@@ -108,6 +116,36 @@ watch(
   font-size: 12px;
   font-weight: 800;
   color: var(--text-muted);
+}
+.cats-note{
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  padding: 10px 12px;
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: var(--shadow-sm);
+}
+
+/* чуть компактнее на мобилке */
+@media (max-width: 480px){
+  .cats-note{
+    padding: 10px;
+    font-size: 12.5px;
+  }
+}
+.cats-note{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+.cats-note-ic{
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  margin-top: 2px;
 }
 
 .cats-grid{

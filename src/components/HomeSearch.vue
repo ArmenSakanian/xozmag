@@ -248,6 +248,7 @@ function normalizeCat(c) {
   return {
     id: c.id,
     name: c.name,
+    slug: c.slug ?? null,
     code: c.code,
     parent,
     photo:
@@ -289,7 +290,7 @@ const props = defineProps({
   syncRoute: { type: Boolean, default: false },
   routeKey: { type: String, default: "q" },
 
-  catalogPath: { type: String, default: "/Catalog" },
+  catalogPath: { type: String, default: "/catalog" },
 
   placeholder: {
     type: String,
@@ -313,6 +314,13 @@ const localCatsLoading = ref(false);
 const catsList = computed(() => {
   const fromProps = Array.isArray(props.categories) ? props.categories : [];
   return fromProps.length ? fromProps : localCats.value;
+});
+
+const currentCategorySlug = computed(() => {
+  const code = props.currentCategory;
+  if (code == null || String(code) === "") return "";
+  const found = (catsList.value || []).find((c) => String(c.code) === String(code));
+  return found?.slug ? String(found.slug) : String(code);
 });
 
 async function ensureCategories() {
@@ -571,7 +579,8 @@ function enterPick() {
 }
 
 function goProduct(p) {
-  router.push({ name: "product", params: { id: p.id } });
+  router.push({ name: "product", params: { slug: p.slug || String(p.id) } });
+
   openDd.value = false;
 }
 
@@ -583,7 +592,7 @@ function goAllResults() {
     path: props.catalogPath,
     query: {
       q: s,
-      cat: props.currentCategory ? String(props.currentCategory) : undefined,
+      cat: currentCategorySlug.value || undefined,
     },
   });
 
@@ -708,9 +717,15 @@ const desktopColumns = computed(() => {
   return cols.slice(0, 6);
 });
 
+const inTree = (cc, code) => {
+  cc = String(cc || "");
+  code = String(code || "");
+  return cc === code || cc.startsWith(code + ".");
+};
+
 function isCatActive(n) {
   if (!props.currentCategory) return false;
-  return String(props.currentCategory).startsWith(String(n.code));
+  return inTree(props.currentCategory, n.code);
 }
 function isCatPicked(n) {
   if (!props.currentCategory) return false;
@@ -805,15 +820,15 @@ function toggleCatPopover() {
 }
 
 function pickCategory(nodeOrCat, { close = false } = {}) {
-  const code = String(nodeOrCat?.code || "");
-  if (!code) return;
+  const slug = String(nodeOrCat?.slug || nodeOrCat?.code || "");
+  if (!slug) return;
 
   const qRaw = qTrim.value;
 
   router.push({
     path: props.catalogPath,
     query: {
-      cat: code,
+      cat: slug,
       q: qRaw || undefined,
     },
   });

@@ -9853,7 +9853,7 @@ class TCPDF {
 		if (!empty($this->efnames)) {
 			$out .= ' /AF [ '. implode(' ', $this->efnames) .' ]';
 		}
-		$out .= ' /Type /Catalog';
+		$out .= ' /Type /catalog';
 		$out .= ' /Version /'.$this->PDFVersion;
 		//$out .= ' /Extensions <<>>';
 		$out .= ' /Pages 1 0 R';

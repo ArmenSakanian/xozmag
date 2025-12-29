@@ -5,7 +5,10 @@
   # www -> без www (сразу на https)
   RewriteCond %{HTTP_HOST} ^www\.xozmag\.ru$ [NC]
   RewriteRule ^ https://xozmag.ru%{REQUEST_URI} [R=301,L]
+
+  # /jp/ -> 410 Gone
   RewriteRule ^jp(/|$) - [G,L]
+
   # http -> https (учитываем, что SSL может быть на nginx, поэтому проверяем X-Forwarded-Proto)
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
@@ -68,9 +71,13 @@
   RewriteCond %{REQUEST_URI} ^/(admin|barcode)(/|$) [NC]
   RewriteRule . /index-noindex.html [L]
 
+  # ================= TRASH URLS: 410 Gone (чтобы исчезли из поиска) =================
+  RewriteRule ^jp(/|$) - [G,L]
+  RewriteRule ^catalog/.*\.html$ - [G,L]
+  RewriteRule ^catalog/cid/ - [G,L]
+
   # обычные SPA-роуты -> index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
-

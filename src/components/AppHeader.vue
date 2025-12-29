@@ -17,7 +17,7 @@
 
         <!-- DESKTOP NAV -->
         <nav class="nav">
-          <a href="/product" class="nav-item">Каталог</a>
+          <a href="/catalog" class="nav-item">Каталог</a>
           <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
           <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
           <a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
@@ -47,7 +47,7 @@
             :categories="categories"
             :current-category="null"
             :sync-route="false"
-            catalog-path="/Catalog"
+            catalog-path="/catalog"
             @categories-loaded="onCategoriesLoaded"
           />
         </div>
@@ -56,7 +56,7 @@
 
     <!-- ===== MOBILE MENU ===== -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
-      <a href="/product" class="mobile-item" @click="closeMenu">Каталог</a>
+      <a href="/catalog" class="mobile-item" @click="closeMenu">Каталог</a>
       <a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
       <a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
       <a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
@@ -76,8 +76,8 @@ const mobileOpen = ref(false);
    HIDE SEARCH ON Catalog
 ========================= */
 const showHeaderSearch = computed(() => {
-  // прячем на /Catalog и на вложенных типа /Catalog/...
-  return !(route.path === "/Catalog" || route.path.startsWith("/Catalog/"));
+  // прячем на /catalog и на вложенных типа /catalog/...
+  return !(route.path === "/catalog" || route.path.startsWith("/catalog/"));
 });
 
 /* =========================

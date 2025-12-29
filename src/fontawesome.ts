@@ -47,6 +47,7 @@ import {
   faPhone,
   faLocationDot,
   faClock,
+  faCircleXmark,
 } from '@fortawesome/free-solid-svg-icons'
 
 
@@ -105,7 +106,7 @@ library.add(
   faPhone,
   faLocationDot,
   faClock,
-
+  faCircleXmark,
   // far
   faCopyR,
   faFaceMeh,

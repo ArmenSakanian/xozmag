@@ -7,16 +7,14 @@ import HomePage from "../page/HomePage.vue";
 const LoginPage   = () => import("../page/LoginPage.vue");
 const BarcodePage = () => import("../page/BarcodePage.vue");
 const ProductPage = () => import("../page/ProductPage.vue");
-const Catalog   = () => import("../page/Catalog.vue");
+const Catalog = () => import("../page/catalog.vue");
+
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
-
   { path: "/product", name: "product_v1", component: ProductPage },
-
   { path: "/login", name: "login", component: LoginPage },
-
-  { path: "/Catalog", name: "catalog", component: Catalog },
+  { path: "/catalog", name: "catalog", component: Catalog },
 
   {
     path: "/barcode",
@@ -35,13 +33,22 @@ const routes = [
   { path: "/admin/order", component: () => import("@/admin/AdminOrder.vue") },
 
   /* карточка товара v2 */
+{
+  path: "/product/:slug",
+  name: "product",
+  component: () => import("@/page/ProductCartPage.vue"),
+  props: true,
+},
+
+
+  // ✅ 404 — последний
   {
-    path: "/product/:id",
-    name: "product",
-    component: () => import("@/page/ProductCartPage.vue"),
-    props: true,
+    path: "/:pathMatch(.*)*",
+    name: "notfound",
+    component: () => import("../page/NotFoundPage.vue"),
   },
 ];
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

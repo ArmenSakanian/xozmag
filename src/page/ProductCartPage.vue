@@ -278,6 +278,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useHead } from "@vueuse/head";
 
 /* Swiper */
 import { Swiper, SwiperSlide } from "swiper/vue";
@@ -308,7 +309,8 @@ const thumbsSwiper = ref(null);
 const tab = ref("desc");
 const descExpanded = ref(false);
 
-const pid = computed(() => String(route.params.id || ""));
+const pkey = computed(() => String(route.params.slug || "")); // /product/:slug
+const isId = (v) => /^\d+$/.test(String(v || ""));
 
 const safeJson = (s) => {
   try {
@@ -340,7 +342,60 @@ const pricePretty = computed(() => {
   if (!Number.isFinite(n)) return "—";
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n);
 });
+/* ===== SEO HEAD (вставить сюда) ===== */
+const SITE = "XOZMAG.RU";
 
+function clip(s, n = 160) {
+  const t = String(s || "").replace(/\s+/g, " ").trim();
+  return t.length > n ? t.slice(0, n - 1) + "…" : t;
+}
+
+const headUrl = computed(() => `https://xozmag.ru${route.fullPath}`);
+
+const ogImage = computed(() => {
+  const img = images.value?.[0] || "";
+  if (!img) return "https://xozmag.ru/img/no-photo.png";
+  if (/^https?:\/\//i.test(img)) return img;
+  return `https://xozmag.ru${img.startsWith("/") ? img : "/" + img}`;
+});
+
+const headTitle = computed(() => {
+  const p = product.value;
+if (!p?.name) return `Товар #${pkey.value} — ${SITE}`;  const price = Number(p.price);
+  const pricePart = Number.isFinite(price) && price > 0 ? ` — ${pricePretty.value} ₽` : "";
+  return `${p.name}${pricePart} | ${SITE}`;
+});
+
+const headDesc = computed(() => {
+  const p = product.value;
+  if (!p?.name) return "Товар в магазине XOZMAG.RU: цена, наличие, характеристики.";
+
+  const desc = String(p.description || "").trim();
+  if (desc) return clip(desc);
+
+  const parts = [
+    p.brand ? `Бренд: ${p.brand}` : "",
+    p.article ? `Арт: ${p.article}` : "",
+    p.barcode ? `Штрихкод: ${p.barcode}` : "",
+    p.category_path && p.category_path !== "—" ? `Категория: ${p.category_path}` : "",
+  ].filter(Boolean);
+
+  return clip(`${p.name}. ${parts.join(" · ")}. Цена и наличие в ${SITE}.`);
+});
+
+useHead(() => ({
+  title: headTitle.value,
+  meta: [
+    { name: "description", content: headDesc.value },
+    { property: "og:title", content: headTitle.value },
+    { property: "og:description", content: headDesc.value },
+    { property: "og:type", content: "product" },
+    { property: "og:url", content: headUrl.value },
+    { property: "og:image", content: ogImage.value },
+  ],
+  link: [{ rel: "canonical", href: headUrl.value }],
+}));
+/* ===== /SEO HEAD ===== */
 const hasDescription = computed(() => String(product.value?.description || "").trim().length > 0);
 const descCanToggle = computed(() => String(product.value?.description || "").trim().length > 260);
 
@@ -447,8 +502,20 @@ async function loadOne() {
     const r1 = await fetch("/api/admin/product/get_products.php", { cache: "no-store" });
     const json1 = await r1.json();
     const list = normalizeProductList(json1);
-    const found = list.find((p) => String(p?.id) === pid.value);
-    if (!found) return;
+const key = pkey.value;
+
+const found = list.find((p) => {
+  if (isId(key)) return String(p?.id) === String(key);       // старые ссылки /product/123
+  return String(p?.slug || "") === String(key);              // новые /product/<slug>
+});
+
+if (!found) return;
+
+// ✅ если пришли по /product/123 — перекидываем на каноничный /product/<slug>
+if (isId(key) && found?.slug) {
+  router.replace({ name: "product", params: { slug: found.slug } });
+}
+
 
 // ✅ photos only from get_products.php (found.photo)
 let imgArr = [];
@@ -506,7 +573,7 @@ onMounted(() => {
   loadOne();
 });
 
-watch(pid, loadOne);
+watch(pkey, loadOne);
 </script>
 
 <style scoped>
