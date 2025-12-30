@@ -4,22 +4,24 @@
     <header class="topbar">
       <div class="shell topbar-inner">
         <button class="iconbtn backbtn" @click="goBack" aria-label="Назад">
-          <Fa :icon="['fas','arrow-left']" />
+          <Fa :icon="['fas', 'arrow-left']" />
           <span class="backtxt">Назад</span>
         </button>
 
         <div class="topmid">
           <div class="crumbs" v-if="crumbs.length">
             <span class="crumb home">
-              <Fa :icon="['fas','house']" />
+              <Fa :icon="['fas', 'house']" />
               <span>Каталог</span>
             </span>
-            <span class="sep"><Fa :icon="['fas','chevron-right']" /></span>
+            <span class="sep">
+              <Fa :icon="['fas', 'chevron-right']" />
+            </span>
 
             <span v-for="(c, i) in crumbs" :key="c + i" class="crumb" :title="c">
               <span class="crumbtxt">{{ c }}</span>
               <span v-if="i !== crumbs.length - 1" class="sep">
-                <Fa :icon="['fas','chevron-right']" />
+                <Fa :icon="['fas', 'chevron-right']" />
               </span>
             </span>
           </div>
@@ -48,24 +50,24 @@
 
       <section v-else-if="error" class="state card">
         <div class="state-title">
-          <Fa :icon="['fas','triangle-exclamation']" />
+          <Fa :icon="['fas', 'triangle-exclamation']" />
           Ошибка загрузки
         </div>
         <div class="state-text">{{ error }}</div>
         <button class="btn solid" @click="loadOne">
-          <Fa :icon="['fas','rotate-right']" />
+          <Fa :icon="['fas', 'rotate-right']" />
           Повторить
         </button>
       </section>
 
       <section v-else-if="!product" class="state card">
         <div class="state-title">
-          <Fa :icon="['fas','circle-question']" />
+          <Fa :icon="['fas', 'circle-question']" />
           Товар не найден
         </div>
         <div class="state-text">Проверь ID или обнови страницу.</div>
         <button class="btn" @click="goBack">
-          <Fa :icon="['fas','arrow-left']" />
+          <Fa :icon="['fas', 'arrow-left']" />
           Назад
         </button>
       </section>
@@ -78,77 +80,39 @@
           <div class="gallery card">
             <div class="stage">
               <template v-if="images.length">
-                <button
-                  ref="mainPrevEl"
-                  class="navbtn prev"
-                  aria-label="Предыдущее фото"
-                  title="Предыдущее"
-                  @click.stop
-                >
-                  <Fa :icon="['fas','chevron-left']" />
+                <button ref="mainPrevEl" class="navbtn prev" aria-label="Предыдущее фото" title="Предыдущее" @click.stop>
+                  <Fa :icon="['fas', 'chevron-left']" />
                 </button>
 
-                <button
-                  ref="mainNextEl"
-                  class="navbtn next"
-                  aria-label="Следующее фото"
-                  title="Следующее"
-                  @click.stop
-                >
-                  <Fa :icon="['fas','chevron-right']" />
+                <button ref="mainNextEl" class="navbtn next" aria-label="Следующее фото" title="Следующее" @click.stop>
+                  <Fa :icon="['fas', 'chevron-right']" />
                 </button>
 
-                <Swiper
-                  :key="galleryKey"
-                  class="mainSwiper"
-                  :modules="swiperModules"
-                  :slides-per-view="1"
-                  :space-between="10"
-                  :navigation="false"
-                  :pagination="{ clickable: true }"
-                  :keyboard="{ enabled: true }"
-                  :thumbs="{ swiper: thumbsSwiper }"
-                  @swiper="onMainSwiper"
-                  @slideChange="onMainSlideChange"
-                >
+                <Swiper :key="galleryKey" class="mainSwiper" :modules="swiperModules" :slides-per-view="1"
+                  :space-between="10" :navigation="false" :pagination="{ clickable: true }" :keyboard="{ enabled: true }"
+                  :thumbs="{ swiper: thumbsSwiper }" @swiper="onMainSwiper" @slideChange="onMainSlideChange">
                   <SwiperSlide v-for="(img, i) in images" :key="img + i">
                     <div class="zoomwrap">
-                      <img
-                        :src="img"
-                        :alt="product?.name || ''"
-                        class="img"
-                        @error="onSlideImgError(i)"
-                      />
+                      <img :src="img" :alt="product?.name || ''" class="img" @error="onSlideImgError(i)" />
                     </div>
                   </SwiperSlide>
                 </Swiper>
               </template>
 
               <div v-else class="nofoto">
-                <div class="nofoto-ico"><Fa :icon="['far','image']" /></div>
+                <div class="nofoto-ico">
+                  <Fa :icon="['far', 'image']" />
+                </div>
                 <div class="nofoto-t">Нет фото</div>
                 <div class="nofoto-s">Фото появится — покажем автоматически.</div>
               </div>
             </div>
 
             <div v-if="images.length > 1" class="thumbs">
-              <Swiper
-                :key="galleryKey + '-thumbs'"
-                class="thumbSwiper"
-                :modules="swiperModules"
-                :slides-per-view="'auto'"
-                :space-between="10"
-                :watch-slides-progress="true"
-                :free-mode="true"
-                @swiper="onThumbsSwiper"
-              >
+              <Swiper :key="galleryKey + '-thumbs'" class="thumbSwiper" :modules="swiperModules" :slides-per-view="'auto'"
+                :space-between="10" :watch-slides-progress="true" :free-mode="true" @swiper="onThumbsSwiper">
                 <SwiperSlide v-for="(img, i) in images" :key="img + i" class="thumbSlide">
-                  <button
-                    class="thumb"
-                    :class="{ on: i === activeIndex }"
-                    @click="goTo(i)"
-                    :title="`Фото ${i + 1}`"
-                  >
+                  <button class="thumb" :class="{ on: i === activeIndex }" @click="goTo(i)" :title="`Фото ${i + 1}`">
                     <img :src="img" alt="" @error="onThumbError(i)" />
                   </button>
                 </SwiperSlide>
@@ -160,18 +124,18 @@
           <div class="card details">
             <div class="tabs">
               <button class="tab" :class="{ on: tab === 'desc' }" @click="tab = 'desc'">
-                <Fa :icon="['far','file-lines']" />
+                <Fa :icon="['far', 'file-lines']" />
                 Описание
               </button>
 
               <button class="tab" :class="{ on: tab === 'attrs' }" @click="tab = 'attrs'">
-                <Fa :icon="['fas','list-check']" />
+                <Fa :icon="['fas', 'list-check']" />
                 Характеристики
                 <span v-if="attrs.length" class="count">{{ attrs.length }}</span>
               </button>
 
               <button class="tab" :class="{ on: tab === 'info' }" @click="tab = 'info'">
-                <Fa :icon="['fas','circle-info']" />
+                <Fa :icon="['fas', 'circle-info']" />
                 Инфо
               </button>
             </div>
@@ -184,15 +148,11 @@
                 </div>
 
                 <div v-else class="empty">
-                  <Fa :icon="['far','face-meh']" />
+                  <Fa :icon="['far', 'face-meh']" />
                   Описание отсутствует
                 </div>
 
-                <button
-                  v-if="hasDescription && descCanToggle"
-                  class="btn small"
-                  @click="descExpanded = !descExpanded"
-                >
+                <button v-if="hasDescription && descCanToggle" class="btn small" @click="descExpanded = !descExpanded">
                   <i class="fa-solid" :class="descExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                   {{ descExpanded ? "Свернуть" : "Показать полностью" }}
                 </button>
@@ -204,20 +164,15 @@
                   <div v-for="(a, i) in attrs" :key="a.name + i" class="specRow">
                     <div class="sk">{{ a.name }}</div>
                     <div class="sv">
-                      <span
-                        v-if="a.ui_render === 'color'"
-                        class="colorDot"
-                        :class="{ empty: !a.meta?.color }"
-                        :style="a.meta?.color ? { background: a.meta.color } : {}"
-                        :title="a.meta?.color || ''"
-                      ></span>
+                      <span v-if="a.ui_render === 'color'" class="colorDot" :class="{ empty: !a.meta?.color }"
+                        :style="a.meta?.color ? { background: a.meta.color } : {}" :title="a.meta?.color || ''"></span>
                       <span class="svt">{{ a.value }}</span>
                     </div>
                   </div>
                 </div>
 
                 <div v-else class="empty">
-                  <Fa :icon="['far','rectangle-list']" />
+                  <Fa :icon="['far', 'rectangle-list']" />
                   Характеристики не заполнены
                 </div>
               </div>
@@ -263,7 +218,7 @@
 
               <div class="metaBadges">
                 <div v-if="product.brand" class="badge">
-                  <Fa :icon="['fas','tag']" />
+                  <Fa :icon="['fas', 'tag']" />
                   <span class="btxt" :title="product.brand">{{ product.brand }}</span>
                 </div>
               </div>
@@ -361,7 +316,7 @@ const ogImage = computed(() => {
 
 const headTitle = computed(() => {
   const p = product.value;
-if (!p?.name) return `Товар #${pkey.value} — ${SITE}`;  const price = Number(p.price);
+  if (!p?.name) return `Товар #${pkey.value} — ${SITE}`; const price = Number(p.price);
   const pricePart = Number.isFinite(price) && price > 0 ? ` — ${pricePretty.value} ₽` : "";
   return `${p.name}${pricePart} | ${SITE}`;
 });
@@ -481,12 +436,6 @@ function onSlideImgError(i) {
   return () => onThumbError(i)();
 }
 
-function normalizeProductList(json) {
-  if (Array.isArray(json)) return json;
-  if (json && Array.isArray(json.products)) return json.products;
-  if (json && Array.isArray(json.items)) return json.items;
-  return [];
-}
 
 async function loadOne() {
   try {
@@ -499,60 +448,29 @@ async function loadOne() {
     tab.value = "desc";
     galleryKey.value++;
 
-    const r1 = await fetch("/api/admin/product/get_products.php", { cache: "no-store" });
-    const json1 = await r1.json();
-    const list = normalizeProductList(json1);
-const key = pkey.value;
+    const key = pkey.value;
 
-const found = list.find((p) => {
-  if (isId(key)) return String(p?.id) === String(key);       // старые ссылки /product/123
-  return String(p?.slug || "") === String(key);              // новые /product/<slug>
-});
+    const url = isId(key)
+      ? `/api/admin/product/get_products.php?id=${encodeURIComponent(key)}&desc=1&attrs=1`
+      : `/api/admin/product/get_products.php?slug=${encodeURIComponent(key)}&desc=1&attrs=1`;
 
-if (!found) return;
+    const r = await fetch(url, { cache: "no-store" });
+    const j = await r.json();
 
-// ✅ если пришли по /product/123 — перекидываем на каноничный /product/<slug>
-if (isId(key) && found?.slug) {
-  router.replace({ name: "product", params: { slug: found.slug } });
-}
+    const found = j?.item || null;
+    if (!found) return;
 
-
-// ✅ photos only from get_products.php (found.photo)
-let imgArr = [];
-
-// если вдруг бек начнет отдавать уже готовый массив images — поддержим
-if (Array.isArray(found?.images)) {
-  imgArr = found.images.filter(Boolean);
-}
-
-// основной вариант: found.photo = JSON-строка массива
-if (!imgArr.length && found?.photo) {
-  const ph = found.photo;
-
-  const parsed = typeof ph === "string" ? safeJson(ph) : ph;
-
-  if (Array.isArray(parsed)) {
-    imgArr = parsed.filter(Boolean);
-  } else if (typeof ph === "string" && ph.trim()) {
-    // если вдруг photo окажется одной строкой-путём
-    imgArr = [ph.trim()];
-  }
-}
-
-// нормализуем пути (у тебя они уже /photo_product_vitrina/... так что просто пройдут)
-imgArr = imgArr.map(toImgUrl).filter(Boolean);
-
-
-    // fallback: found.photo
-    if (!imgArr.length && found.photo) {
-      const parsed = typeof found.photo === "string" ? safeJson(found.photo) : found.photo;
-      if (Array.isArray(parsed)) imgArr = parsed.filter(Boolean);
-      else if (typeof found.photo === "string" && String(found.photo).trim()) imgArr = [found.photo];
+    // ✅ если пришли по /product/123 — перекидываем на каноничный /product/<slug>
+    if (isId(key) && found?.slug) {
+      router.replace({ name: "product", params: { slug: found.slug } });
     }
 
+    product.value = found;
+
+    // ✅ теперь фотки приходят сразу массивом images[]
+    let imgArr = Array.isArray(found.images) ? found.images.filter(Boolean) : [];
     imgArr = imgArr.map(toImgUrl).filter(Boolean);
 
-    product.value = found;
     images.value = imgArr;
     galleryKey.value++;
 
@@ -582,157 +500,177 @@ watch(pkey, loadOne);
    Accent: #0400ff
    ========================================================= */
 
-.ppage{
-  --accent:#0400ff;
-  --accent2:#00c2ff;
+.ppage {
+  --accent: #0400ff;
+  --accent2: #00c2ff;
 
-  --bg:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
+  --bg: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
 
-  --line: rgba(15,23,42,0.10);
-  --soft: rgba(15,23,42,0.06);
+  --line: rgba(15, 23, 42, 0.10);
+  --soft: rgba(15, 23, 42, 0.06);
 
   min-height: 100vh;
   background:
-    radial-gradient(900px 420px at 12% -160px, rgba(4,0,255,0.10), transparent 60%),
-    radial-gradient(900px 420px at 90% -140px, rgba(0,194,255,0.10), transparent 60%),
+    radial-gradient(900px 420px at 12% -160px, rgba(4, 0, 255, 0.10), transparent 60%),
+    radial-gradient(900px 420px at 90% -140px, rgba(0, 194, 255, 0.10), transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* ===== shell ===== */
-.shell{
+.shell {
   max-width: 1180px;
   margin: 0 auto;
   padding: 18px 16px 60px;
 }
 
 /* ===== topbar ===== */
-.topbar{
+.topbar {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(255,255,255,0.78);
+  background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
 }
-.topbar-inner{
+
+.topbar-inner {
   padding: 12px 16px;
   display: grid;
   grid-template-columns: 220px 1fr 220px;
   gap: 12px;
   align-items: center;
 }
-.topspacer{ height: 42px; }
 
-.topmid{
-  display:flex;
+.topspacer {
+  height: 42px;
+}
+
+.topmid {
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
 
-.crumbs{
-  display:flex;
+.crumbs {
+  display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(100,116,139,0.95);
+  color: rgba(100, 116, 139, 0.95);
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;
 }
-.crumb{
-  display:flex;
-  align-items:center;
+
+.crumb {
+  display: flex;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
-.crumb.home{
+
+.crumb.home {
   font-weight: 800;
-  color: rgba(15,23,42,0.72);
+  color: rgba(15, 23, 42, 0.72);
 }
-.crumbtxt{
+
+.crumbtxt {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 240px;
 }
-.sep{
-  display:inline-flex;
-  align-items:center;
-  color: rgba(100,116,139,0.60);
+
+.sep {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(100, 116, 139, 0.60);
 }
-.pagetitle{
+
+.pagetitle {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .14em;
   font-weight: 900;
-  color: rgba(15,23,42,0.70);
+  color: rgba(15, 23, 42, 0.70);
 }
 
 /* ===== Buttons ===== */
-.iconbtn{
+.iconbtn {
   height: 42px;
   width: 42px;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: #fff;
-  color: rgba(15,23,42,0.92);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
+  color: rgba(15, 23, 42, 0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
-.iconbtn:hover{
-  transform: translateY(-1px);
-  border-color: rgba(4,0,255,0.30);
-  box-shadow: 0 14px 30px rgba(2,6,23,0.10);
-}
-.iconbtn:active{ transform: translateY(0); }
 
-.backbtn{
+.iconbtn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(4, 0, 255, 0.30);
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.10);
+}
+
+.iconbtn:active {
+  transform: translateY(0);
+}
+
+.backbtn {
   width: auto;
   padding: 0 14px;
   gap: 10px;
 }
-.backtxt{
+
+.backtxt {
   font-weight: 900;
   letter-spacing: .2px;
 }
 
-.btn{
+.btn {
   height: 44px;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: #fff;
-  color: rgba(15,23,42,0.92);
+  color: rgba(15, 23, 42, 0.92);
   font-weight: 900;
   cursor: pointer;
   padding: 0 14px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
-.btn:hover{
+
+.btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(4,0,255,0.28);
-  box-shadow: 0 14px 30px rgba(2,6,23,0.10);
+  border-color: rgba(4, 0, 255, 0.28);
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.10);
 }
-.btn:active{ transform: translateY(0); }
-.btn.solid{
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn.solid {
   color: #fff;
-  border-color: rgba(4,0,255,0.20);
-  background: linear-gradient(135deg, rgba(4,0,255,0.98), rgba(0,194,255,0.88));
-  box-shadow: 0 14px 30px rgba(4,0,255,0.18);
+  border-color: rgba(4, 0, 255, 0.20);
+  background: linear-gradient(135deg, rgba(4, 0, 255, 0.98), rgba(0, 194, 255, 0.88));
+  box-shadow: 0 14px 30px rgba(4, 0, 255, 0.18);
 }
-.btn.small{
+
+.btn.small {
   height: 38px;
   border-radius: 13px;
   font-size: 13px;
@@ -740,65 +678,96 @@ watch(pkey, loadOne);
 }
 
 /* ===== Cards ===== */
-.card{
-  background: rgba(255,255,255,0.92);
+.card {
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
   border-radius: 22px;
-  box-shadow: 0 18px 45px rgba(2,6,23,0.10);
+  box-shadow: 0 18px 45px rgba(2, 6, 23, 0.10);
 }
 
 /* ===== states ===== */
-.state{
+.state {
   margin-top: 18px;
 }
-.state.card{
+
+.state.card {
   padding: 18px;
 }
-.state-title{
-  display:flex;
-  align-items:center;
+
+.state-title {
+  display: flex;
+  align-items: center;
   gap: 10px;
   font-weight: 950;
   font-size: 15px;
 }
-.state-text{
+
+.state-text {
   margin: 10px 0 14px;
-  color: rgba(100,116,139,0.95);
+  color: rgba(100, 116, 139, 0.95);
   line-height: 1.45;
   font-weight: 700;
 }
 
 /* skeleton */
-.skel.grid{
-  display:grid;
+.skel.grid {
+  display: grid;
   grid-template-columns: 1.55fr 1fr;
   gap: 18px;
 }
-.skelbox{
+
+.skelbox {
   border-radius: 22px;
   border: 1px solid var(--soft);
-  background: linear-gradient(90deg, rgba(255,255,255,0.55), rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55));
   background-size: 200% 100%;
   animation: sk 1.1s ease-in-out infinite;
-  box-shadow: 0 18px 45px rgba(2,6,23,0.08);
+  box-shadow: 0 18px 45px rgba(2, 6, 23, 0.08);
 }
-.skelbox.big{ height: 520px; }
-.skelbox.side{ height: 520px; }
-.skellines{ margin-top: 14px; display:grid; gap: 10px; }
-.skelline{
+
+.skelbox.big {
+  height: 520px;
+}
+
+.skelbox.side {
+  height: 520px;
+}
+
+.skellines {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.skelline {
   height: 14px;
   border-radius: 999px;
   border: 1px solid var(--soft);
-  background: linear-gradient(90deg, rgba(255,255,255,0.55), rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55));
   background-size: 200% 100%;
   animation: sk 1.1s ease-in-out infinite;
 }
-.skelline.w70{ width: 70%; }
-.skelline.w40{ width: 40%; }
-@keyframes sk{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.skelline.w70 {
+  width: 70%;
+}
+
+.skelline.w40 {
+  width: 40%;
+}
+
+@keyframes sk {
+  0% {
+    background-position: 200% 0
+  }
+
+  100% {
+    background-position: -200% 0
+  }
+}
 
 /* ===== layout ===== */
-.product{
+.product {
   display: grid;
   grid-template-columns: minmax(360px, 680px) minmax(320px, 420px);
   gap: 42px;
@@ -806,44 +775,54 @@ watch(pkey, loadOne);
   margin-top: 18px;
 }
 
-.leftCol{
-  display:flex;
+.leftCol {
+  display: flex;
   flex-direction: column;
   gap: 14px;
   min-width: 0;
 }
 
 /* ===== gallery ===== */
-.gallery{
+.gallery {
   padding: 14px;
   top: 78px;
 }
 
-.stage{
+.stage {
   position: relative;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--soft);
-  background: radial-gradient(900px 320px at 50% -120px, rgba(4,0,255,0.08), transparent 60%), #fff;
+  background: radial-gradient(900px 320px at 50% -120px, rgba(4, 0, 255, 0.08), transparent 60%), #fff;
   height: 520px;
 }
 
-.mainSwiper{ height: 100%; }
-.mainSwiper :deep(.swiper-wrapper){ height: 100%; }
-.mainSwiper :deep(.swiper-slide){ height: 100%; display:flex; }
+.mainSwiper {
+  height: 100%;
+}
 
-.zoomwrap{
+.mainSwiper :deep(.swiper-wrapper) {
+  height: 100%;
+}
+
+.mainSwiper :deep(.swiper-slide) {
+  height: 100%;
+  display: flex;
+}
+
+.zoomwrap {
   height: 100%;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: default; /* ✅ больше не zoom-in */
+  cursor: default;
+  /* ✅ больше не zoom-in */
   outline: none;
   padding: 10px;
 }
 
-.img{
+.img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
@@ -852,66 +831,82 @@ watch(pkey, loadOne);
 }
 
 /* Swiper dots */
-:deep(.swiper-pagination-bullet){
+:deep(.swiper-pagination-bullet) {
   width: 7px;
   height: 7px;
-  background: rgba(15,23,42,0.22);
+  background: rgba(15, 23, 42, 0.22);
   opacity: 1;
 }
-:deep(.swiper-pagination-bullet-active){
+
+:deep(.swiper-pagination-bullet-active) {
   background: var(--accent);
 }
 
 /* nav buttons */
-.navbtn{
-  position:absolute;
+.navbtn {
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
   z-index: 5;
   height: 44px;
   width: 44px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.55);
-  background: rgba(15,23,42,0.55);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(15, 23, 42, 0.55);
   color: #fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   transition: transform .12s ease, background .12s ease;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-.navbtn:hover{
+
+.navbtn:hover {
   transform: translateY(-50%) scale(1.03);
-  background: rgba(15,23,42,0.70);
+  background: rgba(15, 23, 42, 0.70);
 }
-.navbtn.prev{ left: 12px; }
-.navbtn.next{ right: 12px; }
+
+.navbtn.prev {
+  left: 12px;
+}
+
+.navbtn.next {
+  right: 12px;
+}
 
 /* thumbs */
-.thumbs{ margin-top: 12px; }
-.thumbSwiper :deep(.swiper-slide){ width: 86px !important; }
+.thumbs {
+  margin-top: 12px;
+}
 
-.thumb{
+.thumbSwiper :deep(.swiper-slide) {
+  width: 86px !important;
+}
+
+.thumb {
   width: 86px;
   height: 64px;
   border-radius: 14px;
   border: 1px solid var(--soft);
   background: #fff;
-  overflow:hidden;
-  cursor:pointer;
+  overflow: hidden;
+  cursor: pointer;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
-.thumb:hover{
+
+.thumb:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(2,6,23,0.10);
+  box-shadow: 0 14px 26px rgba(2, 6, 23, 0.10);
 }
-.thumb.on{
-  border-color: rgba(4,0,255,0.35);
-  box-shadow: 0 0 0 4px rgba(4,0,255,0.10);
+
+.thumb.on {
+  border-color: rgba(4, 0, 255, 0.35);
+  box-shadow: 0 0 0 4px rgba(4, 0, 255, 0.10);
 }
-.thumb img{
+
+.thumb img {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -920,73 +915,96 @@ watch(pkey, loadOne);
   background: #fff;
 }
 
-.nofoto{
+.nofoto {
   height: 100%;
-  display:flex;
+  display: flex;
   flex-direction: column;
-  align-items:center;
-  justify-content:center;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
-  color: rgba(100,116,139,0.95);
-  text-align:center;
+  color: rgba(100, 116, 139, 0.95);
+  text-align: center;
   padding: 18px;
 }
-.nofoto-ico{ font-size: 30px; color: rgba(15,23,42,0.55); }
-.nofoto-t{ font-weight: 950; color: rgba(15,23,42,0.75); }
-.nofoto-s{ font-weight: 700; font-size: 13px; line-height: 1.4; }
+
+.nofoto-ico {
+  font-size: 30px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.nofoto-t {
+  font-weight: 950;
+  color: rgba(15, 23, 42, 0.75);
+}
+
+.nofoto-s {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.4;
+}
 
 /* ===== details under gallery ===== */
-.details{ padding: 16px; }
+.details {
+  padding: 16px;
+}
 
 /* tabs */
-.tabs{
-  display:flex;
+.tabs {
+  display: flex;
   gap: 10px;
-  align-items:center;
+  align-items: center;
   flex-wrap: wrap;
 }
-.tab{
+
+.tab {
   height: 40px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--soft);
-  background: rgba(15,23,42,0.03);
-  color: rgba(15,23,42,0.86);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.86);
   font-weight: 950;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
 }
-.tab:hover{
+
+.tab:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(2,6,23,0.08);
+  box-shadow: 0 14px 26px rgba(2, 6, 23, 0.08);
 }
-.tab.on{
-  border-color: rgba(4,0,255,0.24);
-  background: rgba(4,0,255,0.10);
-  color: rgba(4,0,255,0.95);
+
+.tab.on {
+  border-color: rgba(4, 0, 255, 0.24);
+  background: rgba(4, 0, 255, 0.10);
+  color: rgba(4, 0, 255, 0.95);
 }
-.count{
+
+.count {
   font-size: 11px;
   font-weight: 980;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(4,0,255,0.14);
-  border: 1px solid rgba(4,0,255,0.18);
-  color: rgba(4,0,255,0.95);
+  background: rgba(4, 0, 255, 0.14);
+  border: 1px solid rgba(4, 0, 255, 0.18);
+  color: rgba(4, 0, 255, 0.95);
 }
-.tabBody{ margin-top: 14px; }
+
+.tabBody {
+  margin-top: 14px;
+}
 
 /* description */
-.descText{
+.descText {
   white-space: pre-wrap;
   line-height: 1.65;
   font-size: 13px;
-  color: rgba(15,23,42,0.82);
+  color: rgba(15, 23, 42, 0.82);
 }
-.descText.clamp{
+
+.descText.clamp {
   display: -webkit-box;
   -webkit-line-clamp: 7;
   -webkit-box-orient: vertical;
@@ -994,86 +1012,104 @@ watch(pkey, loadOne);
 }
 
 /* spec table */
-.specTable{ border-top: 1px solid var(--soft); }
-.specRow{
-  display:grid;
+.specTable {
+  border-top: 1px solid var(--soft);
+}
+
+.specRow {
+  display: grid;
   grid-template-columns: 160px 1fr;
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--soft);
 }
-.sk{
+
+.sk {
   font-size: 12px;
   font-weight: 950;
-  color: rgba(100,116,139,0.95);
+  color: rgba(100, 116, 139, 0.95);
 }
-.sv{
-  display:flex;
-  align-items:center;
+
+.sv {
+  display: flex;
+  align-items: center;
   gap: 10px;
   font-weight: 900;
-  color: rgba(15,23,42,0.88);
+  color: rgba(15, 23, 42, 0.88);
   font-size: 13px;
 }
-.svt{ word-break: break-word; }
 
-.colorDot{
+.svt {
+  word-break: break-word;
+}
+
+.colorDot {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  border: 1px solid rgba(15,23,42,0.20);
+  border: 1px solid rgba(15, 23, 42, 0.20);
   flex: 0 0 12px;
 }
-.colorDot.empty{
-  background: repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 3px,#e5e7eb 3px,#e5e7eb 6px);
+
+.colorDot.empty {
+  background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 3px, #e5e7eb 3px, #e5e7eb 6px);
 }
 
 /* info table */
-.infoTable{ border-top: 1px solid var(--soft); }
-.infoRow{
-  display:grid;
+.infoTable {
+  border-top: 1px solid var(--soft);
+}
+
+.infoRow {
+  display: grid;
   grid-template-columns: 140px 1fr;
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--soft);
 }
-.ik{
+
+.ik {
   font-size: 12px;
   font-weight: 950;
-  color: rgba(100,116,139,0.95);
+  color: rgba(100, 116, 139, 0.95);
 }
-.iv{
+
+.iv {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(15,23,42,0.88);
+  color: rgba(15, 23, 42, 0.88);
   word-break: break-word;
 }
-.mono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   letter-spacing: .08em;
 }
 
 /* empty */
-.empty{
+.empty {
   padding: 12px 0;
-  color: rgba(100,116,139,0.95);
+  color: rgba(100, 116, 139, 0.95);
   font-weight: 900;
-  display:flex;
-  align-items:center;
+  display: flex;
+  align-items: center;
   gap: 10px;
 }
 
 /* ===== panel ===== */
-.panel{
+.panel {
   position: sticky;
   top: 78px;
-  display:flex;
+  display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.pcard{ padding: 18px; }
 
-.title{
+.pcard {
+  padding: 18px;
+}
+
+.title {
   margin: 0 0 10px;
   font-size: 20px;
   line-height: 1.25;
@@ -1081,80 +1117,123 @@ watch(pkey, loadOne);
   font-weight: 950;
 }
 
-.priceRow{
-  display:flex;
-  align-items:flex-end;
+.priceRow {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
-.price{
-  display:flex;
+
+.price {
+  display: flex;
   align-items: baseline;
   gap: 10px;
 }
-.pr{
+
+.pr {
   font-size: 30px;
   font-weight: 980;
   color: var(--accent);
   letter-spacing: -0.6px;
 }
-.cur{
+
+.cur {
   font-size: 18px;
   font-weight: 950;
-  color: rgba(4,0,255,0.75);
+  color: rgba(4, 0, 255, 0.75);
 }
 
-.metaBadges{
-  display:flex;
+.metaBadges {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
 }
-.badge{
-  display:inline-flex;
-  align-items:center;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
   padding: 9px 10px;
   border-radius: 999px;
   border: 1px solid var(--soft);
-  background: rgba(15,23,42,0.03);
+  background: rgba(15, 23, 42, 0.03);
   font-weight: 900;
   font-size: 12px;
-  color: rgba(15,23,42,0.85);
+  color: rgba(15, 23, 42, 0.85);
   max-width: 210px;
 }
-.btxt{
-  overflow:hidden;
+
+.btxt {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* ===== responsive ===== */
-@media (max-width: 980px){
-  .topbar-inner{ grid-template-columns: 180px 1fr 180px; }
-  .crumbtxt{ max-width: 140px; }
+@media (max-width: 980px) {
+  .topbar-inner {
+    grid-template-columns: 180px 1fr 180px;
+  }
 
-  .product{
+  .crumbtxt {
+    max-width: 140px;
+  }
+
+  .product {
     grid-template-columns: 1fr;
     gap: 18px;
   }
-  .gallery, .panel{ position: relative; top: 0; }
-  .stage{ height: 380px; }
+
+  .gallery,
+  .panel {
+    position: relative;
+    top: 0;
+  }
+
+  .stage {
+    height: 380px;
+  }
 }
 
-@media (max-width: 560px){
-  .topbar-inner{ grid-template-columns: 160px 1fr 160px; }
-  .backtxt{ display:none; }
-  .stage{ height: 320px; }
-  .specRow{ grid-template-columns: 1fr; gap: 6px; }
-  .infoRow{ grid-template-columns: 1fr; gap: 6px; }
-  .crumbs{ display:none; }
-  .pagetitle{ letter-spacing: .12em; }
+@media (max-width: 560px) {
+  .topbar-inner {
+    grid-template-columns: 160px 1fr 160px;
+  }
+
+  .backtxt {
+    display: none;
+  }
+
+  .stage {
+    height: 320px;
+  }
+
+  .specRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .infoRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .crumbs {
+    display: none;
+  }
+
+  .pagetitle {
+    letter-spacing: .12em;
+  }
 }
 
 /* motion safety */
-@media (prefers-reduced-motion: reduce){
-  *{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-}
-</style>
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}</style>

@@ -14,20 +14,10 @@ function normalize_q($s) {
 function safe_rel_from_url_or_path($p) {
   $p = trim((string)$p);
   if ($p === "") return "";
-
-  // если это URL — берем только path
-  if (preg_match('~^https?://~i', $p)) {
-    $u = parse_url($p);
-    $p = $u["path"] ?? "";
-  } else {
-    // если не URL — тоже вырежем ?query/#hash если вдруг есть
-    $u = parse_url($p);
-    $p = $u["path"] ?? $p;
-  }
-
+  $u = parse_url($p);
+  $p = $u["path"] ?? $p;
   $p = trim((string)$p);
   if ($p === "") return "";
-
   if ($p[0] !== "/") $p = "/" . ltrim($p, "/");
   return $p;
 }
@@ -35,8 +25,6 @@ function safe_rel_from_url_or_path($p) {
 function decode_photo_to_images($photo) {
   $photo = trim((string)$photo);
   if ($photo === "" || $photo === "[]") return [];
-
-  // 1) пробуем как JSON-массив
   $decoded = json_decode($photo, true);
   if (is_array($decoded)) {
     $out = [];
@@ -44,13 +32,14 @@ function decode_photo_to_images($photo) {
       $p = safe_rel_from_url_or_path($p);
       if ($p !== "") $out[] = $p;
     }
-    $out = array_values(array_unique($out));
-    return $out;
+    return array_values(array_unique($out));
   }
-
-  // 2) если не JSON — считаем что там один путь строкой
   $one = safe_rel_from_url_or_path($photo);
   return $one ? [$one] : [];
+}
+
+function is_code($s) {
+  return preg_match('~^[0-9]+(\.[0-9]+)*$~', (string)$s) === 1;
 }
 
 /* ===== input ===== */
@@ -60,6 +49,8 @@ if ($qRaw === "") { echo json_encode([]); exit; }
 $limit = isset($_GET["limit"]) ? (int)$_GET["limit"] : 12;
 if ($limit < 1) $limit = 12;
 if ($limit > 30) $limit = 30;
+
+$catRaw = isset($_GET["cat"]) ? trim((string)$_GET["cat"]) : "";
 
 $q = normalize_q($qRaw);
 
@@ -71,36 +62,71 @@ if (!$isDigits && mb_strlen($q, "UTF-8") < 2) {
 }
 
 try {
+  /* ===== cat filter (optional) ===== */
+  $catIds = [];
+  if ($catRaw !== "") {
+    $catCode = "";
+    if (is_code($catRaw)) $catCode = $catRaw;
+    else {
+      $st = $pdo->prepare("SELECT code FROM categories WHERE slug = ? LIMIT 1");
+      $st->execute([$catRaw]);
+      $catCode = (string)($st->fetch(PDO::FETCH_ASSOC)["code"] ?? "");
+    }
+
+    if ($catCode !== "") {
+      $st = $pdo->prepare("SELECT id FROM categories WHERE code = ? OR code LIKE CONCAT(?, '.%')");
+      $st->execute([$catCode, $catCode]);
+      $catIds = array_map(fn($x)=> (int)$x["id"], $st->fetchAll(PDO::FETCH_ASSOC));
+    }
+  }
+
+  $whereCat = "";
+  $paramsCat = [];
+  if (!empty($catIds)) {
+    $in = implode(",", array_fill(0, count($catIds), "?"));
+    $whereCat = " AND p.category_id IN ($in) ";
+    $paramsCat = $catIds;
+  }
+
   if ($isDigits) {
     $sql = "
-      SELECT id, name, price, brand, barcode, photo
-      FROM products
-      WHERE barcode = ?
-         OR barcode LIKE ?
-         OR name   LIKE ?
-         OR brand  LIKE ?
+      SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo
+      FROM products p
+      WHERE (
+        p.barcode = ?
+        OR p.barcode LIKE ?
+        OR p.name   LIKE ?
+        OR p.brand  LIKE ?
+      )
+      $whereCat
       ORDER BY
-        (barcode = ?) DESC,
-        (barcode LIKE ?) DESC,
-        id DESC
+        (p.barcode = ?) DESC,
+        (p.barcode LIKE ?) DESC,
+        p.id DESC
       LIMIT $limit
     ";
     $st = $pdo->prepare($sql);
-    $st->execute([$q, $q."%", "%$q%", "%$q%", $q, $q."%"]);
+    $st->execute(array_merge(
+      [$q, $q."%", "%$q%", "%$q%", $q, $q."%"],
+      $paramsCat
+    ));
     $rows = $st->fetchAll(PDO::FETCH_ASSOC);
   } else {
     $like = "%$q%";
     $sql = "
-      SELECT id, name, price, brand, barcode, photo
-      FROM products
-      WHERE name LIKE ?
-         OR brand LIKE ?
-         OR barcode LIKE ?
-      ORDER BY id DESC
+      SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo
+      FROM products p
+      WHERE (
+        p.name LIKE ?
+        OR p.brand LIKE ?
+        OR p.barcode LIKE ?
+      )
+      $whereCat
+      ORDER BY p.id DESC
       LIMIT $limit
     ";
     $st = $pdo->prepare($sql);
-    $st->execute([$like, $like, $like]);
+    $st->execute(array_merge([$like, $like, $like], $paramsCat));
     $rows = $st->fetchAll(PDO::FETCH_ASSOC);
   }
 
@@ -108,16 +134,15 @@ try {
     $imgs = decode_photo_to_images($r["photo"] ?? "");
     $first = $imgs[0] ?? "";
 
-    // ✅ берём ТОЛЬКО первую фотку
     $r["images"] = $first ? [$first] : [];
     $r["thumb"]  = $first ?: "/img/no-photo.png";
 
-    // чтобы не путаться — не отдаём сырой photo
     unset($r["photo"]);
   }
   unset($r);
 
   echo json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
 } catch (Throwable $e) {
   http_response_code(500);
   echo json_encode(["error" => true, "message" => $e->getMessage()], JSON_UNESCAPED_UNICODE);

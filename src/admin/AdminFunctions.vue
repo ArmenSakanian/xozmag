@@ -188,8 +188,38 @@
             </div>
           </div>
         </section>
+        <!-- ================= PANEL 3: YML ================= -->
+        <section class="panel">
+          <h1 class="title">YML-фид</h1>
+          <p class="subtitle">Генерация <b>/yml.xml</b> и <b>/yml.xml.gz</b></p>
 
-        <!-- ================= PANEL 3: MIN STOCK IMPORT ================= -->
+          <button
+            class="yml-btn"
+            :disabled="busy"
+            @click="startYml"
+          >
+            {{ loadingYml ? "Генерация…" : "Сгенерировать YML" }}
+          </button>
+
+          <div class="sync-status" v-if="yml.status">
+            <span class="pill" :class="yml.status">{{ yml.statusText }}</span>
+            <span class="muted" v-if="yml.finishedAt">• {{ yml.finishedAt }}</span>
+          </div>
+
+          <div class="hint" v-if="yml.ok">
+            Готовые файлы:
+            <a class="yml-link" href="/yml.xml" target="_blank" rel="noopener">yml.xml</a>
+            •
+            <a class="yml-link" href="/yml.xml.gz" target="_blank" rel="noopener">yml.xml.gz</a>
+          </div>
+
+          <div class="log-box sync-log">
+            <div v-for="(l, i) in ymlLogs" :key="i" class="log-line">
+              {{ l }}
+            </div>
+          </div>
+        </section>
+        <!-- ================= PANEL 4: MIN STOCK IMPORT ================= -->
         <section class="panel">
           <h1 class="title">Импорт “Минимальный остаток”</h1>
           <p class="subtitle">
@@ -410,7 +440,12 @@ NProgress.configure({
 ========================= */
 const loadingConvert = ref(false);
 const loadingSync = ref(false);
+const loadingYml = ref(false);
 
+// общий “полный лок”
+const busy = computed(
+  () => loadingConvert.value || loadingSync.value || loadingMin.value || loadingYml.value
+);
 /* =========================
    CONVERT
 ========================= */
@@ -643,7 +678,80 @@ const startSync = async () => {
     loadingSync.value = false;
   }
 };
+/* =========================
+   YML GENERATE
+========================= */
+const API_YML_URL = "/api/admin/functions/generate_yml.php";
 
+const ymlLogs = ref([]);
+const yml = ref({
+  status: "",
+  statusText: "",
+  finishedAt: "",
+  ok: false,
+});
+
+const startYml = async () => {
+  if (busy.value) return;
+
+  loadingYml.value = true;
+  ymlLogs.value = [];
+  yml.value = {
+    status: "run",
+    statusText: "Выполняется…",
+    finishedAt: "",
+    ok: false,
+  };
+
+  NProgress.start();
+
+  try {
+    ymlLogs.value.unshift(`→ Запуск: ${API_YML_URL}`);
+
+    const res = await fetch(API_YML_URL, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const text = await res.text();
+
+    // иногда удобно вернуть JSON — поддержим и это
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+
+    if (data) {
+      if (!res.ok || data?.error || data?.success === false) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      const msg = data?.message ? String(data.message) : JSON.stringify(data);
+      ymlLogs.value = msg.split(/\r?\n/).filter(Boolean);
+    } else {
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+      }
+      ymlLogs.value = String(text || "OK").split(/\r?\n/).filter(Boolean);
+    }
+
+    yml.value.status = "ok";
+    yml.value.statusText = "Готово";
+    yml.value.finishedAt = new Date().toLocaleString();
+    yml.value.ok = true;
+  } catch (e) {
+    yml.value.status = "error";
+    yml.value.statusText = "Ошибка";
+    yml.value.finishedAt = new Date().toLocaleString();
+    yml.value.ok = false;
+
+    ymlLogs.value.unshift("✖ ERROR: " + (e?.message || "Unknown"));
+  } finally {
+    NProgress.done();
+    loadingYml.value = false;
+  }
+};
 /* =========================
    MIN STOCK IMPORT
 ========================= */
@@ -831,7 +939,49 @@ function downloadMinTemplate() {
     opacity 0.12s ease, background 0.12s ease, border-color 0.12s ease;
   user-select: none;
 }
+.yml-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease,
+    opacity 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+  user-select: none;
 
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 12px;
+}
+
+.yml-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.02);
+}
+
+.yml-btn:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+.yml-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.yml-link {
+  color: var(--accent);
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .main-btn {
   background: var(--accent);
   color: #fff;
