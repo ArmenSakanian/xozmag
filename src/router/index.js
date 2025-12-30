@@ -32,7 +32,7 @@ const routes = [
   { path: "/admin/functions", component: () => import("@/admin/AdminFunctions.vue") },
   { path: "/admin/order", component: () => import("@/admin/AdminOrder.vue") },
 
-  /* карточка товара v2 */
+  /* карточка товара v2 */п
 {
   path: "/product/:slug",
   name: "product",

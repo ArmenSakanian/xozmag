@@ -714,7 +714,7 @@ const saveBulkAttrs = async () => {
 
 /* ===== PRODUCTS ===== */
 const loadProducts = async () => {
-  const data = await fetch("/api/admin/product/get_products.php").then((r) =>
+  const data = await fetch("/api/admin/product/get_products_all.php").then((r) =>
     r.json()
   );
 
