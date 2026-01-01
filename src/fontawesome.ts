@@ -1,8 +1,6 @@
 // src/fontawesome.ts
 import { library } from "@fortawesome/fontawesome-svg-core";
 
-// SOLID (fas)
-// SOLID (fas)
 import {
   faArrowLeft,
   faArrowRightArrowLeft,
@@ -48,10 +46,21 @@ import {
   faLocationDot,
   faClock,
   faCircleXmark,
-} from '@fortawesome/free-solid-svg-icons'
+  faExpand,
+  // ✅ ДОБАВИТЬ (нужно для AdminFunctions.vue)
+  faArrowsRotate,
+  faFileCode,
+  faFileArrowUp,
+  faShieldHalved,
+  faPlay,
+  faBolt,
+  faWandMagicSparkles,
+  faFloppyDisk,
+  faScroll,
+  // (не обязательно) если хочешь оставить ['fas','image']
+  // faImage,
+} from "@fortawesome/free-solid-svg-icons";
 
-
-// REGULAR (far) — алиасы, потому что имена пересекаются с solid
 import {
   faCopy as faCopyR,
   faFaceMeh,
@@ -107,6 +116,18 @@ library.add(
   faLocationDot,
   faClock,
   faCircleXmark,
+  faExpand,
+  // ✅ ДОБАВИТЬ
+  faArrowsRotate,
+  faFileCode,
+  faFileArrowUp,
+  faShieldHalved,
+  faPlay,
+  faBolt,
+  faWandMagicSparkles,
+  faFloppyDisk,
+  faScroll,
+
   // far
   faCopyR,
   faFaceMeh,
@@ -114,4 +135,4 @@ library.add(
   faFileLines,
   faImage,
   faRectangleList
-)
+);

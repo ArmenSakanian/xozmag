@@ -41,6 +41,19 @@ function decode_photo_to_images($photo) {
 function is_code($s) {
   return preg_match('~^[0-9]+(\.[0-9]+)*$~', (string)$s) === 1;
 }
+function format_qty_for_ui($qty, $measureName): string {
+  $m = mb_strtolower(trim((string)$measureName), "UTF-8");
+  $num = (float)str_replace(",", ".", (string)$qty);
+
+  if ($m === "шт" || $m === "pcs" || $m === "pc") {
+    return (string)intval(round($num, 0));
+  }
+
+  $s = number_format($num, 3, ".", "");
+  $s = rtrim(rtrim($s, "0"), ".");
+  if ($s === "" || $s === "-0") $s = "0";
+  return $s;
+}
 
 /* ===== input ===== */
 $qRaw = isset($_GET["q"]) ? trim((string)$_GET["q"]) : "";
@@ -90,7 +103,7 @@ try {
 
   if ($isDigits) {
     $sql = "
-      SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo
+SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo, p.quantity, p.measure_name
       FROM products p
       WHERE (
         p.barcode = ?
@@ -114,7 +127,7 @@ try {
   } else {
     $like = "%$q%";
     $sql = "
-      SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo
+SELECT p.id, p.name, p.slug, p.price, p.brand, p.barcode, p.photo, p.quantity, p.measure_name
       FROM products p
       WHERE (
         p.name LIKE ?
@@ -130,16 +143,27 @@ try {
     $rows = $st->fetchAll(PDO::FETCH_ASSOC);
   }
 
-  foreach ($rows as &$r) {
-    $imgs = decode_photo_to_images($r["photo"] ?? "");
-    $first = $imgs[0] ?? "";
+foreach ($rows as &$r) {
+  // measure + quantity (для UI)
+  $measure = (string)($r["measure_name"] ?? "");
+  $r["measureName"] = $measure;
 
-    $r["images"] = $first ? [$first] : [];
-    $r["thumb"]  = $first ?: "/img/no-photo.png";
+  $r["quantity_value"] = (float)($r["quantity"] ?? 0);
+  $r["quantity"] = format_qty_for_ui($r["quantity"] ?? 0, $measure);
 
-    unset($r["photo"]);
-  }
-  unset($r);
+  unset($r["measure_name"]);
+
+  // images/thumb
+  $imgs = decode_photo_to_images($r["photo"] ?? "");
+  $first = $imgs[0] ?? "";
+
+  $r["images"] = $first ? [$first] : [];
+  $r["thumb"]  = $first ?: "/img/no-photo.png";
+
+  unset($r["photo"]);
+}
+unset($r);
+
 
   echo json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 

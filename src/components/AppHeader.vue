@@ -42,14 +42,12 @@
     <div v-if="showHeaderSearch" class="header-bottom">
       <div class="header-bottom-container">
         <div class="header-search">
-          <HomeSearch
-            :show-category="true"
-            :categories="categories"
-            :current-category="null"
-            :sync-route="false"
-            catalog-path="/catalog"
-            @categories-loaded="onCategoriesLoaded"
-          />
+<HomeSearch
+  :show-category="false"
+  :sync-route="false"
+  catalog-path="/catalog"
+/>
+
         </div>
       </div>
     </div>
@@ -336,10 +334,7 @@ onBeforeUnmount(() => {
   width: 100%;
   margin: 0;
 }
-.header-search :deep(.search-box) {
-  padding: 9px 12px;
-  gap: 8px;
-}
+
 .header-search :deep(.search-clear),
 .header-search :deep(.catpick-btn) {
   width: 32px;

@@ -325,21 +325,23 @@ function evotor_catalog_build(array $opts = []): array
 
     $images = $findProductImages($barcode);
 
-    $item = [
-      "uuid"         => (string)($p["uuid"] ?? ""),
-      "name"         => $title,
-      "price"        => $p["price"] ?? 0,
-      "quantity"     => $p["quantity"] ?? 0,
-      "barcode"      => $barcode,
-      "article"      => (string)($p["articleNumber"] ?? ""),
-      "brandName"    => $brandName,
-      "description"  => (string)($p["description"] ?? ""),
-      "categoryUuid" => $catUuid,
-      "categoryName" => $catName,
-      "typeUuid"     => $typeUuid,
-      "typeName"     => $typeName,
-      "images"       => $images
-    ];
+$item = [
+  "uuid"         => (string)($p["uuid"] ?? ""),
+  "name"         => $title,
+  "price"        => $p["price"] ?? 0,
+  "quantity"     => $p["quantity"] ?? 0,
+  "measureName"  => (string)($p["measureName"] ?? ""), // ✅ добавили
+  "barcode"      => $barcode,
+  "article"      => (string)($p["articleNumber"] ?? ""),
+  "brandName"    => $brandName,
+  "description"  => (string)($p["description"] ?? ""),
+  "categoryUuid" => $catUuid,
+  "categoryName" => $catName,
+  "typeUuid"     => $typeUuid,
+  "typeName"     => $typeName,
+  "images"       => $images
+];
+
 
     if (!isset($byBarcode[$barcode])) {
       $byBarcode[$barcode] = $item;

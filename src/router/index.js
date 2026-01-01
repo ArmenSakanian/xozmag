@@ -32,13 +32,14 @@ const routes = [
   { path: "/admin/functions", component: () => import("@/admin/AdminFunctions.vue") },
   { path: "/admin/order", component: () => import("@/admin/AdminOrder.vue") },
 
-  /* карточка товара v2 */п
+/* карточка товара v2 */
 {
   path: "/product/:slug",
   name: "product",
   component: () => import("@/page/ProductCartPage.vue"),
   props: true,
 },
+
 
 
   // ✅ 404 — последний

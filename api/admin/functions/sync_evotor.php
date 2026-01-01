@@ -254,31 +254,35 @@ function collect_photos_for_barcode($barcode, $photoColumn) {
 ========================= */
 
 $sqlSelect = $pdo->prepare("
-  SELECT id, name, slug, article, brand, type, price, quantity, description, photo
-  FROM products
-  WHERE barcode = ?
-  LIMIT 1
+  SELECT id, name, slug, article, brand, type, price, quantity, measure_name, description, photo
+FROM products
+WHERE barcode = ?
+LIMIT 1
+
 ");
 
 $sqlInsert = $pdo->prepare("
   INSERT INTO products
-    (name, article, brand, type, price, barcode, description, photo, quantity, category_id, slug)
-  VALUES
-    (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+  (name, article, brand, type, price, barcode, description, photo, quantity, measure_name, category_id, slug)
+VALUES
+  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+
 ");
 
 $sqlUpdate = $pdo->prepare("
-  UPDATE products SET
-    name = ?,
-    slug = ?,
-    article = ?,
-    brand = ?,
-    type = ?,
-    price = ?,
-    description = ?,
-    photo = ?,
-    quantity = ?
-  WHERE barcode = ?
+UPDATE products SET
+  name = ?,
+  slug = ?,
+  article = ?,
+  brand = ?,
+  type = ?,
+  price = ?,
+  description = ?,
+  photo = ?,
+  quantity = ?,
+  measure_name = ?
+WHERE barcode = ?
+
 ");
 
 $sqlUpdateSlugById = $pdo->prepare("UPDATE products SET slug = ? WHERE id = ?");
@@ -300,6 +304,9 @@ foreach ($products as $p) {
   $price       = $p["price"] ?? 0;
   $quantity    = $p["quantity"] ?? 0;
   $description = (string)($p["description"] ?? "");
+
+  // ✅ ДОБАВЬ ВОТ ЭТО (чтобы было определено и для UPDATE и для INSERT)
+  $measureName = (string)($p["measureName"] ?? $p["measure_name"] ?? "");
 
   // ✅ строго: записываем в БД ровно то, что дал Evotor (после нормализации путей витрины)
   $imagesArr  = normalize_images_vitrina_strict($p["images"] ?? []);
@@ -323,6 +330,7 @@ foreach ($products as $p) {
     if (norm_str($row["type"] ?? "")        !== norm_str($type))        $changed[] = "type";
     if (norm_num($row["price"] ?? 0)        !== norm_num($price))       $changed[] = "price";
     if (norm_num($row["quantity"] ?? 0)     !== norm_num($quantity))    $changed[] = "quantity";
+    if (norm_str($row["measure_name"] ?? "") !== norm_str($measureName)) $changed[] = "measureName";
     if (norm_str($row["description"] ?? "") !== norm_str($description)) $changed[] = "description";
 
     // ✅ сравниваем фото строго по нормализованным путям витрины
@@ -338,17 +346,19 @@ foreach ($products as $p) {
 
     if (!empty($changed)) {
       $sqlUpdate->execute([
-        $name,
-        $newSlug,
-        $article,
-        $brand,
-        $type,
-        $price,
-        $description,
-        $imagesJson,
-        $quantity,
-        $barcode
-      ]);
+  $name,
+  $newSlug,
+  $article,
+  $brand,
+  $type,
+  $price,
+  $description,
+  $imagesJson,
+  $quantity,
+  $measureName,
+  $barcode
+]);
+
 
       $updated++;
 
@@ -367,10 +377,11 @@ foreach ($products as $p) {
     }
 
   } else {
-    // INSERT (slug пока NULL), потом поставим slug по id
-    $sqlInsert->execute([
-      $name, $article, $brand, $type, $price, $barcode, $description, $imagesJson, $quantity
-    ]);
+
+$sqlInsert->execute([
+  $name, $article, $brand, $type, $price, $barcode, $description, $imagesJson, $quantity, $measureName
+]);
+
 
     $newId = (int)$pdo->lastInsertId();
 

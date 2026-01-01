@@ -189,6 +189,10 @@
                     <div class="ik">Штрихкод</div>
                     <div class="iv mono">{{ product.barcode || "—" }}</div>
                   </div>
+                  <div class="infoRow">
+  <div class="ik">Остаток</div>
+  <div class="iv">{{ qtyPretty }}</div>
+</div>
 
                   <div class="infoRow" v-if="product.article">
                     <div class="ik">Артикул</div>
@@ -223,6 +227,10 @@
                 </div>
               </div>
             </div>
+            <div class="stockRow">
+  Остаток: <b>{{ qtyPretty }}</b>
+</div>
+
           </div>
         </aside>
       </section>
@@ -297,6 +305,16 @@ const pricePretty = computed(() => {
   if (!Number.isFinite(n)) return "—";
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n);
 });
+const qtyPretty = computed(() => {
+  const p = product.value || {};
+  const q = p.quantity;
+
+  if (q === undefined || q === null || String(q).trim() === "") return "—";
+
+  const m = String(p.measureName || "").trim();
+  return m ? `${q} ${m}` : String(q);
+});
+
 /* ===== SEO HEAD (вставить сюда) ===== */
 const SITE = "XOZMAG.RU";
 
@@ -1066,6 +1084,12 @@ watch(pkey, loadOne);
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--soft);
+}
+.stockRow {
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.78);
+  font-weight: 800;
 }
 
 .ik {

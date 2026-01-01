@@ -1,9 +1,16 @@
 <?php
 
-$DOCROOT = realpath(__DIR__ . "/../.."); // => /home/.../www/xozmag.ru
-$_SERVER["DOCUMENT_ROOT"] = $DOCROOT;
-
 date_default_timezone_set("Europe/Moscow");
+
+// Чтобы header() внутри подключаемых файлов не ругался из-за раннего echo
+ob_start();
+
+$DOCROOT = realpath(__DIR__ . "/../.."); // /var/www/.../xozmag.ru
+if (!$DOCROOT) {
+  echo "!!!! ERROR: DOCROOT not found\n";
+  exit(1);
+}
+$_SERVER["DOCUMENT_ROOT"] = $DOCROOT;
 
 // ====== GLOBAL LOCK ======
 $lockFile = sys_get_temp_dir() . "/xozmag_cron_10min.lock";
@@ -14,6 +21,10 @@ if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
 }
 
 function run_php_include(string $file, array $get = []): string {
+  if (!is_file($file)) {
+    throw new Exception("File not found: " . $file);
+  }
+
   $oldGet = $_GET;
   $_GET = $get;
 
@@ -27,32 +38,34 @@ function run_php_include(string $file, array $get = []): string {
   return (string)$out;
 }
 
-function j($s) {
-  $d = json_decode($s, true);
-  return is_array($d) ? $d : null;
+// вытащить JSON даже если перед ним были warnings/лишний текст
+function extract_json(string $s): ?array {
+  $s = trim($s);
+  if ($s === "") return null;
+
+  // пробуем взять JSON с последней "{"
+  $pos = strrpos($s, "{");
+  if ($pos !== false) {
+    $j = json_decode(substr($s, $pos), true);
+    if (is_array($j)) return $j;
+  }
+
+  $j = json_decode($s, true);
+  return is_array($j) ? $j : null;
 }
 
 try {
   echo "==== " . date("Y-m-d H:i:s") . " START ====\n";
 
-  // 1) SYNC EVOTOR
-  echo "-> sync_evotor\n";
-  $syncOut = run_php_include($GLOBALS["DOCROOT"] . "/api/admin/functions/sync_evotor.php", [
-    "cron" => "1",
-    "nocache" => "1",
-  ]);
-  echo $syncOut . "\n";
-
-  // 2) CONVERT IMAGES (init + poll status until done)
+  // 1) CONVERT IMAGES (init + poll status until done)
   echo "-> convert_images (init)\n";
   $initOut = run_php_include($GLOBALS["DOCROOT"] . "/api/admin/functions/convert_images_step.php", [
     "init" => "1",
     "dry_run" => "0",
   ]);
-  $init = j($initOut);
-  if (!$init) {
-    throw new Exception("convert init: not JSON: " . substr($initOut, 0, 300));
-  }
+
+  $init = extract_json($initOut);
+  if (!$init) throw new Exception("convert init: not JSON: " . substr($initOut, 0, 300));
   if (!empty($init["error"])) throw new Exception("convert init error: " . $init["error"]);
 
   if (!empty($init["done"])) {
@@ -63,7 +76,7 @@ try {
 
     echo "convert: token=$token total=" . ($init["total"] ?? "?") . "\n";
 
-    $maxSeconds = 20 * 60; // максимум 20 минут на конвертацию (настрой)
+    $maxSeconds = 20 * 60;
     $t0 = time();
 
     while (true) {
@@ -71,20 +84,20 @@ try {
         throw new Exception("convert: timeout > {$maxSeconds}s");
       }
 
-      usleep(700000); // 0.7s
+      usleep(700000);
 
       $stOut = run_php_include($GLOBALS["DOCROOT"] . "/api/admin/functions/convert_images_step.php", [
         "status" => "1",
         "token" => $token,
       ]);
-      $st = j($stOut);
+
+      $st = extract_json($stOut);
       if (!$st) throw new Exception("convert status: not JSON: " . substr($stOut, 0, 300));
       if (!empty($st["error"])) throw new Exception("convert status error: " . $st["error"]);
 
       $idx = (int)($st["index"] ?? 0);
       $done = !empty($st["done"]);
 
-      // лог раз в ~10 шагов
       if ($idx % 10 === 0) {
         echo "convert: index=$idx done=" . ($done ? "1" : "0") . "\n";
       }
@@ -96,12 +109,20 @@ try {
     }
   }
 
+  // 2) SYNC EVOTOR
+  echo "-> sync_evotor\n";
+  $syncOut = run_php_include($GLOBALS["DOCROOT"] . "/api/admin/functions/sync_evotor.php", [
+    "cron" => "1",
+    "nocache" => "1",
+  ]);
+  echo trim($syncOut) . "\n";
+
   // 3) GENERATE YML
   echo "-> generate_yml\n";
   $ymlOut = run_php_include($GLOBALS["DOCROOT"] . "/api/admin/functions/generate_yml.php", [
     "cron" => "1",
   ]);
-  echo $ymlOut . "\n";
+  echo trim($ymlOut) . "\n";
 
   echo "==== " . date("Y-m-d H:i:s") . " DONE ====\n\n";
 

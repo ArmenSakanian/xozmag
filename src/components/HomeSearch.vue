@@ -1,26 +1,30 @@
+<!-- src/components/HomeSearch.vue -->
 <template>
   <div class="search-wrap">
     <div class="search-box" ref="searchBoxRef">
-      <Fa class="search-icon" :icon="['fas','magnifying-glass']" />
+      <Fa class="search-icon" :icon="['fas', 'magnifying-glass']" />
 
-      <!-- ✅ CATEGORY BUTTON INSIDE SEARCH -->
-      <div v-if="showCategory" class="catpick-wrap" ref="catPickRef">
+      <!-- ✅ CATALOG BUTTON INSIDE SEARCH (ONLY /catalog) -->
+      <div v-if="showCatalogButton" class="catpick-wrap" ref="catPickRef">
         <button
           class="catpick-btn"
           :class="{ on: showCatPopover && !isMobile }"
           :disabled="!catsList.length"
           type="button"
-          title="Категории"
-          aria-label="Категории"
+          title="Каталог"
+          aria-label="Каталог"
           @click.prevent="toggleCatPopover"
         >
-          <Fa :icon="['fas','bars-staggered']" />
+          <span class="catpick-text">Каталог</span>
+          <Fa class="catpick-ico" :icon="['fas', 'bars-staggered']" />
         </button>
       </div>
 
       <!-- ✅ DESKTOP POPOVER CATEGORIES -->
       <div
-        v-if="showCategory && catsList.length && showCatPopover && !isMobile"
+        v-if="
+          showCatalogButton && catsList.length && showCatPopover && !isMobile
+        "
         class="catpop"
         ref="catPopRef"
       >
@@ -33,7 +37,7 @@
             @click="closeCatPopover"
             title="Закрыть"
           >
-            <Fa :icon="['fas','xmark']" />
+            <Fa :icon="['fas', 'xmark']" />
           </button>
         </div>
 
@@ -61,7 +65,7 @@
               <Fa
                 v-if="n.children?.length"
                 class="catpop-chev"
-                :icon="['fas','chevron-right']"
+                :icon="['fas', 'chevron-right']"
               />
             </button>
           </div>
@@ -82,6 +86,18 @@
         @blur="onBlur"
       />
 
+      <!-- ✅ SCAN BARCODE -->
+      <button
+        v-if="canScan"
+        class="search-scan"
+        @click="openScanner"
+        title="Сканировать штрихкод"
+        type="button"
+        aria-label="Сканировать штрихкод"
+      >
+        <Fa :icon="['fas', 'expand']" />
+      </button>
+
       <!-- ✅ CLEAR -->
       <button
         v-if="q"
@@ -91,7 +107,7 @@
         type="button"
         aria-label="Очистить"
       >
-        <Fa :icon="['fas','xmark']" />
+        <Fa :icon="['fas', 'xmark']" />
       </button>
     </div>
 
@@ -119,7 +135,7 @@
               @error="thumbErr[r.id] = true"
             />
             <div v-else class="dd-thumb dd-thumb-ph" aria-hidden="true">
-              <Fa :icon="['far','image']" />
+              <Fa :icon="['far', 'image']" />
             </div>
           </div>
 
@@ -127,12 +143,18 @@
             <div class="dd-title">{{ r.name }}</div>
             <div class="dd-sub">
               <span v-if="r.brand" class="dd-pill">{{ r.brand }}</span>
-              <span v-if="r.price != null" class="dd-price">{{ r.price }} ₽</span>
+              <span v-if="r.price != null" class="dd-price"
+                >{{ r.price }} ₽</span
+              >
               <span v-if="r.barcode" class="dd-code">{{ r.barcode }}</span>
             </div>
           </div>
 
-          <Fa aria-hidden="true" class="dd-arrow" :icon="['fas','chevron-right']" />
+          <Fa
+            aria-hidden="true"
+            class="dd-arrow"
+            :icon="['fas', 'chevron-right']"
+          />
         </button>
       </div>
 
@@ -147,7 +169,7 @@
 
     <!-- ✅ MOBILE CATEGORIES PANEL -->
     <div
-      v-if="showCategory && catsList.length && showMobileCats"
+      v-if="showCatalogButton && catsList.length && showMobileCats"
       class="moverlay-overlay"
       @click.self="closeMobileCats"
     >
@@ -160,7 +182,7 @@
             @click="mobileCatsStack.length && backMobileCat()"
             title="Назад"
           >
-            <Fa :icon="['fas','arrow-left']" />
+            <Fa :icon="['fas', 'arrow-left']" />
           </button>
 
           <span class="moverlay-title">{{ mobileCatsTitle }}</span>
@@ -179,7 +201,9 @@
             <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
               <button
                 class="mcat-check"
-                :class="{ on: String(c.code) === String(currentCategory || '') }"
+                :class="{
+                  on: String(c.code) === String(currentCategory || ''),
+                }"
                 @click.stop="pickCategory(c, { close: true })"
                 :title="
                   String(c.code) === String(currentCategory || '')
@@ -190,7 +214,7 @@
               >
                 <Fa
                   v-if="String(c.code) === String(currentCategory || '')"
-                  :icon="['fas','check']"
+                  :icon="['fas', 'check']"
                 />
               </button>
 
@@ -211,7 +235,7 @@
                 @click.stop="openMobileCat(c)"
                 title="Подкатегории"
               >
-                <Fa :icon="['fas','chevron-right']" />
+                <Fa :icon="['fas', 'chevron-right']" />
               </button>
             </div>
 
@@ -226,12 +250,114 @@
         </div>
       </div>
     </div>
+
+    <!-- ✅ TOAST -->
+    <transition name="toast">
+      <div v-if="toastShow" class="toast" :class="toastKind">
+        {{ toastText }}
+      </div>
+    </transition>
+
+    <!-- ✅ SCANNER OVERLAY -->
+    <div v-if="showScanner" class="scan-overlay" @click.self="closeScanner">
+      <div class="scan-panel" :class="scanPanelClass">
+        <div class="scan-head">
+          <div class="scan-title">Сканирование штрих-кода</div>
+
+          <button
+            class="scan-close"
+            type="button"
+            @click="closeScanner"
+            title="Закрыть"
+          >
+            <Fa :icon="['fas', 'xmark']" />
+          </button>
+        </div>
+
+        <div class="scan-video-wrap">
+<video
+  ref="scanVideoRef"
+  class="scan-video"
+  :class="{ flip: camFlip }"
+  autoplay
+  playsinline
+  muted
+></video>
+
+          <!-- ✅ TORCH BUTTON (OVER VIDEO) -->
+          <button
+            v-if="torchSupported"
+            class="scan-torch"
+            :class="{ on: torchOn }"
+            type="button"
+            @click.stop="toggleTorch"
+            :title="torchOn ? 'Выключить фонарь' : 'Включить фонарь'"
+            :aria-label="torchOn ? 'Выключить фонарь' : 'Включить фонарь'"
+          >
+            <Fa :icon="['fas', 'bolt']" />
+          </button>
+          <!-- ✅ SWITCH CAMERA BUTTON (BOTTOM RIGHT) -->
+<button
+  class="scan-switch"
+  type="button"
+  @click.stop="switchCameraAnimated"
+  title="Сменить камеру"
+  aria-label="Сменить камеру"
+>
+  <Fa :icon="['fas','camera-rotate']" />
+</button>
+
+          <!-- рамка/анимация -->
+          <div
+            class="scan-frame"
+            :class="{ bad: scanBad, ok: scanState === 'found' }"
+            aria-hidden="true"
+          >
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+          </div>
+
+          <!-- UI card -->
+          <div class="scan-ui">
+            <div class="scan-badge" :class="scanBadgeClass">
+              <span class="scan-bdot"></span>
+              <span class="scan-btxt">{{ scanBadgeText }}</span>
+            </div>
+
+            <div
+              class="scan-msg"
+              :class="{ bad: scanBad || scanState === 'error' }"
+            >
+              <div class="scan-msg-top">
+                <div class="scan-msg-title">{{ scanTitleText }}</div>
+                <div v-if="scanCode" class="scan-code">{{ scanCode }}</div>
+              </div>
+
+              <div class="scan-msg-sub">{{ scanMessage }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+const route = useRoute();
+const router = useRouter();
 
 /* ================== SHARED CATEGORIES CACHE (MODULE SCOPE) ================== */
 const CATS_URL = "/api/admin/product/get_categories_flat.php";
@@ -241,7 +367,10 @@ let _catsPromise = null;
 function normalizeCat(c) {
   const pid = c?.parent_id ?? c?.parent ?? null;
   const parent =
-    pid === null || pid === undefined || String(pid) === "0" || String(pid) === ""
+    pid === null ||
+    pid === undefined ||
+    String(pid) === "0" ||
+    String(pid) === ""
       ? null
       : String(pid);
 
@@ -255,7 +384,9 @@ function normalizeCat(c) {
       c.photo_url_abs ||
       c.photo_url ||
       c.photo ||
-      (c.photo_categories ? `/photo_categories_vitrina/${c.photo_categories}` : null),
+      (c.photo_categories
+        ? `/photo_categories_vitrina/${c.photo_categories}`
+        : null),
   };
 }
 
@@ -266,7 +397,9 @@ async function fetchCategoriesOnce() {
   _catsPromise = fetch(CATS_URL, { headers: { Accept: "application/json" } })
     .then((r) => r.json())
     .then((data) => {
-      const list = Array.isArray(data) ? data : data.categories || data.items || data.data || [];
+      const list = Array.isArray(data)
+        ? data
+        : data.categories || data.items || data.data || [];
       _catsCache = (list || []).filter(Boolean).map(normalizeCat);
       return _catsCache;
     })
@@ -284,7 +417,7 @@ async function fetchCategoriesOnce() {
 /* ================== PROPS / EMITS ================== */
 const props = defineProps({
   showCategory: { type: Boolean, default: false },
-  categories: { type: Array, default: () => [] }, // можно передать извне
+  categories: { type: Array, default: () => [] },
   currentCategory: { type: [String, Number, null], default: null },
 
   syncRoute: { type: Boolean, default: false },
@@ -303,9 +436,15 @@ const props = defineProps({
 
 const emit = defineEmits([
   "search-hits",
-  "categories-loaded",   // ✅ отдаём наверх
-  "categories-loading",  // ✅ чтобы Catalog мог показывать loader если надо
+  "categories-loaded",
+  "categories-loading",
 ]);
+
+/* ================== SHOW BUTTON ONLY ON /catalog ================== */
+const showCatalogButton = computed(() => {
+  if (!props.showCategory) return false;
+  return route.path === "/catalog" || route.path.startsWith("/catalog/");
+});
 
 /* ================== LOCAL CATS (WHEN NOT PASSED) ================== */
 const localCats = ref([]);
@@ -319,13 +458,14 @@ const catsList = computed(() => {
 const currentCategorySlug = computed(() => {
   const code = props.currentCategory;
   if (code == null || String(code) === "") return "";
-  const found = (catsList.value || []).find((c) => String(c.code) === String(code));
+  const found = (catsList.value || []).find(
+    (c) => String(c.code) === String(code)
+  );
   return found?.slug ? String(found.slug) : String(code);
 });
 
 async function ensureCategories() {
-  // грузим только если нужны категории (кнопка/поповер)
-  if (!props.showCategory) return;
+  if (!showCatalogButton.value) return;
 
   const fromProps = Array.isArray(props.categories) ? props.categories : [];
   if (fromProps.length) {
@@ -345,7 +485,7 @@ async function ensureCategories() {
 }
 
 watch(
-  () => props.showCategory,
+  () => showCatalogButton.value,
   () => ensureCategories(),
   { immediate: true }
 );
@@ -359,9 +499,6 @@ watch(
   { immediate: true }
 );
 
-const route = useRoute();
-const router = useRouter();
-
 /* ================= SEARCH ================= */
 const q = ref("");
 const openDd = ref(false);
@@ -371,6 +508,17 @@ const loadingSearch = ref(false);
 const activeIdx = ref(-1);
 const itemRefs = ref([]);
 const thumbErr = ref({});
+const camFlip = ref(false);
+
+function pulseCamFlip() {
+  camFlip.value = true;
+  setTimeout(() => (camFlip.value = false), 260);
+}
+
+async function switchCameraAnimated() {
+  pulseCamFlip();
+  await switchCamera();
+}
 
 const qTrim = computed(() => String(q.value || "").trim());
 
@@ -496,9 +644,9 @@ async function doSearch(text) {
   loadingSearch.value = true;
   try {
     const r = await fetch(
-      `/api/admin/product/search_products.php?q=${encodeURIComponent(s)}&limit=${encodeURIComponent(
-        String(props.serverLimit || 30)
-      )}`,
+      `/api/admin/product/search_products.php?q=${encodeURIComponent(
+        s
+      )}&limit=${encodeURIComponent(String(props.serverLimit || 30))}`,
       { headers: { Accept: "application/json" }, signal: ac.signal }
     );
 
@@ -510,10 +658,16 @@ async function doSearch(text) {
       .slice(0, Number(props.serverLimit || 30))
       .map((p) => ({
         id: p.id,
+        slug: p.slug ?? null,
+
         name: p.name,
         price: p.price,
         brand: p.brand,
         barcode: p.barcode,
+
+        quantity_value: p.quantity_value ?? null,
+        measureName: p.measureName ?? p.measure_name ?? null,
+
         thumb: p.thumb || p.image || null,
         images: p.images || null,
       }))
@@ -580,7 +734,6 @@ function enterPick() {
 
 function goProduct(p) {
   router.push({ name: "product", params: { slug: p.slug || String(p.id) } });
-
   openDd.value = false;
 }
 
@@ -646,7 +799,9 @@ const treeData = computed(() => {
 
   const sortNode = (n) => {
     n.children.sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
+      String(a.name).localeCompare(String(b.name), "ru", {
+        sensitivity: "base",
+      })
     );
     n.children.forEach(sortNode);
   };
@@ -758,7 +913,9 @@ const childrenByParent = computed(() => {
   });
   Object.keys(map).forEach((k) =>
     map[k].sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
+      String(a.name).localeCompare(String(b.name), "ru", {
+        sensitivity: "base",
+      })
     )
   );
   return map;
@@ -848,15 +1005,377 @@ function onDocDown(e) {
   const btn = catPickRef.value;
 
   const inside =
-    (box && box.contains(t)) || (pop && pop.contains(t)) || (btn && btn.contains(t));
+    (box && box.contains(t)) ||
+    (pop && pop.contains(t)) ||
+    (btn && btn.contains(t));
 
   if (!inside) closeCatPopover();
 }
 
-onMounted(() => document.addEventListener("mousedown", onDocDown, { passive: true }));
+onMounted(() =>
+  document.addEventListener("mousedown", onDocDown, { passive: true })
+);
 onBeforeUnmount(() => document.removeEventListener("mousedown", onDocDown));
 
-/* body lock only for mobile cats */
+/* ================= TOAST ================= */
+const toastShow = ref(false);
+const toastText = ref("");
+const toastKind = ref("info");
+let toastTimer = null;
+
+function showToast(text, kind = "info", ms = 2400) {
+  toastText.value = text;
+  toastKind.value = kind;
+  toastShow.value = true;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toastShow.value = false), ms);
+}
+
+/* ================= BARCODE SCANNER ================= */
+const canScan = computed(() => {
+  return (
+    typeof window !== "undefined" &&
+    window.isSecureContext &&
+    navigator?.mediaDevices?.getUserMedia
+  );
+});
+
+const showScanner = ref(false); // ✅ важно: объявлено ДО любых watch где оно используется
+const scanVideoRef = ref(null);
+
+const scanState = ref("idle"); // idle | starting | scanning | checking | not_found | found | error
+const scanMessage = ref("");
+const scanCode = ref("");
+const scanBad = ref(false);
+
+const torchSupported = ref(false);
+const torchOn = ref(false);
+const facingMode = ref("environment"); // environment | user
+
+let zxingReader = null;
+let zxingControls = null;
+let currentTrack = null;
+
+let scanLock = false;
+let lastHandledCode = "";
+let lastHandledAt = 0;
+
+const scanBadgeText = computed(() => {
+  const s = scanState.value;
+  if (s === "starting") return "Подключение камеры…";
+  if (s === "scanning") return "Сканер активен";
+  if (s === "checking") return "Проверка кода…";
+  if (s === "not_found") return "Товар не найден";
+  if (s === "found") return "Товар найден";
+  if (s === "error") return "Ошибка";
+  return "Сканер";
+});
+
+const scanTitleText = computed(() => {
+  const s = scanState.value;
+  if (s === "starting") return "Подготовка сканера";
+  if (s === "scanning") return "Наведите штрих-код в рамку";
+  if (s === "checking") return "Проверяем код";
+  if (s === "not_found") return "Товар не найден";
+  if (s === "found") return "Товар найден ✅";
+  if (s === "error") return "Не удалось запустить сканер";
+  return "Сканирование";
+});
+
+const scanBadgeClass = computed(() => {
+  const s = scanState.value;
+  return {
+    starting: s === "starting",
+    scanning: s === "scanning",
+    checking: s === "checking",
+    bad: s === "not_found" || s === "error",
+    ok: s === "found",
+  };
+});
+
+const scanPanelClass = computed(() => {
+  const s = scanState.value;
+  return {
+    bad: s === "not_found" || s === "error",
+    ok: s === "found",
+  };
+});
+
+async function openScanner() {
+  openDd.value = false;
+  closeCatPopover();
+  closeMobileCats();
+
+  if (!canScan.value) {
+    showToast(
+      "Камера недоступна: требуется HTTPS и разрешение на доступ.",
+      "err"
+    );
+    return;
+  }
+
+  showScanner.value = true;
+  scanBad.value = false;
+  scanCode.value = "";
+  scanMessage.value = "Пожалуйста, разрешите доступ к камере.";
+  scanState.value = "starting";
+
+  await nextTick();
+
+  try {
+    await startZXing();
+    scanState.value = "scanning";
+    scanMessage.value = torchSupported.value
+      ? "Держите штрих-код в рамке. Если код читается плохо — поднесите ближе или включите фонарь."
+      : "Держите штрих-код в рамке. Если код читается плохо — поднесите ближе и держите код ровно.";
+  } catch (e) {
+    scanState.value = "error";
+    scanBad.value = true;
+    scanMessage.value =
+      "Не удалось открыть камеру. Проверьте разрешения браузера и убедитесь, что сайт открыт по HTTPS.";
+  }
+}
+
+function closeScanner() {
+  showScanner.value = false;
+  stopZXing();
+  scanState.value = "idle";
+  scanMessage.value = "";
+  scanCode.value = "";
+  scanBad.value = false;
+  torchSupported.value = false;
+  torchOn.value = false;
+  currentTrack = null;
+  scanLock = false;
+}
+
+function resumeScanningNow() {
+  scanBad.value = false;
+  scanState.value = "scanning";
+  scanMessage.value = "Наведите штрих-код в рамку";
+  scanLock = false;
+}
+
+async function manualSearchScanned() {
+  const code = String(scanCode.value || "").trim();
+  if (!code) return;
+  await processCode(code, { manual: true });
+}
+
+async function startZXing() {
+  stopZXing();
+
+  const ZX = await import("@zxing/browser");
+  const ZL = await import("@zxing/library");
+
+  const hints = new Map();
+  hints.set(ZL.DecodeHintType.TRY_HARDER, true);
+  hints.set(ZL.DecodeHintType.POSSIBLE_FORMATS, [
+    ZL.BarcodeFormat.EAN_13,
+    ZL.BarcodeFormat.EAN_8,
+    ZL.BarcodeFormat.UPC_A,
+    ZL.BarcodeFormat.UPC_E,
+    ZL.BarcodeFormat.CODE_128,
+    ZL.BarcodeFormat.CODE_39,
+    ZL.BarcodeFormat.ITF,
+    ZL.BarcodeFormat.CODABAR,
+  ]);
+
+  zxingReader = new ZX.BrowserMultiFormatReader(hints);
+
+  const videoEl = scanVideoRef.value;
+  if (!videoEl) throw new Error("No video element");
+
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: { ideal: facingMode.value }, // ✅ если телефон — обычно задняя
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  };
+
+  zxingControls = await zxingReader.decodeFromConstraints(
+    constraints,
+    videoEl,
+    async (result) => {
+      if (!result) return;
+
+      const text = String(result.getText?.() ?? result.text ?? "").trim();
+      if (!text) return;
+
+      // анти-дребезг + анти-спам
+      const now = Date.now();
+      if (scanLock) return;
+      if (text === lastHandledCode && now - lastHandledAt < 1600) return;
+
+      lastHandledCode = text;
+      lastHandledAt = now;
+
+      await processCode(text);
+    }
+  );
+
+  // torch detection
+  try {
+    const stream = videoEl.srcObject;
+    const track = stream?.getVideoTracks?.()?.[0] || null;
+    currentTrack = track;
+
+    const caps = track?.getCapabilities?.();
+    torchSupported.value = !!caps?.torch;
+    torchOn.value = false;
+  } catch {
+    torchSupported.value = false;
+    torchOn.value = false;
+  }
+}
+
+function stopZXing() {
+  try {
+    if (zxingControls && typeof zxingControls.stop === "function")
+      zxingControls.stop();
+  } catch {}
+  zxingControls = null;
+
+  try {
+    if (zxingReader && typeof zxingReader.reset === "function")
+      zxingReader.reset();
+  } catch {}
+  zxingReader = null;
+
+  const v = scanVideoRef.value;
+  if (v && v.srcObject) {
+    try {
+      const stream = v.srcObject;
+      stream?.getTracks?.().forEach((t) => t.stop());
+    } catch {}
+    v.srcObject = null;
+  }
+
+  currentTrack = null;
+}
+
+async function toggleTorch() {
+  const track = currentTrack;
+  if (!track) return;
+
+  try {
+    await track.applyConstraints({
+      advanced: [{ torch: !torchOn.value }],
+    });
+    torchOn.value = !torchOn.value;
+
+    if (navigator.vibrate) navigator.vibrate(10);
+  } catch {
+    showToast("Фонарь недоступен на этом устройстве.", "err");
+  }
+}
+
+async function switchCamera() {
+  facingMode.value =
+    facingMode.value === "environment" ? "user" : "environment";
+
+  scanBad.value = false;
+  scanCode.value = "";
+  scanState.value = "starting";
+  scanMessage.value = "Переключаем камеру…";
+  scanLock = true;
+
+  try {
+    await startZXing();
+    scanState.value = "scanning";
+    scanMessage.value = "Наведите штрих-код в рамку.";
+  } catch (e) {
+    scanState.value = "error";
+    scanBad.value = true;
+    scanMessage.value = "Не удалось переключить камеру.";
+  } finally {
+    setTimeout(() => (scanLock = false), 600);
+  }
+}
+
+async function processCode(codeRaw, { manual = false } = {}) {
+  const code = String(codeRaw || "").trim();
+  if (!code) return;
+
+  scanCode.value = code;
+  scanState.value = "checking";
+  scanBad.value = false;
+  scanLock = true;
+
+  if (navigator.vibrate) navigator.vibrate(20);
+
+  scanMessage.value = manual ? "Проверяем код…" : "Код считан. Ищем товар…";
+
+  try {
+    const p = await findProductByBarcode(code);
+
+    if (p?.id) {
+      scanState.value = "found";
+      scanMessage.value = "Открываем карточку товара…";
+
+      // закрываем камеру и переходим
+      setTimeout(() => {
+        closeScanner();
+        router.push({
+          name: "product",
+          params: { slug: p.slug || String(p.id) },
+        });
+      }, 260);
+
+      return;
+    }
+
+    // ❌ НЕ НАЙДЕНО — КАМЕРА ПРОДОЛЖАЕТ СКАНИРОВАТЬ
+    scanState.value = "scanning"; // оставляем “Сканер активен”
+    scanBad.value = true;
+    scanMessage.value = torchSupported.value
+      ? "Товар по этому штрих-коду не найден. Поднесите код ближе и держите его ровно. При необходимости включите фонарь."
+      : "Товар по этому штрих-коду не найден. Поднесите код ближе и держите его ровно.";
+    // рамку красной делаем ненадолго
+    setTimeout(() => {
+      if (!showScanner.value) return;
+      scanBad.value = false;
+    }, 900);
+
+    // сообщение показываем 3 секунды, потом возвращаем обычную подсказку
+    setTimeout(() => {
+      if (!showScanner.value) return;
+      if (scanState.value === "scanning") {
+        scanMessage.value = "Наведите штрих-код в рамку.";
+      }
+    }, 3000);
+
+    // снимаем лок, чтобы сканер продолжал ловить новые коды
+    setTimeout(() => {
+      scanLock = false;
+    }, 700);
+  } catch (e) {
+    scanState.value = "error";
+    scanBad.value = true;
+    scanMessage.value =
+      "Не удалось проверить товар. Проверьте подключение к интернету и повторите попытку.";
+    setTimeout(() => {
+      if (!showScanner.value) return;
+      scanLock = false;
+    }, 1200);
+  }
+}
+
+async function findProductByBarcode(code) {
+  const r = await fetch(
+    `/api/admin/product/search_products.php?q=${encodeURIComponent(
+      code
+    )}&limit=1`,
+    { headers: { Accept: "application/json" } }
+  );
+  const data = await r.json();
+  const list = Array.isArray(data) ? data : data.products || data.items || [];
+  return list?.[0] || null;
+}
+
+/* ================= BODY LOCK (mobile cats + scanner) ================= */
 let savedScrollY = 0;
 function lockBody() {
   savedScrollY = window.scrollY || 0;
@@ -879,14 +1398,20 @@ function unlockBody() {
   window.scrollTo(0, savedScrollY);
 }
 
-watch(showMobileCats, (v) => {
-  if (v) lockBody();
-  else unlockBody();
+const bodyLocked = ref(false);
+watch([showMobileCats, showScanner], ([m, s]) => {
+  const should = !!(m || s);
+  if (should && !bodyLocked.value) lockBody();
+  if (!should && bodyLocked.value) unlockBody();
+  bodyLocked.value = should;
 });
 
+/* cleanup */
 onBeforeUnmount(() => {
   clearTimeout(t);
   if (ac) ac.abort();
+  stopZXing();
+  clearTimeout(toastTimer);
 });
 </script>
 
@@ -904,7 +1429,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 5px 10px;
   border-radius: 999px;
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
@@ -944,6 +1469,37 @@ onBeforeUnmount(() => {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
+.search-box {
+  gap: 8px;
+}
+.search-clear,
+.search-scan {
+  flex: 0 0 auto;
+}
+
+/* ===== scan button (красиво) ===== */
+.search-scan {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1),
+    rgba(247, 248, 255, 1)
+  );
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.search-scan:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.12);
+  border-color: rgba(4, 0, 255, 0.18);
+}
 
 /* ===== category button ===== */
 .catpick-wrap {
@@ -951,28 +1507,42 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
+
+  height: 34px;
+  padding-left: 10px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border-soft);
 }
 
 .catpick-btn {
-  width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  color: var(--accent);
+
+  border: 1px solid transparent;
+  background: transparent;
+
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  gap: 8px;
+  padding: 0 10px;
+
+  font-weight: 900;
+  color: var(--text-main);
+
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
+
 .catpick-btn:hover {
-  background: rgba(4, 0, 255, 0.05);
+  background: rgba(4, 0, 255, 0.06);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
-.catpick-btn:disabled{
-  opacity: .45;
+
+.catpick-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -982,6 +1552,23 @@ onBeforeUnmount(() => {
   background: rgba(4, 0, 255, 0.08);
   border-color: rgba(4, 0, 255, 0.22);
   box-shadow: 0 10px 26px rgba(4, 0, 255, 0.1);
+}
+
+.catpick-text {
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.catpick-ico {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .catpick-text {
+    display: none;
+  }
 }
 
 /* ===== desktop categories popover ===== */
@@ -1061,7 +1648,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
 .catpop-close:hover {
   transform: translateY(-1px);
@@ -1108,8 +1696,8 @@ onBeforeUnmount(() => {
   gap: 10px;
   color: var(--text-main);
   font-weight: 900;
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease,
-    box-shadow 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    transform 0.12s ease, box-shadow 0.12s ease;
 }
 .catpop-item:hover {
   background: rgba(4, 0, 255, 0.06);
@@ -1203,7 +1791,8 @@ onBeforeUnmount(() => {
   padding: 10px 10px;
   border-radius: 14px;
 
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    transform 0.12s ease;
 }
 .dd-item:hover {
   background: rgba(4, 0, 255, 0.05);
@@ -1473,4 +2062,444 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-weight: 900;
 }
+
+/* ===== toast ===== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+  max-width: min(92vw, 520px);
+  text-align: center;
+}
+.toast.ok {
+  color: #0f766e;
+}
+.toast.err {
+  color: #b91c1c;
+}
+.toast.info {
+  color: var(--text-main);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+/* torch button (over video) */
+.scan-torch {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 6;
+
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(2, 6, 23, 0.36);
+  color: #fff;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
+
+  transition: transform 0.12s ease, background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.scan-torch:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.scan-torch:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.scan-torch.on {
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(2, 6, 23, 0.92);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== scanner overlay ===== */
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: radial-gradient(
+      900px 420px at 50% 0%,
+      rgba(255, 255, 255, 0.1),
+      transparent 60%
+    ),
+    rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+
+.scan-panel {
+  width: min(700px, 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 34px 110px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+  transform: translateY(0);
+  animation: scanPop 0.18s ease-out;
+}
+@keyframes scanPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.scan-panel.bad {
+  box-shadow: 0 34px 110px rgba(185, 28, 28, 0.22);
+}
+.scan-panel.ok {
+  box-shadow: 0 34px 110px rgba(16, 185, 129, 0.22);
+}
+
+.scan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(255, 255, 255, 0.9)
+  );
+}
+
+.scan-title {
+  font-weight: 950;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.scan-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-video-wrap {
+  position: relative;
+  padding: 12px;
+}
+
+.scan-video {
+  width: 100%;
+  height: min(66vh, 480px);
+  border-radius: 20px;
+  background: #0b1020;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(2, 6, 23, 0.12);
+  filter: contrast(1.05) saturate(1.05);
+}
+
+/* рамка */
+.scan-frame {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-frame::before {
+  content: "";
+  width: min(78%, 470px);
+  aspect-ratio: 3 / 2;
+  border-radius: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.18) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.1), 0 18px 50px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.scan-frame.bad::before {
+  border-color: rgba(239, 68, 68, 0.95);
+  box-shadow: 0 0 0 9999px rgba(185, 28, 28, 0.18) inset,
+    0 0 0 1px rgba(239, 68, 68, 0.35), 0 18px 50px rgba(185, 28, 28, 0.2);
+}
+.scan-frame.ok::before {
+  border-color: rgba(34, 197, 94, 0.95);
+  box-shadow: 0 0 0 9999px rgba(16, 185, 129, 0.18) inset,
+    0 0 0 1px rgba(34, 197, 94, 0.35), 0 18px 50px rgba(16, 185, 129, 0.18);
+}
+
+/* уголки */
+.scan-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 7px;
+  transition: border-color 0.18s ease;
+}
+.scan-frame.bad .scan-corner {
+  border-color: rgba(239, 68, 68, 0.95);
+}
+.scan-frame.ok .scan-corner {
+  border-color: rgba(34, 197, 94, 0.95);
+}
+
+.scan-corner.tl {
+  transform: translate(calc(-1 * min(39%, 235px)), calc(-1 * min(26%, 150px)));
+  border-right: 0;
+  border-bottom: 0;
+}
+.scan-corner.tr {
+  transform: translate(min(39%, 235px), calc(-1 * min(26%, 150px)));
+  border-left: 0;
+  border-bottom: 0;
+}
+.scan-corner.bl {
+  transform: translate(calc(-1 * min(39%, 235px)), min(26%, 150px));
+  border-right: 0;
+  border-top: 0;
+}
+.scan-corner.br {
+  transform: translate(min(39%, 235px), min(26%, 150px));
+  border-left: 0;
+  border-top: 0;
+}
+
+/* линия скана */
+.scan-line {
+  position: absolute;
+  width: min(76%, 455px);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+  opacity: 0.95;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.28));
+  animation: scanLine 1.25s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(calc(-1 * min(20%, 120px)));
+    opacity: 0.25;
+  }
+  45% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(min(20%, 120px));
+    opacity: 0.25;
+  }
+}
+
+/* UI card */
+.scan-ui {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.scan-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(2, 6, 23, 0.34);
+  color: #fff;
+  font-weight: 950;
+  font-size: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.scan-badge.checking {
+  background: rgba(4, 0, 255, 0.26);
+}
+.scan-badge.ok {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+.scan-badge.bad {
+  background: rgba(127, 29, 29, 0.22);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.scan-bdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  opacity: 0.9;
+}
+.scan-badge.scanning .scan-bdot {
+  animation: pulseDot 1s ease-in-out infinite;
+}
+.scan-badge.checking .scan-bdot {
+  animation: pulseDot 0.7s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.scan-msg {
+  pointer-events: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(2, 6, 23, 0.35);
+  color: #fff;
+  padding: 12px 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+}
+.scan-msg.bad {
+  background: rgba(127, 29, 29, 0.3);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.scan-msg-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.scan-msg-title {
+  font-weight: 950;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.scan-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  max-width: 58%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scan-msg-sub {
+  font-size: 12px;
+  font-weight: 850;
+  opacity: 0.96;
+  line-height: 1.25;
+}
+
+.search-scan:active,
+.search-clear:active,
+.catpick-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+/* switch camera (bottom-right) */
+.scan-switch {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 6;
+
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(2, 6, 23, 0.36);
+  color: #fff;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 16px 44px rgba(0,0,0,0.30);
+
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.scan-switch:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.32);
+}
+
+.scan-switch:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* flip animation on video */
+.scan-video.flip {
+  animation: camFlip 0.26s ease-in-out;
+}
+
+@keyframes camFlip {
+  0%   { transform: scale(1) rotateY(0deg); filter: blur(0px); }
+  45%  { transform: scale(0.985) rotateY(18deg); filter: blur(1px); }
+  100% { transform: scale(1) rotateY(0deg); filter: blur(0px); }
+}
+
 </style>
