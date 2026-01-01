@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
   bottom: 6px;
   width: 0;
   height: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--accent);
   transform: translateX(-50%);
   transition: width 0.2s ease;

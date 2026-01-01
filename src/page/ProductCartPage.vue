@@ -759,7 +759,7 @@ watch(pkey, loadOne);
 
 .skelline {
   height: 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--soft);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55));
   background-size: 200% 100%;
@@ -868,7 +868,7 @@ watch(pkey, loadOne);
   z-index: 5;
   height: 44px;
   width: 44px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.55);
   background: rgba(15, 23, 42, 0.55);
   color: #fff;
@@ -977,7 +977,7 @@ watch(pkey, loadOne);
 .tab {
   height: 40px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--soft);
   background: rgba(15, 23, 42, 0.03);
   color: rgba(15, 23, 42, 0.86);
@@ -1004,7 +1004,7 @@ watch(pkey, loadOne);
   font-size: 11px;
   font-weight: 980;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: rgba(4, 0, 255, 0.14);
   border: 1px solid rgba(4, 0, 255, 0.18);
   color: rgba(4, 0, 255, 0.95);
@@ -1064,7 +1064,7 @@ watch(pkey, loadOne);
 .colorDot {
   width: 12px;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(15, 23, 42, 0.20);
   flex: 0 0 12px;
 }
@@ -1180,7 +1180,7 @@ watch(pkey, loadOne);
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--soft);
   background: rgba(15, 23, 42, 0.03);
   font-weight: 900;

@@ -1430,7 +1430,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-sm);
@@ -1456,7 +1456,7 @@ onBeforeUnmount(() => {
 .search-clear {
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   background: #fff;
   cursor: pointer;
@@ -1481,7 +1481,7 @@ onBeforeUnmount(() => {
 .search-scan {
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(2, 6, 23, 0.08);
   background: linear-gradient(
     180deg,
@@ -1516,10 +1516,10 @@ onBeforeUnmount(() => {
 
 .catpick-btn {
   height: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 
-  border: 1px solid transparent;
-  background: transparent;
+  border: none;
+  background: var(--accent);
 
   cursor: pointer;
   display: inline-flex;
@@ -1530,14 +1530,16 @@ onBeforeUnmount(() => {
   padding: 0 10px;
 
   font-weight: 900;
-  color: var(--text-main);
+  color: white;
 
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: .6s;
 }
 
-.catpick-btn:hover {
-  background: rgba(4, 0, 255, 0.06);
+.catpick-btn:hover,
+.catpick-btn:hover .catpick-ico  {
+  background: rgba(255, 255, 255, 0.06);
   box-shadow: var(--shadow-sm);
+  color: black;
   transform: translateY(-1px);
 }
 
@@ -1562,7 +1564,8 @@ onBeforeUnmount(() => {
 
 .catpick-ico {
   font-size: 13px;
-  color: var(--accent);
+  color: white;
+  transition: .6s;
 }
 
 @media (max-width: 520px) {
@@ -1737,7 +1740,7 @@ onBeforeUnmount(() => {
 .search-hint .dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--accent);
   opacity: 0.7;
 }
@@ -1868,7 +1871,7 @@ onBeforeUnmount(() => {
   font-size: 11px;
   font-weight: 900;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 
   background: rgba(4, 0, 255, 0.08);
   border: 1px solid rgba(4, 0, 255, 0.16);
@@ -1893,7 +1896,7 @@ onBeforeUnmount(() => {
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 }
@@ -2071,7 +2074,7 @@ onBeforeUnmount(() => {
   transform: translateX(-50%);
   z-index: 9999;
   padding: 10px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-weight: 900;
   font-size: 12px;
   border: 1px solid var(--border-soft);
@@ -2252,19 +2255,19 @@ onBeforeUnmount(() => {
   aspect-ratio: 3 / 2;
   border-radius: 20px;
   border: 1px dashed rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.18) inset,
+  box-shadow: 0 0 0 9var(--radius-lg) rgba(2, 6, 23, 0.18) inset,
     0 0 0 1px rgba(255, 255, 255, 0.1), 0 18px 50px rgba(0, 0, 0, 0.25);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .scan-frame.bad::before {
   border-color: rgba(239, 68, 68, 0.95);
-  box-shadow: 0 0 0 9999px rgba(185, 28, 28, 0.18) inset,
+  box-shadow: 0 0 0 9var(--radius-lg) rgba(185, 28, 28, 0.18) inset,
     0 0 0 1px rgba(239, 68, 68, 0.35), 0 18px 50px rgba(185, 28, 28, 0.2);
 }
 .scan-frame.ok::before {
   border-color: rgba(34, 197, 94, 0.95);
-  box-shadow: 0 0 0 9999px rgba(16, 185, 129, 0.18) inset,
+  box-shadow: 0 0 0 9var(--radius-lg) rgba(16, 185, 129, 0.18) inset,
     0 0 0 1px rgba(34, 197, 94, 0.35), 0 18px 50px rgba(16, 185, 129, 0.18);
 }
 
@@ -2310,7 +2313,7 @@ onBeforeUnmount(() => {
   position: absolute;
   width: min(76%, 455px);
   height: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(
     90deg,
     transparent,
@@ -2354,7 +2357,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(2, 6, 23, 0.34);
   color: #fff;
@@ -2378,7 +2381,7 @@ onBeforeUnmount(() => {
 .scan-bdot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.92);
   opacity: 0.9;
 }
@@ -2435,7 +2438,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 900;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.18);
   max-width: 58%;

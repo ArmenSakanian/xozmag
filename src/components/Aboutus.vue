@@ -343,7 +343,7 @@ const yandexLink =
 .brand-dot {
   width: 10px;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--secondary-accent);
   box-shadow: 0 0 0 4px rgba(252, 200, 34, 0.25);
 }
@@ -463,7 +463,7 @@ const yandexLink =
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--secondary-accent);
   border: 1px solid rgba(0, 0, 0, 0.08);
   line-height: 1;
@@ -543,7 +543,7 @@ const yandexLink =
 .range-kicker {
   width: 10px;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: rgba(4, 0, 255, 0.85);
 }
 
@@ -636,7 +636,7 @@ const yandexLink =
   background: var(--secondary-accent);
   border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   white-space: nowrap;
 }
 
@@ -680,7 +680,7 @@ const yandexLink =
   align-items: center;
   justify-content: center;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--secondary-accent);
   border: 1px solid rgba(0, 0, 0, 0.08);
   line-height: 1;

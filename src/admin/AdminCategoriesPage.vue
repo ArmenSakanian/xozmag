@@ -444,7 +444,7 @@ onMounted(loadCategories);
   min-width: 34px;
   height: 24px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
   color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-soft));
@@ -725,7 +725,7 @@ onMounted(loadCategories);
   border: 1px solid var(--border-soft);
 
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   white-space: nowrap;
 }
 

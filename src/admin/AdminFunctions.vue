@@ -1123,7 +1123,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
   font-weight: 900;
@@ -1328,7 +1328,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   font-weight: 1000;
   border: 1px solid var(--border-soft);
@@ -1382,7 +1382,7 @@ onBeforeUnmount(() => {
 .progress-track {
   height: 12px;
   background: color-mix(in srgb, var(--bg-panel) 55%, var(--bg-soft));
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--border-soft);
 }
@@ -1716,7 +1716,7 @@ onBeforeUnmount(() => {
   margin-left: 8px;
   font-size: 11px;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-soft));
   background: color-mix(in srgb, var(--accent) 10%, var(--bg-panel));
   color: var(--accent);
@@ -1815,7 +1815,7 @@ onBeforeUnmount(() => {
 .min-pill {
   display: inline-flex;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   font-weight: 1000;
   border: 1px solid var(--border-soft);
@@ -1934,7 +1934,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   background: color-mix(in srgb, var(--bg-panel) 70%, var(--bg-soft));
   border: 1px solid var(--border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   transition: 0.15s;
 }
 
@@ -1946,7 +1946,7 @@ onBeforeUnmount(() => {
   left: 4px;
   top: 3px;
   background: #fff;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   transition: 0.15s;
   box-shadow: var(--shadow-sm);
 }

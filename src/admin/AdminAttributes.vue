@@ -693,7 +693,7 @@ onMounted(loadAttributes);
   border: 1px solid var(--border-soft);
   color: var(--text-main);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-size: 13px;
   font-weight: 700;
 }

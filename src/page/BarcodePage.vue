@@ -1443,7 +1443,7 @@ onMounted(async () => {
   border: 1px solid var(--border-soft);
   background: var(--bg-soft);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-weight: 900;
   font-size: 12px;
 }

@@ -680,7 +680,7 @@ onBeforeUnmount(() => {
 .dot{
   height: 10px;
   width: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--accent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
 }
@@ -698,7 +698,7 @@ onBeforeUnmount(() => {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 }
 
 .cats{
@@ -711,7 +711,7 @@ onBeforeUnmount(() => {
 .chip{
   font-size: 12px;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-soft));
   background: color-mix(in srgb, var(--accent) 9%, var(--bg-panel));
   color: var(--text-main);
@@ -818,7 +818,7 @@ onBeforeUnmount(() => {
 .spinner{
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 3px solid color-mix(in srgb, var(--accent) 18%, transparent);
   border-top-color: var(--accent);
   animation: spin .85s linear infinite;
@@ -937,7 +937,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   border: 1px solid color-mix(in srgb, var(--accent-2) 28%, var(--border-soft));
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent-2) 10%, var(--bg-panel));
   color: var(--text-main);
   white-space: nowrap;

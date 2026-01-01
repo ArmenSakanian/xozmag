@@ -1516,10 +1516,10 @@ onMounted(async () => {
 
 @keyframes rowFlash {
   0% {
-    box-shadow: inset 0 0 0 9999px rgba(0, 180, 90, 0.35);
+    box-shadow: inset 0 0 0 9var(--radius-lg) rgba(0, 180, 90, 0.35);
   }
   100% {
-    box-shadow: inset 0 0 0 9999px rgba(0, 180, 90, 0);
+    box-shadow: inset 0 0 0 9var(--radius-lg) rgba(0, 180, 90, 0);
   }
 }
 

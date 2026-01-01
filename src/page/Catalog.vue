@@ -1613,7 +1613,7 @@ watch(showMobileFilters, (open) => {
 .color-dot {
   width: 12px;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   border: 1px solid #d1d5db;
   display: inline-block;
   flex: 0 0 12px;
@@ -1976,7 +1976,7 @@ watch(showMobileFilters, (open) => {
   background: var(--bg-panel);
   box-shadow: var(--shadow-sm);
   padding: 12px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-weight: 900;
   display: inline-flex;
@@ -2123,7 +2123,7 @@ watch(showMobileFilters, (open) => {
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 }
 
 .product-barcode {
@@ -2142,7 +2142,7 @@ watch(showMobileFilters, (open) => {
   background: rgba(4, 0, 255, 0.08);
   color: var(--accent);
   padding: 10px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   font-weight: 800;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -2217,7 +2217,7 @@ watch(showMobileFilters, (open) => {
   background: var(--bg-panel);
   box-shadow: var(--shadow-sm);
   padding: 12px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-weight: 900;
   transition: transform 0.15s ease, box-shadow 0.15s ease;

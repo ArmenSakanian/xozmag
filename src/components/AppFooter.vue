@@ -202,7 +202,7 @@ function scrollToSection(id) {
 
   background: rgba(4, 0, 231, 0.06);
   border: 1px solid rgba(4, 0, 231, 0.16);
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 
   color: var(--accent);
   text-decoration: none;

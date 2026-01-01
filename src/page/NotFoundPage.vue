@@ -129,7 +129,7 @@ const goBack = () => {
   gap: 10px;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
 }

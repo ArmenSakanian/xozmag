@@ -120,7 +120,7 @@ useHead({
   align-items: center;
   height: 26px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   color: var(--text-main);

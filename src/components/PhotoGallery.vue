@@ -80,7 +80,7 @@ const slides = [
 :global(.full-swiper .swiper-button-prev){
   width: 46px;
   height: 46px;
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 
   background: rgba(255,255,255,0.85);
   border: 1px solid var(--border-soft);
