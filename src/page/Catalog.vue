@@ -32,9 +32,7 @@
 
           <h1 class="catalog-title">
             <template v-if="!hasActiveCategory && !searchQ">Категории</template>
-            <template v-else-if="searchQ && !hasActiveCategory"
-              >Результаты поиска</template
-            >
+            <template v-else-if="searchQ && !hasActiveCategory">Результаты поиска</template>
             <template v-else>{{ currentCategoryName || "Каталог" }}</template>
           </h1>
         </div>
@@ -71,49 +69,51 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('type')">
                 <span class="filter-head-text">{{ typeHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.type }">▾</span>
+                <span class="arrow" :class="{ open: openFilters.type }"><Fa :icon="['fas','chevron-down']" /></span>
               </div>
 
-              <div
-                v-show="openFilters.type"
-                class="filter-dropdown-body"
-                :class="{ scrollable: (typeOptions.length || 0) > 6 }"
-              >
-                <label class="filter-checkbox filter-all">
-                  <input
-                    type="checkbox"
-                    :checked="!typeModel.length"
-                    @change="
-                      typeModel = [];
-                      applyFilters();
-                    "
-                  />
-                  <span>Все</span>
-                </label>
-
-                <label
-                  v-for="c in typeOptions"
-                  :key="c.id"
-                  class="filter-checkbox typeopt"
-                  :class="{ parent: c.hasChildren }"
-                  :style="{ '--indent': (c.depth - 1) * 14 + 'px' }"
+              <transition name="dd">
+                <div
+                  v-if="openFilters.type"
+                  class="filter-dropdown-body"
+                  :class="{ scrollable: (typeOptions.length || 0) > 6 }"
                 >
-                  <input
-                    type="checkbox"
-                    :value="String(c.code)"
-                    v-model="typeModel"
-                    @change="applyFilters"
-                  />
+                  <label class="filter-checkbox filter-all">
+                    <input
+                      type="checkbox"
+                      :checked="!typeModel.length"
+                      @change="
+                        typeModel = [];
+                        applyFilters();
+                      "
+                    />
+                    <span>Все</span>
+                  </label>
 
-                  <span class="typeopt-text">
-                    <span class="typeopt-name">{{ c.name }}</span>
-                  </span>
-                </label>
+                  <label
+                    v-for="c in typeOptions"
+                    :key="c.id"
+                    class="filter-checkbox typeopt"
+                    :class="{ parent: c.hasChildren }"
+                    :style="{ '--indent': (c.depth - 1) * 14 + 'px' }"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="String(c.code)"
+                      v-model="typeModel"
+                      @change="applyFilters"
+                    />
 
-                <div v-if="!typeOptions.length" class="dd-empty">
-                  Нет подкатегорий
+                    <span class="typeopt-text">
+                      <span class="typeopt-name">{{ c.name }}</span>
+                    </span>
+                  </label>
+
+                  <div v-if="!typeOptions.length" class="dd-empty">
+                    Нет подкатегорий
+                  </div>
                 </div>
-              </div>
+              </transition>
             </div>
           </div>
 
@@ -123,6 +123,7 @@
             :class="{ open: openFilters.brand }"
           >
             <div class="filter-label">Бренд</div>
+
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('brand')">
                 <span class="filter-head-text">
@@ -134,42 +135,42 @@
                       : " Все"
                   }}
                 </span>
-                <span class="arrow" :class="{ open: openFilters.brand }"
-                  >▾</span
+                <span class="arrow" :class="{ open: openFilters.brand }"><Fa :icon="['fas','chevron-down']" /></span>
+              </div>
+
+              <transition name="dd">
+                <div
+                  v-if="openFilters.brand"
+                  class="filter-dropdown-body"
+                  :class="{ scrollable: brands.length > 6 }"
                 >
-              </div>
+                  <label class="filter-checkbox filter-all">
+                    <input
+                      type="checkbox"
+                      :checked="!brandModel.length"
+                      @change="
+                        brandModel = [];
+                        applyFilters();
+                      "
+                    />
+                    <span>Все</span>
+                  </label>
 
-              <div
-                v-show="openFilters.brand"
-                class="filter-dropdown-body"
-                :class="{ scrollable: brands.length > 6 }"
-              >
-                <label class="filter-checkbox filter-all">
-                  <input
-                    type="checkbox"
-                    :checked="!brandModel.length"
-                    @change="
-                      brandModel = [];
-                      applyFilters();
-                    "
-                  />
-                  <span>Все</span>
-                </label>
-
-                <label v-for="b in brands" :key="b" class="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    :value="b"
-                    v-model="brandModel"
-                    @change="applyFilters"
-                  />
-                  <span>{{ b }}</span>
-                </label>
-              </div>
+                  <label v-for="b in brands" :key="b" class="filter-checkbox">
+                    <input
+                      type="checkbox"
+                      :value="b"
+                      v-model="brandModel"
+                      @change="applyFilters"
+                    />
+                    <span>{{ b }}</span>
+                  </label>
+                </div>
+              </transition>
             </div>
           </div>
 
-          <!-- ✅ PHOTO (всегда, НЕ зависит от типа) -->
+          <!-- ✅ PHOTO (всегда) -->
           <div
             class="filter-block filter-photo"
             :class="{ open: openFilters.photo }"
@@ -179,46 +180,46 @@
             <div class="filter-dropdown">
               <div class="filter-dropdown-head" @click="toggleFilter('photo')">
                 <span class="filter-head-text">{{ photoHeadText }}</span>
-                <span class="arrow" :class="{ open: openFilters.photo }"
-                  >▾</span
-                >
+                <span class="arrow" :class="{ open: openFilters.photo }"><Fa :icon="['fas','chevron-down']" /></span>
               </div>
 
-              <div v-show="openFilters.photo" class="filter-dropdown-body">
-                <label class="filter-checkbox">
-                  <input
-                    type="radio"
-                    value="all"
-                    v-model="photoModel"
-                    @change="applyFilters"
-                  />
-                  <span>Все</span>
-                </label>
+              <transition name="dd">
+                <div v-if="openFilters.photo" class="filter-dropdown-body">
+                  <label class="filter-checkbox">
+                    <input
+                      type="radio"
+                      value="all"
+                      v-model="photoModel"
+                      @change="applyFilters"
+                    />
+                    <span>Все</span>
+                  </label>
 
-                <label class="filter-checkbox">
-                  <input
-                    type="radio"
-                    value="with"
-                    v-model="photoModel"
-                    @change="applyFilters"
-                  />
-                  <span>С фото</span>
-                </label>
+                  <label class="filter-checkbox">
+                    <input
+                      type="radio"
+                      value="with"
+                      v-model="photoModel"
+                      @change="applyFilters"
+                    />
+                    <span>С фото</span>
+                  </label>
 
-                <label class="filter-checkbox">
-                  <input
-                    type="radio"
-                    value="without"
-                    v-model="photoModel"
-                    @change="applyFilters"
-                  />
-                  <span>Без фото</span>
-                </label>
-              </div>
+                  <label class="filter-checkbox">
+                    <input
+                      type="radio"
+                      value="without"
+                      v-model="photoModel"
+                      @change="applyFilters"
+                    />
+                    <span>Без фото</span>
+                  </label>
+                </div>
+              </transition>
             </div>
           </div>
 
-          <!-- ✅ ATTRIBUTES: только если НЕ root или на root выбран хотя бы 1 тип -->
+          <!-- ✅ ATTRIBUTES -->
           <template v-if="allowAttrFilters">
             <div
               class="filter-block filter-attribute"
@@ -230,54 +231,50 @@
 
               <div class="filter-dropdown">
                 <div class="filter-dropdown-head" @click="toggleFilter(attr)">
-                  <span class="filter-head-text">{{
-                    attributeHeadText(attr)
-                  }}</span>
-                  <span class="arrow" :class="{ open: openFilters[attr] }"
-                    >▾</span
-                  >
+                  <span class="filter-head-text">{{ attributeHeadText(attr) }}</span>
+                  <span class="arrow" :class="{ open: openFilters[attr] }"><Fa :icon="['fas','chevron-down']" /></span>
                 </div>
 
-                <div
-                  v-show="openFilters[attr]"
-                  class="filter-dropdown-body"
-                  :class="{ scrollable: (block.values?.length || 0) > 6 }"
-                >
-                  <label class="filter-checkbox filter-all">
-                    <input
-                      type="checkbox"
-                      :checked="isAttrAllSelected(attr)"
-                      @change="selectAttrAll(attr)"
-                    />
-                    <span>Все</span>
-                  </label>
-
-                  <label
-                    v-for="v in block.values"
-                    :key="v.value"
-                    class="filter-checkbox"
+                <transition name="dd">
+                  <div
+                    v-if="openFilters[attr]"
+                    class="filter-dropdown-body"
+                    :class="{ scrollable: (block.values?.length || 0) > 6 }"
                   >
-                    <input
-                      type="checkbox"
-                      :value="v.value"
-                      v-model="attributeModels[attr]"
-                      @change="onAttrValueChange(attr)"
-                    />
+                    <label class="filter-checkbox filter-all">
+                      <input
+                        type="checkbox"
+                        :checked="isAttrAllSelected(attr)"
+                        @change="selectAttrAll(attr)"
+                      />
+                      <span>Все</span>
+                    </label>
 
-                    <span class="filter-option">
-                      <span
-                        v-if="block.ui_render === 'color'"
-                        class="color-dot"
-                        :class="{ empty: !v.meta?.color }"
-                        :style="
-                          v.meta?.color ? { background: v.meta.color } : {}
-                        "
-                      ></span>
+                    <label
+                      v-for="v in block.values"
+                      :key="v.value"
+                      class="filter-checkbox"
+                    >
+                      <input
+                        type="checkbox"
+                        :value="v.value"
+                        v-model="attributeModels[attr]"
+                        @change="onAttrValueChange(attr)"
+                      />
 
-                      <span class="filter-option-text">{{ v.value }}</span>
-                    </span>
-                  </label>
-                </div>
+                      <span class="filter-option">
+                        <span
+                          v-if="block.ui_render === 'color'"
+                          class="color-dot"
+                          :class="{ empty: !v.meta?.color }"
+                          :style="v.meta?.color ? { background: v.meta.color } : {}"
+                        ></span>
+
+                        <span class="filter-option-text">{{ v.value }}</span>
+                      </span>
+                    </label>
+                  </div>
+                </transition>
               </div>
             </div>
           </template>
@@ -354,21 +351,20 @@
                   <div class="product-qty">
                     Остаток:
                     <template v-if="p.quantity !== null && p.quantity !== undefined">
-  {{ p.quantity }}
-  <span v-if="p.measureName">&nbsp;{{ p.measureName }}</span>
-</template>
-
+                      {{ p.quantity }}
+                      <span v-if="p.measureName">&nbsp;{{ p.measureName }}</span>
+                    </template>
                     <template v-else>—</template>
                   </div>
                 </div>
 
                 <div class="product-meta">
-                  <span v-if="p.barcode" class="product-chip product-barcode">{{
-                    p.barcode
-                  }}</span>
-                  <span v-if="p.article" class="product-chip product-article"
-                    >Арт: {{ p.article }}</span
-                  >
+                  <span v-if="p.barcode" class="product-chip product-barcode">
+                    {{ p.barcode }}
+                  </span>
+                  <span v-if="p.article" class="product-chip product-article">
+                    Арт: {{ p.article }}
+                  </span>
                 </div>
 
                 <div class="product-actions">
@@ -607,9 +603,7 @@
 
               <span class="filter-option">
                 <span
-                  v-if="
-                    attributeFilters[activeMobileAttr]?.ui_render === 'color'
-                  "
+                  v-if="attributeFilters[activeMobileAttr]?.ui_render === 'color'"
                   class="color-dot"
                   :class="{ empty: !v.meta?.color }"
                   :style="v.meta?.color ? { background: v.meta.color } : {}"
@@ -645,7 +639,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useHead } from "@vueuse/head";
@@ -1607,7 +1600,6 @@ watch(showMobileFilters, (open) => {
   else unlockBody();
 });
 </script>
-
 <style scoped>
 /* ====== shared small ui ====== */
 .color-dot {
@@ -1726,17 +1718,20 @@ watch(showMobileFilters, (open) => {
   grid-column: span 2;
 }
 
+/* ✅ переменная паддинга, чтобы dropdown-body расширять как filter-block */
 .filter-block {
+  --fb-pad-x: 12px;
+
   min-width: 180px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   background: #fff;
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 10px var(--fb-pad-x);
   border: 1px solid #e4e7ef;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-radius 0.18s ease;
   position: relative;
   z-index: 1;
 }
@@ -1751,8 +1746,11 @@ watch(showMobileFilters, (open) => {
   transform: translateY(-1px);
 }
 
+/* ✅ когда открыт список — радиус только сверху (низ = 0) */
 .filter-block.open {
   z-index: 200;
+  border-radius: 14px 14px 0 0;
+    border-bottom: none;
 }
 
 .filter-label {
@@ -1798,6 +1796,16 @@ watch(showMobileFilters, (open) => {
   border-radius: 12px;
   background: linear-gradient(180deg, #fff, #f9faff);
   border: 1px solid #e4e7ef;
+  transition: .6s;
+}
+.filter-dropdown:hover {
+  background: #6b7280;
+}
+
+/* ✅ чтобы визуально “сливалось” при открытом списке */
+.filter-block.open .filter-dropdown {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .filter-dropdown-head {
@@ -1812,24 +1820,38 @@ watch(showMobileFilters, (open) => {
   transition: background 0.2s ease;
 }
 
-.filter-dropdown-head:hover {
-  background: rgba(4, 0, 255, 0.05);
-}
 
+/* ✅✅✅ dropdown-body: ширина как filter-block, -1.1, без тени, без верхнего бордера, шторка */
 .filter-dropdown-body {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
+
+  /* без зазора, чуть перекрываем стык */
+  top: calc(100% - -11px);
+
+  /* было -1, стало -1.1 */
+  left: calc(var(--fb-pad-x) * -1.1);
+  right: calc(var(--fb-pad-x) * -1.1);
+
   z-index: 210;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+
   background: #fff;
-  border-radius: 14px;
+
+  /* убрать тень */
+  box-shadow: none;
+
+  /* убрать верхний border, оставить слева/справа/снизу */
+  border-top: none;
   border: 1px solid #e4e7ef;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+  /* радиус только снизу */
+  border-radius: 0 0 14px 14px;
+
+  /* для шторы */
+  transform-origin: top;
+  overflow: hidden;
 }
 
 .filter-dropdown-body.scrollable {
@@ -1926,6 +1948,25 @@ watch(showMobileFilters, (open) => {
 
 .arrow.open {
   transform: rotate(180deg);
+}
+
+/* ✅✅✅ Анимация “штора” (Vue transition name="dd") */
+.dd-enter-active,
+.dd-leave-active {
+  transition: transform 180ms ease, opacity 180ms ease;
+  transform-origin: top;
+}
+
+.dd-enter-from,
+.dd-leave-to {
+  transform: scaleY(0);
+  opacity: 0;
+}
+
+.dd-enter-to,
+.dd-leave-from {
+  transform: scaleY(1);
+  opacity: 1;
 }
 
 /* ========================= MOBILE FILTER BAR ========================= */
@@ -2359,7 +2400,6 @@ watch(showMobileFilters, (open) => {
 
 .categories-landing :deep(.home-entry) {
   width: min(1120px, 100%);
-  padding: 0;
   margin: 0;
 }
 
@@ -2419,3 +2459,7 @@ input[type="number"] {
   user-select: auto;
 }
 </style>
+
+
+
+
