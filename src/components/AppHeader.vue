@@ -17,6 +17,8 @@
 
         <!-- DESKTOP NAV -->
         <nav class="nav">
+                  <router-link class="btn primary" to="catalog">Каталог</router-link>
+
           <a href="/catalog" class="nav-item">Каталог</a>
           <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
           <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
@@ -172,8 +174,6 @@ onBeforeUnmount(() => {
   position: sticky;
   top: 0;
   z-index: 9999;
-
-  border-bottom: 1px solid var(--border-soft);
   box-shadow: var(--shadow-sm);
 
   /* чтобы ::before с z-index:-1 не улетал за пределы */
@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.86);
+  background: #1e1e1e;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: -1;
@@ -204,10 +204,14 @@ onBeforeUnmount(() => {
 
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
 }
 
 /* LOGO */
+.logo {
+  margin-right: auto;
+}
 .logo a {
   display: flex;
   align-items: center;
@@ -230,8 +234,7 @@ onBeforeUnmount(() => {
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: var(--text-main);
-}
+  color: var(--secondary-accent);}
 
 /* DESKTOP NAV */
 .nav {
@@ -246,7 +249,7 @@ onBeforeUnmount(() => {
   text-decoration: none;
   cursor: pointer;
 
-  color: var(--text-main);
+  color: var(--secondary-accent);
   font-size: 14.5px;
   font-weight: 800;
   padding: 10px 10px;
@@ -327,36 +330,6 @@ onBeforeUnmount(() => {
 
 .header-search {
   width: min(760px, 100%);
-}
-
-/* компактнее HomeSearch в шапке */
-.header-search :deep(.search-wrap) {
-  width: 100%;
-  margin: 0;
-}
-
-.header-search :deep(.search-clear),
-.header-search :deep(.catpick-btn) {
-  width: 32px;
-  height: 32px;
-}
-.header-search :deep(.search-hint) {
-  display: none;
-}
-
-/* чтобы dropdown/popover были поверх всего */
-.header-search :deep(.dd),
-.header-search :deep(.catpop) {
-  z-index: 20000 !important;
-}
-
-/* ✅ ФИКС ДЛЯ МОБИЛЬНЫХ КАТЕГОРИЙ:
-   поднимаем overlay выше хедера/всего */
-.header :deep(.moverlay-overlay) {
-  z-index: 20000 !important;
-}
-.header :deep(.moverlay-panel) {
-  z-index: 20001 !important;
 }
 
 /* ===== MOBILE MENU ===== */

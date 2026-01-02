@@ -275,14 +275,14 @@
         </div>
 
         <div class="scan-video-wrap">
-<video
-  ref="scanVideoRef"
-  class="scan-video"
-  :class="{ flip: camFlip }"
-  autoplay
-  playsinline
-  muted
-></video>
+          <video
+            ref="scanVideoRef"
+            class="scan-video"
+            :class="{ flip: camFlip }"
+            autoplay
+            playsinline
+            muted
+          ></video>
 
           <!-- ✅ TORCH BUTTON (OVER VIDEO) -->
           <button
@@ -297,15 +297,15 @@
             <Fa :icon="['fas', 'bolt']" />
           </button>
           <!-- ✅ SWITCH CAMERA BUTTON (BOTTOM RIGHT) -->
-<button
-  class="scan-switch"
-  type="button"
-  @click.stop="switchCameraAnimated"
-  title="Сменить камеру"
-  aria-label="Сменить камеру"
->
-  <Fa :icon="['fas','camera-rotate']" />
-</button>
+          <button
+            class="scan-switch"
+            type="button"
+            @click.stop="switchCameraAnimated"
+            title="Сменить камеру"
+            aria-label="Сменить камеру"
+          >
+            <Fa :icon="['fas', 'camera-rotate']" />
+          </button>
 
           <!-- рамка/анимация -->
           <div
@@ -1532,11 +1532,11 @@ onBeforeUnmount(() => {
   font-weight: 900;
   color: white;
 
-  transition: .6s;
+  transition: 0.6s;
 }
 
 .catpick-btn:hover,
-.catpick-btn:hover .catpick-ico  {
+.catpick-btn:hover .catpick-ico {
   background: rgba(255, 255, 255, 0.06);
   box-shadow: var(--shadow-sm);
   color: black;
@@ -1565,7 +1565,7 @@ onBeforeUnmount(() => {
 .catpick-ico {
   font-size: 13px;
   color: white;
-  transition: .6s;
+  transition: 0.6s;
 }
 
 @media (max-width: 520px) {
@@ -2255,19 +2255,19 @@ onBeforeUnmount(() => {
   aspect-ratio: 3 / 2;
   border-radius: 20px;
   border: 1px dashed rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 0 9var(--radius-lg) rgba(2, 6, 23, 0.18) inset,
+  box-shadow: 0 0 0 9var (--radius-lg) rgba(2, 6, 23, 0.18) inset,
     0 0 0 1px rgba(255, 255, 255, 0.1), 0 18px 50px rgba(0, 0, 0, 0.25);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .scan-frame.bad::before {
   border-color: rgba(239, 68, 68, 0.95);
-  box-shadow: 0 0 0 9var(--radius-lg) rgba(185, 28, 28, 0.18) inset,
+  box-shadow: 0 0 0 9var (--radius-lg) rgba(185, 28, 28, 0.18) inset,
     0 0 0 1px rgba(239, 68, 68, 0.35), 0 18px 50px rgba(185, 28, 28, 0.2);
 }
 .scan-frame.ok::before {
   border-color: rgba(34, 197, 94, 0.95);
-  box-shadow: 0 0 0 9var(--radius-lg) rgba(16, 185, 129, 0.18) inset,
+  box-shadow: 0 0 0 9var (--radius-lg) rgba(16, 185, 129, 0.18) inset,
     0 0 0 1px rgba(34, 197, 94, 0.35), 0 18px 50px rgba(16, 185, 129, 0.18);
 }
 
@@ -2469,7 +2469,7 @@ onBeforeUnmount(() => {
   height: 46px;
   border-radius: 16px;
 
-  border: 1px solid rgba(255,255,255,0.22);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(2, 6, 23, 0.36);
   color: #fff;
 
@@ -2480,14 +2480,14 @@ onBeforeUnmount(() => {
   cursor: pointer;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 16px 44px rgba(0,0,0,0.30);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
 
   transition: transform 0.12s ease, border-color 0.12s ease;
 }
 
 .scan-switch:hover {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.32);
+  border-color: rgba(255, 255, 255, 0.32);
 }
 
 .scan-switch:active {
@@ -2500,9 +2500,17 @@ onBeforeUnmount(() => {
 }
 
 @keyframes camFlip {
-  0%   { transform: scale(1) rotateY(0deg); filter: blur(0px); }
-  45%  { transform: scale(0.985) rotateY(18deg); filter: blur(1px); }
-  100% { transform: scale(1) rotateY(0deg); filter: blur(0px); }
+  0% {
+    transform: scale(1) rotateY(0deg);
+    filter: blur(0px);
+  }
+  45% {
+    transform: scale(0.985) rotateY(18deg);
+    filter: blur(1px);
+  }
+  100% {
+    transform: scale(1) rotateY(0deg);
+    filter: blur(0px);
+  }
 }
-
 </style>

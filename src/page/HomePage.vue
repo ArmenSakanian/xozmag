@@ -64,7 +64,6 @@ useHead({
 .home-entry {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -130,10 +129,7 @@ useHead({
 }
 
 @media (max-width: 480px) {
-  .home-entry {
-    padding: 6px 6px;
-    gap: 14px;
-  }
+
 
   .seo-body {
     padding: 12px 12px 10px;

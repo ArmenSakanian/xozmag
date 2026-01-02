@@ -1646,7 +1646,7 @@ watch(showMobileFilters, (open) => {
 /* ========================= MAIN ========================= */
 .catalog-content {
   flex: 1;
-  padding: 26px 30px;
+  padding: 10px 30px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1768,6 +1768,7 @@ watch(showMobileFilters, (open) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: .6s;
 }
 
 .price-inputs {
@@ -1800,6 +1801,9 @@ watch(showMobileFilters, (open) => {
 }
 .filter-dropdown:hover {
   background: #6b7280;
+}
+.filter-dropdown:hover .filter-head-text {
+  color: white;
 }
 
 /* ✅ чтобы визуально “сливалось” при открытом списке */
