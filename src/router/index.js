@@ -8,14 +8,17 @@ const LoginPage   = () => import("../page/LoginPage.vue");
 const BarcodePage = () => import("../page/BarcodePage.vue");
 const ProductPage = () => import("../page/ProductPage.vue");
 const Catalog = () => import("../page/catalog.vue");
+const Aboutus = () => import("../page/aboutus.vue");
+
 
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
   { path: "/product", name: "product_v1", component: ProductPage },
+  { path: "/aboutus", name: "aboutus", component: Aboutus },
+
   { path: "/login", name: "login", component: LoginPage },
   { path: "/catalog", name: "catalog", component: Catalog },
-
   {
     path: "/barcode",
     name: "barcode",

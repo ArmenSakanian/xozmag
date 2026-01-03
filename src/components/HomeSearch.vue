@@ -355,64 +355,10 @@ import {
   onBeforeUnmount,
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { getCategoriesOnce } from "@/composables/useCategories";
 
 const route = useRoute();
 const router = useRouter();
-
-/* ================== SHARED CATEGORIES CACHE (MODULE SCOPE) ================== */
-const CATS_URL = "/api/admin/product/get_categories_flat.php";
-let _catsCache = null;
-let _catsPromise = null;
-
-function normalizeCat(c) {
-  const pid = c?.parent_id ?? c?.parent ?? null;
-  const parent =
-    pid === null ||
-    pid === undefined ||
-    String(pid) === "0" ||
-    String(pid) === ""
-      ? null
-      : String(pid);
-
-  return {
-    id: c.id,
-    name: c.name,
-    slug: c.slug ?? null,
-    code: c.code,
-    parent,
-    photo:
-      c.photo_url_abs ||
-      c.photo_url ||
-      c.photo ||
-      (c.photo_categories
-        ? `/photo_categories_vitrina/${c.photo_categories}`
-        : null),
-  };
-}
-
-async function fetchCategoriesOnce() {
-  if (_catsCache) return _catsCache;
-  if (_catsPromise) return _catsPromise;
-
-  _catsPromise = fetch(CATS_URL, { headers: { Accept: "application/json" } })
-    .then((r) => r.json())
-    .then((data) => {
-      const list = Array.isArray(data)
-        ? data
-        : data.categories || data.items || data.data || [];
-      _catsCache = (list || []).filter(Boolean).map(normalizeCat);
-      return _catsCache;
-    })
-    .catch(() => {
-      _catsCache = [];
-      return _catsCache;
-    })
-    .finally(() => {
-      _catsPromise = null;
-    });
-
-  return _catsPromise;
-}
 
 /* ================== PROPS / EMITS ================== */
 const props = defineProps({
@@ -477,7 +423,8 @@ async function ensureCategories() {
   localCatsLoading.value = true;
   emit("categories-loading", true);
 
-  localCats.value = await fetchCategoriesOnce();
+  // ✅ теперь общий кеш/фетч живёт в composable
+  localCats.value = await getCategoriesOnce();
 
   localCatsLoading.value = false;
   emit("categories-loading", false);
@@ -1040,17 +987,17 @@ const canScan = computed(() => {
   );
 });
 
-const showScanner = ref(false); // ✅ важно: объявлено ДО любых watch где оно используется
+const showScanner = ref(false);
 const scanVideoRef = ref(null);
 
-const scanState = ref("idle"); // idle | starting | scanning | checking | not_found | found | error
+const scanState = ref("idle");
 const scanMessage = ref("");
 const scanCode = ref("");
 const scanBad = ref(false);
 
 const torchSupported = ref(false);
 const torchOn = ref(false);
-const facingMode = ref("environment"); // environment | user
+const facingMode = ref("environment");
 
 let zxingReader = null;
 let zxingControls = null;
@@ -1149,19 +1096,6 @@ function closeScanner() {
   scanLock = false;
 }
 
-function resumeScanningNow() {
-  scanBad.value = false;
-  scanState.value = "scanning";
-  scanMessage.value = "Наведите штрих-код в рамку";
-  scanLock = false;
-}
-
-async function manualSearchScanned() {
-  const code = String(scanCode.value || "").trim();
-  if (!code) return;
-  await processCode(code, { manual: true });
-}
-
 async function startZXing() {
   stopZXing();
 
@@ -1189,7 +1123,7 @@ async function startZXing() {
   const constraints = {
     audio: false,
     video: {
-      facingMode: { ideal: facingMode.value }, // ✅ если телефон — обычно задняя
+      facingMode: { ideal: facingMode.value },
       width: { ideal: 1280 },
       height: { ideal: 720 },
     },
@@ -1204,7 +1138,6 @@ async function startZXing() {
       const text = String(result.getText?.() ?? result.text ?? "").trim();
       if (!text) return;
 
-      // анти-дребезг + анти-спам
       const now = Date.now();
       if (scanLock) return;
       if (text === lastHandledCode && now - lastHandledAt < 1600) return;
@@ -1216,7 +1149,6 @@ async function startZXing() {
     }
   );
 
-  // torch detection
   try {
     const stream = videoEl.srcObject;
     const track = stream?.getVideoTracks?.()?.[0] || null;
@@ -1315,7 +1247,6 @@ async function processCode(codeRaw, { manual = false } = {}) {
       scanState.value = "found";
       scanMessage.value = "Открываем карточку товара…";
 
-      // закрываем камеру и переходим
       setTimeout(() => {
         closeScanner();
         router.push({
@@ -1327,19 +1258,17 @@ async function processCode(codeRaw, { manual = false } = {}) {
       return;
     }
 
-    // ❌ НЕ НАЙДЕНО — КАМЕРА ПРОДОЛЖАЕТ СКАНИРОВАТЬ
-    scanState.value = "scanning"; // оставляем “Сканер активен”
+    scanState.value = "scanning";
     scanBad.value = true;
     scanMessage.value = torchSupported.value
       ? "Товар по этому штрих-коду не найден. Поднесите код ближе и держите его ровно. При необходимости включите фонарь."
       : "Товар по этому штрих-коду не найден. Поднесите код ближе и держите его ровно.";
-    // рамку красной делаем ненадолго
+
     setTimeout(() => {
       if (!showScanner.value) return;
       scanBad.value = false;
     }, 900);
 
-    // сообщение показываем 3 секунды, потом возвращаем обычную подсказку
     setTimeout(() => {
       if (!showScanner.value) return;
       if (scanState.value === "scanning") {
@@ -1347,7 +1276,6 @@ async function processCode(codeRaw, { manual = false } = {}) {
       }
     }, 3000);
 
-    // снимаем лок, чтобы сканер продолжал ловить новые коды
     setTimeout(() => {
       scanLock = false;
     }, 700);

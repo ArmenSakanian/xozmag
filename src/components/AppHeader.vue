@@ -17,10 +17,8 @@
 
         <!-- DESKTOP NAV -->
         <nav class="nav">
-                  <router-link class="btn primary" to="catalog">Каталог</router-link>
-
-          <a href="/catalog" class="nav-item">Каталог</a>
-          <a class="nav-item" @click.prevent="scrollToSection('about')">О нас</a>
+          <RouterLink class="nav-item" to="/catalog">Каталог</RouterLink>
+          <a class="nav-item" href="/aboutus">О нас</a>
           <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
           <a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
         </nav>
@@ -39,25 +37,10 @@
       </div>
     </div>
 
-    <!-- ===== BOTTOM ROW (CENTER SEARCH) ===== -->
-    <!-- ❗️На Catalog не показываем -->
-    <div v-if="showHeaderSearch" class="header-bottom">
-      <div class="header-bottom-container">
-        <div class="header-search">
-<HomeSearch
-  :show-category="false"
-  :sync-route="false"
-  catalog-path="/catalog"
-/>
-
-        </div>
-      </div>
-    </div>
-
     <!-- ===== MOBILE MENU ===== -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
-      <a href="/catalog" class="mobile-item" @click="closeMenu">Каталог</a>
-      <a class="mobile-item" @click.prevent="scrollToSection('about')">О нас</a>
+      <RouterLink to="/catalog" class="mobile-item" @click="closeMenu">Каталог</RouterLink>
+      <a class="mobile-item" href="/aboutus">О нас</a>
       <a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
       <a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
     </div>
@@ -65,28 +48,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
-import { useRoute } from "vue-router";
-import HomeSearch from "@/components/HomeSearch.vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
+import { useRoute, RouterLink } from "vue-router";
 
 const route = useRoute();
 const mobileOpen = ref(false);
-
-/* =========================
-   HIDE SEARCH ON Catalog
-========================= */
-const showHeaderSearch = computed(() => {
-  // прячем на /catalog и на вложенных типа /catalog/...
-  return !(route.path === "/catalog" || route.path.startsWith("/catalog/"));
-});
-
-/* =========================
-   CATEGORIES (from HomeSearch)
-========================= */
-const categories = ref([]);
-function onCategoriesLoaded(arr) {
-  categories.value = Array.isArray(arr) ? arr : [];
-}
 
 /* =========================
    HEADER HEIGHT (for mobile-menu top)
@@ -104,7 +70,7 @@ function handleResize() {
 }
 
 /* =========================
-   SCROLL NAVIGATION (your logic)
+   SCROLL NAVIGATION
 ========================= */
 function scrollToSection(id) {
   const currentPath = route.path;
@@ -146,7 +112,6 @@ watch(
   }
 );
 
-watch(showHeaderSearch, () => updateHeaderH());
 watch(mobileOpen, () => updateHeaderH());
 
 /* =========================
@@ -168,19 +133,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 /* ===== HEADER SHELL ===== */
-/* ❗️ВАЖНО: backdrop-filter НЕ на header, иначе fixed внутри (категории) ломаются */
 .header {
   width: 100%;
   position: sticky;
   top: 0;
   z-index: 9999;
   box-shadow: var(--shadow-sm);
-
-  /* чтобы ::before с z-index:-1 не улетал за пределы */
   isolation: isolate;
 }
 
-/* фон + blur теперь на псевдоэлементе */
 .header::before {
   content: "";
   position: absolute;
@@ -234,7 +195,8 @@ onBeforeUnmount(() => {
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: var(--secondary-accent);}
+  color: var(--secondary-accent);
+}
 
 /* DESKTOP NAV */
 .nav {
@@ -259,7 +221,6 @@ onBeforeUnmount(() => {
 }
 
 .nav-item:hover {
-  background: var(--bg-soft);
   transform: translateY(-1px);
 }
 
@@ -270,14 +231,13 @@ onBeforeUnmount(() => {
   bottom: 6px;
   width: 0;
   height: 2px;
-  border-radius: var(--radius-lg);
-  background: var(--accent);
+  background: white;
   transform: translateX(-50%);
   transition: width 0.2s ease;
   opacity: 0.9;
 }
 .nav-item:hover::after {
-  width: 26px;
+  width: 60%;
 }
 
 /* BURGER */
@@ -316,21 +276,6 @@ onBeforeUnmount(() => {
 .burger span.open:nth-child(1) { transform: translateY(0) rotate(45deg); }
 .burger span.open:nth-child(2) { opacity: 0; }
 .burger span.open:nth-child(3) { transform: translateY(0) rotate(-45deg); }
-
-/* ===== BOTTOM ROW (CENTER SEARCH) ===== */
-.header-bottom-container {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 10px 16px 12px;
-
-  display: flex;
-  justify-content: center;
-}
-
-.header-search {
-  width: min(760px, 100%);
-}
 
 /* ===== MOBILE MENU ===== */
 .mobile-menu {
@@ -409,6 +354,5 @@ onBeforeUnmount(() => {
   .logo img { height: 38px; border-radius: 9px; }
   .logo h1 { font-size: 15px; }
   .header-top-container { padding: 9px 12px; }
-  .header-bottom-container { padding: 9px 12px 11px; }
 }
 </style>
