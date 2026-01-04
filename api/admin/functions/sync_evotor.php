@@ -116,11 +116,11 @@ function make_unique_product_slug(PDO $pdo, string $name, int $id): string {
 
   if (!slug_exists($pdo, $candidate, $id)) return $candidate;
 
-  // если занято — добавляем -id (id уникален, почти всегда этого достаточно)
+  // если занято - добавляем -id (id уникален, почти всегда этого достаточно)
   $candidate = $base . "-" . $id;
   if (!slug_exists($pdo, $candidate, $id)) return $candidate;
 
-  // на всякий пожарный — добиваем счётчиком
+  // на всякий пожарный - добиваем счётчиком
   for ($i = 2; $i <= 200; $i++) {
     $try = $base . "-" . $id . "-" . $i;
     if (!slug_exists($pdo, $try, $id)) return $try;
@@ -216,7 +216,7 @@ function collect_photos_for_barcode($barcode, $photoColumn) {
   $barcode = trim((string)$barcode);
   if ($barcode === "") return [];
 
-  // 1) если в БД в photo уже есть JSON массив путей — используем его (строго витрина)
+  // 1) если в БД в photo уже есть JSON массив путей - используем его (строго витрина)
   $paths = normalize_images_vitrina_strict($photoColumn);
   if (!empty($paths)) return $paths;
 

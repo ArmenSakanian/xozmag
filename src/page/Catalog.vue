@@ -35,6 +35,11 @@
             <template v-else-if="searchQ && !hasActiveCategory">Результаты поиска</template>
             <template v-else>{{ currentCategoryName || "Каталог" }}</template>
           </h1>
+
+          <!-- ✅ короткий SEO-текст (без простыни) -->
+          <p v-if="seoIntroText" class="catalog-intro">
+            {{ seoIntroText }}
+          </p>
         </div>
 
         <!-- ===== FILTERS BAR (DESKTOP) ===== -->
@@ -354,7 +359,7 @@
                       {{ p.quantity }}
                       <span v-if="p.measureName">&nbsp;{{ p.measureName }}</span>
                     </template>
-                    <template v-else>—</template>
+                    <template v-else>-</template>
                   </div>
                 </div>
 
@@ -639,6 +644,7 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useHead } from "@vueuse/head";
@@ -674,7 +680,7 @@ const hasImages = (p) =>
 
 const normText = (v) => {
   const s = String(v ?? "").trim();
-  if (!s || s === "-" || s === "—") return null;
+  if (!s || s === "-" || s === "-") return null;
   return s;
 };
 
@@ -682,7 +688,7 @@ const normNumber = (v) => {
   if (v == null) return null;
   if (typeof v === "string") {
     const s = v.trim();
-    if (!s || s === "-" || s === "—") return null;
+    if (!s || s === "-" || s === "-") return null;
   }
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
@@ -693,7 +699,6 @@ const normQty = (v) => {
   if (n == null) return null;
   return n; // ✅ минус оставляем, ничего не обнуляем
 };
-
 
 // ✅ ВОТ СЮДА вставляй
 const formatQtyForUI = (qty, measureName) => {
@@ -710,6 +715,7 @@ const formatQtyForUI = (qty, measureName) => {
   if (s === "-0") s = "0";
   return s;
 };
+
 function getCatCodeOfProduct(p) {
   const v = p?.category_code ?? p?.categoryCode ?? p?.category ?? "";
   return String(v || "");
@@ -764,19 +770,67 @@ const currentCategoryName = computed(() => {
   );
   return found ? found.name : null;
 });
-const SITE = "XOZMAG.RU";
+
+/* ================= SEO (title/desc/canonical/robots) ================= */
+const BRAND = "XOZMAG.RU";
+const GEO_SHORT = "Сходненская и Планерная";
+const GEO_TEXT = "у метро Сходненская и Планерная";
+
+const canonicalCatParam = computed(() => {
+  const raw = currentCategoryParam.value;
+  if (!raw) return null;
+
+  // если уже slug - оставляем
+  if (!/^[0-9.]+$/.test(raw)) return raw;
+
+  // если code - пытаемся подменить на slug (когда категории уже загрузились)
+  const found = categories.value.find((c) => String(c.code) === String(raw));
+  return found?.slug || raw;
+});
+
+const canonicalUrl = computed(() => {
+  const base = "https://xozmag.ru/catalog";
+  const cat = canonicalCatParam.value;
+  return cat ? `${base}?cat=${encodeURIComponent(cat)}` : base;
+});
+
+// индексируем ТОЛЬКО:
+// - /catalog
+// - /catalog?cat=...
+// все остальные параметры (q, type, brand, price, photo, attr_*) - noindex,follow
+const hasExtraQueryParams = computed(() => {
+  const q = route.query || {};
+  const keys = Object.keys(q);
+  const allowed = new Set(["cat"]);
+  for (const k of keys) {
+    if (!allowed.has(k)) return true;
+  }
+  return false;
+});
+
+const robotsContent = computed(() => {
+  const q = String(searchQ.value || "").trim();
+  const noindex = !!q || hasExtraQueryParams.value;
+  return noindex ? "noindex,follow" : "index,follow";
+});
 
 const headTitle = computed(() => {
   const q = String(searchQ.value || "").trim();
   const catName = currentCategoryName.value;
 
-  if (!hasActiveCategory.value && !q) return `Каталог товаров — ${SITE}`;
-  if (!hasActiveCategory.value && q) return `Поиск: ${q} — ${SITE}`;
-  if (hasActiveCategory.value && q && catName)
-    return `${catName}: поиск “${q}” — ${SITE}`;
-  if (hasActiveCategory.value && catName) return `${catName} купить — ${SITE}`;
+  if (!hasActiveCategory.value && !q)
+    return `Каталог товаров для дома ${GEO_TEXT} - ${BRAND}`;
 
-  return `Каталог — ${SITE}`;
+  if (!hasActiveCategory.value && q)
+    return `Поиск: ${q} - каталог товаров для дома (${GEO_SHORT}) - ${BRAND}`;
+
+  if (hasActiveCategory.value && q && catName)
+    return `${catName}: поиск “${q}” (${GEO_SHORT}) - ${BRAND}`;
+
+  if (hasActiveCategory.value && catName)
+    return `${catName} ${GEO_TEXT} - купить в магазине - ${BRAND}`;
+
+  return `Каталог товаров для дома ${GEO_TEXT} - ${BRAND}`;
 });
 
 const headDesc = computed(() => {
@@ -784,31 +838,81 @@ const headDesc = computed(() => {
   const catName = currentCategoryName.value;
 
   if (!hasActiveCategory.value && !q) {
-    return "Каталог хозтоваров и товаров для дома: выберите категорию и найдите нужные товары по цене, бренду и наличию.";
+    return `Каталог хозтоваров и товаров для дома ${GEO_TEXT}: сантехника, электрика, крепёж, замки, расходники. Цены, наличие и фильтры по бренду и характеристикам.`;
   }
   if (!hasActiveCategory.value && q) {
-    return `Результаты поиска по запросу “${q}”. Фильтры по бренду, цене и наличию.`;
+    return `Результаты поиска по запросу “${q}” в каталоге товаров для дома ${GEO_TEXT}. Фильтры по цене, бренду и наличию.`;
   }
   if (hasActiveCategory.value && q && catName) {
-    return `Результаты поиска “${q}” в категории “${catName}”. Фильтры по цене, бренду и наличию.`;
+    return `Результаты поиска “${q}” в категории “${catName}”. Магазин товаров для дома ${GEO_TEXT}.`;
   }
   if (hasActiveCategory.value && catName) {
-    return `Категория “${catName}”: цены, наличие и фильтры по бренду, цене и характеристикам.`;
+    return `Категория “${catName}” ${GEO_TEXT}: цены, наличие и удобные фильтры по бренду, цене и характеристикам.`;
   }
 
-  return "Каталог товаров для дома и хозтоваров.";
+  return `Каталог товаров для дома ${GEO_TEXT}.`;
+});
+// ✅ canonical только на чистую страницу каталога или каталога-категории
+const canonicalCatalogUrl = computed(() => {
+  const base = "https://xozmag.ru/catalog";
+  const cat = currentCategoryParam.value; // slug/code из URL
+  return cat ? `${base}?cat=${encodeURIComponent(cat)}` : base;
 });
 
+// ✅ индексируем только /catalog и /catalog?cat=...
+// всё остальное (поиск, фильтры, attr_*) -> noindex,follow
+const robotsCatalog = computed(() => {
+  const q = route.query || {};
+  const keys = Object.keys(q);
+
+  // разрешаем UTM как "неважные"
+  const ignore = new Set([
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "utm_term",
+  ]);
+
+  const real = keys.filter((k) => !ignore.has(k));
+
+  if (real.length === 0) return "index,follow";
+  if (real.length === 1 && real[0] === "cat") return "index,follow";
+
+  return "noindex,follow";
+});
 useHead(() => ({
   title: headTitle.value,
+  link: [{ rel: "canonical", href: canonicalCatalogUrl.value }],
   meta: [
     { name: "description", content: headDesc.value },
+    { name: "robots", content: robotsCatalog.value },
+
     { property: "og:title", content: headTitle.value },
     { property: "og:description", content: headDesc.value },
     { property: "og:type", content: "website" },
-    { property: "og:url", content: `https://xozmag.ru${route.fullPath}` },
+    { property: "og:url", content: canonicalCatalogUrl.value },
   ],
 }));
+
+const seoIntroText = computed(() => {
+  const q = String(searchQ.value || "").trim();
+  const catName = currentCategoryName.value;
+
+  if (q) return ""; // на поиске не надо лишних текстов
+
+  if (!hasActiveCategory.value) {
+    return `Магазин «Все для дома» рядом с метро ${GEO_SHORT}. Выберите категорию и смотрите товары по наличию, цене и бренду.`;
+  }
+
+  if (catName) {
+    return `Товары “${catName}” - купить рядом с метро ${GEO_SHORT}. На странице есть фильтры по цене, бренду и характеристикам.`;
+  }
+
+  return "";
+});
+
+
 
 /* ===== photo filter ===== */
 const photoModel = ref(
@@ -861,8 +965,8 @@ function normalizeProduct(p) {
     ...p,
     images,
     measureName: measureName ?? null,
-    quantity_value: qtyValue,       // число (может быть -3.5)
-    quantity: qtyDisplay, 
+    quantity_value: qtyValue, // число (может быть -3.5)
+    quantity: qtyDisplay,
     _search: normalize(
       `${p.name || ""} ${p.brand || ""} ${p.article || ""} ${p.barcode || ""}`
     ),
@@ -873,7 +977,7 @@ async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
   const code = currentCategory.value; // тут CODE (или slug, если захочешь)
   if (!code) return;
 
-  // если сменили категорию — сбрасываем накопленное
+  // если сменили категорию - сбрасываем накопленное
   if (reset || lastLoadedCat.value !== code) {
     products.value = [];
     productsLoaded.value = false;
@@ -882,7 +986,7 @@ async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
     lastLoadedCat.value = code;
   }
 
-  // если уже грузим или больше нечего — выходим
+  // если уже грузим или больше нечего - выходим
   if (productsLoaded.value && !serverHasMore.value) return;
   if (productsPromise) return productsPromise;
 
@@ -1043,7 +1147,7 @@ const selectedCatNode = computed(() => {
   return treeData.value.byCode.get(String(currentCategory.value)) || null;
 });
 
-/* ✅ root? (null пока категории не загрузились — чтобы не мигало) */
+/* ✅ root? (null пока категории не загрузились - чтобы не мигало) */
 const isRootCategorySelected = computed(() => {
   if (!hasActiveCategory.value) return false;
   if (!catsLoadedOnce.value) return null;
@@ -1261,10 +1365,10 @@ function applyFilters() {
       const raw = currentCategoryParam.value;
       if (!raw) return undefined;
 
-      // если уже slug — оставляем
+      // если уже slug - оставляем
       if (!/^[0-9.]+$/.test(raw)) return raw;
 
-      // если code — пытаемся заменить на slug
+      // если code - пытаемся заменить на slug
       const found = categories.value.find(
         (c) => String(c.code) === String(raw)
       );
@@ -1352,7 +1456,7 @@ watch(
   { immediate: true }
 );
 
-/* если ушли с root на подкатегорию — typeModel очищаем и выкидываем из URL */
+/* если ушли с root на подкатегорию - typeModel очищаем и выкидываем из URL */
 watch(isRootCategorySelected, (isRoot) => {
   if (isRoot === false && typeModel.value.length) {
     typeModel.value = [];
@@ -1360,7 +1464,7 @@ watch(isRootCategorySelected, (isRoot) => {
   }
 });
 
-/* если запретили attrs — сбрасываем ТОЛЬКО атрибуты (фото НЕ трогаем) */
+/* если запретили attrs - сбрасываем ТОЛЬКО атрибуты (фото НЕ трогаем) */
 watch(allowAttrFilters, (ok, prev) => {
   if (prev && !ok) {
     let changed = false;
@@ -1378,7 +1482,7 @@ watch(allowAttrFilters, (ok, prev) => {
   }
 });
 
-/* при смене категории — сбрасываем фильтры (поиск остаётся в URL) */
+/* при смене категории - сбрасываем фильтры (поиск остаётся в URL) */
 watch(currentCategoryParam, () => {
   typeModel.value = [];
   brandModel.value = [];
@@ -1414,16 +1518,16 @@ const mergedSearchProducts = computed(() => {
       const hitThumb = isRealImage(hit.thumb) ? [hit.thumb] : [];
       const fromHit = hitImages.length ? hitImages : hitThumb;
 
-const measureName =
-  normText(full?.measureName ?? full?.measure_name) ??
-  normText(hit.measureName ?? hit.measure_name);
+      const measureName =
+        normText(full?.measureName ?? full?.measure_name) ??
+        normText(hit.measureName ?? hit.measure_name);
 
-const qtyValue = normQty(
-  (full?.quantity_value ?? full?.quantity) ??
-    (hit.quantity_value ?? hit.quantity_value_raw ?? hit.quantity)
-);
+      const qtyValue = normQty(
+        (full?.quantity_value ?? full?.quantity) ??
+          (hit.quantity_value ?? hit.quantity_value_raw ?? hit.quantity)
+      );
 
-const qtyDisplay = formatQtyForUI(qtyValue, measureName);
+      const qtyDisplay = formatQtyForUI(qtyValue, measureName);
 
       const base = full
         ? { ...full }
@@ -1467,8 +1571,7 @@ const filteredProducts = computed(() => {
   else if (hasActiveCategory.value) list = productsInCurrentCat.value;
   else list = [];
 
-  // ✅ если есть cat — ограничиваем ТОЛЬКО когда это НЕ поиск
-  // (в поиске category_code у hit часто пустой, а сервер и так уже фильтрует по currentCategory)
+  // ✅ если есть cat - ограничиваем ТОЛЬКО когда это НЕ поиск
   if (hasActiveCategory.value && !hasQ) {
     const pref = String(currentCategory.value);
     list = list.filter((p) => inTree(getCatCodeOfProduct(p), pref));
@@ -1494,12 +1597,12 @@ const filteredProducts = computed(() => {
   if (priceToModel.value !== null)
     list = list.filter((p) => Number(p.price) <= priceToModel.value);
 
-  // ✅ фото — ВСЕГДА (НЕ зависит от типа)
+  // ✅ фото - ВСЕГДА
   if (photoModel.value === "with") list = list.filter((p) => hasImages(p));
   else if (photoModel.value === "without")
     list = list.filter((p) => !hasImages(p));
 
-  // ✅ атрибуты — только когда разрешено
+  // ✅ атрибуты - только когда разрешено
   if (allowAttrFilters.value) {
     for (const [k, arr] of Object.entries(attributeModels.value)) {
       if (!Array.isArray(arr) || !arr.length) continue;
@@ -1533,11 +1636,10 @@ const canLoadMore = computed(
 async function loadMore() {
   displayLimit.value += step.value;
 
-  // ✅ если каталог по категории и локальных товаров уже не хватает — догружаем
   const hasQ = !!String(searchQ.value || "").trim();
   if (hasActiveCategory.value && !hasQ && serverHasMore.value) {
     if (displayLimit.value > productsInCurrentCat.value.length) {
-      await ensureProductsOnlyWhenCategory(); // следующая порция
+      await ensureProductsOnlyWhenCategory();
     }
   }
 }
@@ -1600,6 +1702,7 @@ watch(showMobileFilters, (open) => {
   else unlockBody();
 });
 </script>
+
 <style scoped>
 /* ====== shared small ui ====== */
 .color-dot {
@@ -1702,6 +1805,15 @@ watch(showMobileFilters, (open) => {
   color: var(--text-main);
 }
 
+/* ✅ SEO intro */
+.catalog-intro {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  max-width: 980px;
+}
+
 /* ========================= FILTERS DESKTOP ========================= */
 .filters-bar {
   background: var(--bg-panel);
@@ -1746,11 +1858,11 @@ watch(showMobileFilters, (open) => {
   transform: translateY(-1px);
 }
 
-/* ✅ когда открыт список — радиус только сверху (низ = 0) */
+/* ✅ когда открыт список - радиус только сверху (низ = 0) */
 .filter-block.open {
   z-index: 200;
   border-radius: 14px 14px 0 0;
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .filter-label {
@@ -1768,7 +1880,7 @@ watch(showMobileFilters, (open) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: .6s;
+  transition: 0.6s;
 }
 
 .price-inputs {
@@ -1797,7 +1909,7 @@ watch(showMobileFilters, (open) => {
   border-radius: 12px;
   background: linear-gradient(180deg, #fff, #f9faff);
   border: 1px solid #e4e7ef;
-  transition: .6s;
+  transition: 0.6s;
 }
 .filter-dropdown:hover {
   background: #6b7280;
@@ -1824,15 +1936,10 @@ watch(showMobileFilters, (open) => {
   transition: background 0.2s ease;
 }
 
-
 /* ✅✅✅ dropdown-body: ширина как filter-block, -1.1, без тени, без верхнего бордера, шторка */
 .filter-dropdown-body {
   position: absolute;
-
-  /* без зазора, чуть перекрываем стык */
   top: calc(100% - -11px);
-
-  /* было -1, стало -1.1 */
   left: calc(var(--fb-pad-x) * -1.1);
   right: calc(var(--fb-pad-x) * -1.1);
 
@@ -1843,17 +1950,12 @@ watch(showMobileFilters, (open) => {
   gap: 8px;
 
   background: #fff;
-
-  /* убрать тень */
   box-shadow: none;
 
-  /* убрать верхний border, оставить слева/справа/снизу */
   border-top: none;
   border: 1px solid #e4e7ef;
-  /* радиус только снизу */
   border-radius: 0 0 14px 14px;
 
-  /* для шторы */
   transform-origin: top;
   overflow: hidden;
 }
@@ -1891,12 +1993,8 @@ watch(showMobileFilters, (open) => {
   position: relative;
   display: flex;
   align-items: center;
-
-  /* КЛЮЧ: чтобы текст не пропадал на мобиле */
   flex: 1;
   min-width: 0;
-
-  /* отступ по уровню дерева */
   padding-left: calc(var(--indent) + 14px);
 }
 
@@ -1919,12 +2017,6 @@ watch(showMobileFilters, (open) => {
   bottom: -10px;
   width: 1px;
   background: rgba(15, 23, 42, 0.12);
-}
-
-.typeopt-mark {
-  opacity: 0.55;
-  font-size: 12px;
-  flex: 0 0 auto;
 }
 
 .typeopt-name {
@@ -2463,7 +2555,3 @@ input[type="number"] {
   user-select: auto;
 }
 </style>
-
-
-
-

@@ -14,7 +14,7 @@ import AppFooter from "@/components/AppFooter.vue";
 </script>
 
 <style>
-/* ВАЖНО — основной контейнер */
+/* ВАЖНО - основной контейнер */
 #app {
   min-height: 100vh;
   display: flex;
@@ -26,7 +26,7 @@ import AppFooter from "@/components/AppFooter.vue";
   flex: 1;
 }
 
-/* Твои прежние стили — остаются */
+/* Твои прежние стили - остаются */
 #app section {
   margin-bottom: 30px;
 }

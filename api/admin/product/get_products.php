@@ -73,7 +73,7 @@ $includeDesc  = isset($_GET["desc"]) && (string)$_GET["desc"] === "1";
 $imgMode = isset($_GET["img"]) ? (string)$_GET["img"] : "all"; // all|first
 
 try {
-  /* ================= categories map (маленькая таблица — ок) ================= */
+  /* ================= categories map (маленькая таблица - ок) ================= */
   $cats = $pdo->query("SELECT id, name, parent_id, code FROM categories")->fetchAll(PDO::FETCH_ASSOC);
   $catMap = [];
   foreach ($cats as $c) $catMap[(int)$c["id"]] = $c;
@@ -103,7 +103,7 @@ try {
 
   $catIds = [];
   if ($catCode !== "") {
-    // категорий мало — можно так
+    // категорий мало - можно так
     $st = $pdo->prepare("SELECT id FROM categories WHERE code = ? OR code LIKE CONCAT(?, '.%')");
     $st->execute([$catCode, $catCode]);
     $catIds = array_map(fn($x)=> (int)$x["id"], $st->fetchAll(PDO::FETCH_ASSOC));
@@ -177,7 +177,7 @@ try {
       $p["category_path"] = $buildCategoryPath($cid);
       $p["category_code"] = $catMap[$cid]["code"];
     } else {
-      $p["category_path"] = "—";
+      $p["category_path"] = "-";
       $p["category_code"] = null;
     }
 
@@ -289,7 +289,7 @@ try {
       $p["category_path"] = $buildCategoryPath($cid);
       $p["category_code"] = $catMap[$cid]["code"];
     } else {
-      $p["category_path"] = "—";
+      $p["category_path"] = "-";
       $p["category_code"] = null;
     }
 
@@ -320,7 +320,7 @@ try {
   unset($p);
 
   // отдаём либо массив (как раньше), либо объект с meta
-  // чтобы совсем не ломать фронт: если cat не задан — вернем как раньше (массив)
+  // чтобы совсем не ломать фронт: если cat не задан - вернем как раньше (массив)
   if ($catRaw === "") {
     echo json_encode($products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;

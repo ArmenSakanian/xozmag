@@ -38,7 +38,7 @@
           <select v-model="newParent" class="select">
             <option :value="null">Без родителя (корень)</option>
             <option v-for="c in treeOrdered" :key="c.id" :value="c.id">
-              {{ c.code }} — {{ c.name }}
+              {{ c.code }} - {{ c.name }}
             </option>
           </select>
 
@@ -126,7 +126,7 @@
                   :value="p.id"
                   :disabled="p.id === c.id"
                 >
-                  {{ p.code }} — {{ p.name }}
+                  {{ p.code }} - {{ p.name }}
                 </option>
               </select>
 
@@ -326,7 +326,7 @@ function buildTreeOrder(list) {
         map[c.parent_id].children.push(map[c.id]);
         map[c.parent_id].hasChildren = true;
       } else {
-        // если родитель не найден (грязные данные) — считаем корнем
+        // если родитель не найден (грязные данные) - считаем корнем
         roots.push(map[c.id]);
       }
     } else {

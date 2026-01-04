@@ -104,7 +104,7 @@
                   <Fa :icon="['far', 'image']" />
                 </div>
                 <div class="nofoto-t">Нет фото</div>
-                <div class="nofoto-s">Фото появится — покажем автоматически.</div>
+                <div class="nofoto-s">Фото появится - покажем автоматически.</div>
               </div>
             </div>
 
@@ -187,7 +187,7 @@
 
                   <div class="infoRow">
                     <div class="ik">Штрихкод</div>
-                    <div class="iv mono">{{ product.barcode || "—" }}</div>
+                    <div class="iv mono">{{ product.barcode || "-" }}</div>
                   </div>
                   <div class="infoRow">
   <div class="ik">Остаток</div>
@@ -199,7 +199,7 @@
                     <div class="iv mono">{{ product.article }}</div>
                   </div>
 
-                  <div class="infoRow" v-if="product.category_path && product.category_path !== '—'">
+                  <div class="infoRow" v-if="product.category_path && product.category_path !== '-'">
                     <div class="ik">Категория</div>
                     <div class="iv">{{ product.category_path }}</div>
                   </div>
@@ -295,35 +295,48 @@ const toImgUrl = (s) => {
 /* Breadcrumbs */
 const crumbs = computed(() => {
   const p = String(product.value?.category_path || "").trim();
-  if (!p || p === "—") return [];
+  if (!p || p === "-") return [];
   const parts = p.split("/").map((x) => x.trim()).filter(Boolean);
   return parts.length > 3 ? ["…", ...parts.slice(-2)] : parts;
 });
 
 const pricePretty = computed(() => {
   const n = Number(product.value?.price ?? 0);
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n)) return "-";
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n);
 });
 const qtyPretty = computed(() => {
   const p = product.value || {};
   const q = p.quantity;
 
-  if (q === undefined || q === null || String(q).trim() === "") return "—";
+  if (q === undefined || q === null || String(q).trim() === "") return "-";
 
   const m = String(p.measureName || "").trim();
   return m ? `${q} ${m}` : String(q);
 });
 
-/* ===== SEO HEAD (вставить сюда) ===== */
+/* ===== SEO HEAD ===== */
 const SITE = "XOZMAG.RU";
+const GEO_SHORT = "Сходненская и Планерная";
+const GEO_TEXT = "у метро Сходненская и Планерная";
 
 function clip(s, n = 160) {
   const t = String(s || "").replace(/\s+/g, " ").trim();
   return t.length > n ? t.slice(0, n - 1) + "…" : t;
 }
 
-const headUrl = computed(() => `https://xozmag.ru${route.fullPath}`);
+// каноничный URL только /product/<slug> (без query)
+const canonicalPath = computed(() => {
+  const slug = product.value?.slug
+    ? String(product.value.slug)
+    : !isId(pkey.value)
+    ? String(pkey.value)
+    : String(pkey.value);
+
+  return `/product/${encodeURIComponent(slug)}`;
+});
+
+const canonicalUrl = computed(() => `https://xozmag.ru${canonicalPath.value}`);
 
 const ogImage = computed(() => {
   const img = images.value?.[0] || "";
@@ -334,41 +347,126 @@ const ogImage = computed(() => {
 
 const headTitle = computed(() => {
   const p = product.value;
-  if (!p?.name) return `Товар #${pkey.value} — ${SITE}`; const price = Number(p.price);
-  const pricePart = Number.isFinite(price) && price > 0 ? ` — ${pricePretty.value} ₽` : "";
-  return `${p.name}${pricePart} | ${SITE}`;
+  if (!p?.name) return `Товар #${pkey.value} - ${SITE}`;
+
+  const price = Number(p.price);
+  const pricePart =
+    Number.isFinite(price) && price > 0 ? ` - ${pricePretty.value} ₽` : "";
+
+  // GEO аккуратно (не спамим)
+  return `${p.name}${pricePart} - магазин ${GEO_SHORT} | ${SITE}`;
 });
 
 const headDesc = computed(() => {
   const p = product.value;
-  if (!p?.name) return "Товар в магазине XOZMAG.RU: цена, наличие, характеристики.";
+  if (!p?.name)
+    return `Товар в магазине ${SITE}: цена, наличие, характеристики.`;
 
   const desc = String(p.description || "").trim();
-  if (desc) return clip(desc);
+  if (desc) return clip(`${desc} В наличии ${GEO_TEXT}.`);
 
   const parts = [
     p.brand ? `Бренд: ${p.brand}` : "",
     p.article ? `Арт: ${p.article}` : "",
     p.barcode ? `Штрихкод: ${p.barcode}` : "",
-    p.category_path && p.category_path !== "—" ? `Категория: ${p.category_path}` : "",
+    p.category_path && p.category_path !== "-" ? `Категория: ${p.category_path}` : "",
   ].filter(Boolean);
 
-  return clip(`${p.name}. ${parts.join(" · ")}. Цена и наличие в ${SITE}.`);
+  return clip(`${p.name}. ${parts.join(" · ")}. Цена и наличие ${GEO_TEXT}. ${SITE}.`);
+});
+
+const productLd = computed(() => {
+  const p = product.value;
+  if (!p?.name) return null;
+
+  const priceNum = Number(p.price);
+  const price =
+    Number.isFinite(priceNum) && priceNum > 0 ? String(Math.round(priceNum)) : null;
+
+  // остаток: стараемся понять число (если есть quantity_value - лучше его)
+  const qtyNum = Number(p.quantity_value ?? p.quantity_value_raw ?? p.quantity);
+  const hasQty = Number.isFinite(qtyNum);
+
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: String(p.name),
+    url: canonicalUrl.value,
+    image: images.value?.length ? images.value.map((x) => {
+      if (/^https?:\/\//i.test(x)) return x;
+      return `https://xozmag.ru${x.startsWith("/") ? x : "/" + x}`;
+    }) : [ogImage.value],
+    description: clip(String(p.description || headDesc.value || "")),
+    sku: String(p.article || p.id || ""),
+  };
+
+  // бренд
+  if (p.brand) {
+    data.brand = { "@type": "Brand", name: String(p.brand) };
+  }
+
+  // GTIN из штрихкода (если цифры есть)
+  const bc = String(p.barcode || "").replace(/\D/g, "");
+  if (bc) {
+    if (bc.length === 13) data.gtin13 = bc;
+    else data.gtin = bc;
+  }
+
+  // offers
+  const offers = {
+    "@type": "Offer",
+    url: canonicalUrl.value,
+    priceCurrency: "RUB",
+    itemCondition: "https://schema.org/NewCondition",
+  };
+
+  if (price) offers.price = price;
+
+  // availability - только если уверены в числе
+  if (hasQty) {
+    offers.availability =
+      qtyNum > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+  }
+
+  data.offers = offers;
+
+  return data;
+});
+
+const headScripts = computed(() => {
+  if (!productLd.value) return [];
+  return [
+    {
+      type: "application/ld+json",
+      children: JSON.stringify(productLd.value),
+    },
+  ];
 });
 
 useHead(() => ({
   title: headTitle.value,
+  link: [{ rel: "canonical", href: canonicalUrl.value }],
   meta: [
     { name: "description", content: headDesc.value },
+    { name: "robots", content: "index,follow" },
+
     { property: "og:title", content: headTitle.value },
     { property: "og:description", content: headDesc.value },
     { property: "og:type", content: "product" },
-    { property: "og:url", content: headUrl.value },
+    { property: "og:locale", content: "ru_RU" },
+    { property: "og:site_name", content: "Все для дома - XOZMAG" },
+    { property: "og:url", content: canonicalUrl.value },
     { property: "og:image", content: ogImage.value },
+
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: headTitle.value },
+    { name: "twitter:description", content: headDesc.value },
+    { name: "twitter:image", content: ogImage.value },
   ],
-  link: [{ rel: "canonical", href: headUrl.value }],
+  script: headScripts.value,
 }));
 /* ===== /SEO HEAD ===== */
+
 const hasDescription = computed(() => String(product.value?.description || "").trim().length > 0);
 const descCanToggle = computed(() => String(product.value?.description || "").trim().length > 260);
 
@@ -478,7 +576,7 @@ async function loadOne() {
     const found = j?.item || null;
     if (!found) return;
 
-    // ✅ если пришли по /product/123 — перекидываем на каноничный /product/<slug>
+    // ✅ если пришли по /product/123 - перекидываем на каноничный /product/<slug>
     if (isId(key) && found?.slug) {
       router.replace({ name: "product", params: { slug: found.slug } });
     }
@@ -514,7 +612,7 @@ watch(pkey, loadOne);
 
 <style scoped>
 /* =========================================================
-   PRODUCT PAGE — no lightbox / no zoom
+   PRODUCT PAGE - no lightbox / no zoom
    Accent: #0400ff
    ========================================================= */
 

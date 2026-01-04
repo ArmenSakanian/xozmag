@@ -122,7 +122,7 @@ foreach ($products as &$p) {
     $p["category_path"] = buildCategoryPath($p["category_id"], $catMap);
     $p["category_code"] = $catMap[$p["category_id"]]["code"];
   } else {
-    $p["category_path"] = "—";
+    $p["category_path"] = "-";
     $p["category_code"] = null;
   }
 

@@ -50,7 +50,7 @@
 
         <!-- Правая часть: карта -->
         <div class="contact-map" ref="mapWrapRef">
-          <!-- пока src не установлен — показываем спокойную заглушку (без кнопок) -->
+          <!-- пока src не установлен - показываем спокойную заглушку (без кнопок) -->
           <div v-if="!mapLoaded" class="map-skeleton" aria-hidden="true"></div>
 
           <iframe
@@ -68,25 +68,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { useHead } from "@vueuse/head";
 
+/** ===== Contact data (у тебя уже есть) ===== */
 const phone = "+7 (925) 869-34-16";
 const phoneHref = "tel:+79258693416";
 
 const mapsLink = "https://yandex.ru/maps/-/CLgkAIiy";
 
-// ТВОЙ constructor iframe:
+// iframe
 const mapUrl =
   "https://yandex.ru/map-widget/v1/?um=constructor%3A620efd7c99bc91020f789a56c6f0e55bd29c1a6a5f3cb8a86aa31e52f6d1242e&source=constructor";
 
+/** ===== Map lazy-load (у тебя уже есть) ===== */
 const mapLoaded = ref(false);
 const mapWrapRef = ref(null);
-
 let io = null;
 
 onMounted(() => {
-  // ✅ Автозагрузка карты без кнопки, но только когда блок карты почти виден.
-  // Это сильно помогает Lighthouse (карта не грузится на первом экране).
   if ("IntersectionObserver" in window) {
     io = new IntersectionObserver(
       (entries) => {
@@ -102,7 +102,6 @@ onMounted(() => {
 
     if (mapWrapRef.value) io.observe(mapWrapRef.value);
   } else {
-    // fallback: если браузер старый — просто загрузим с небольшой задержкой
     setTimeout(() => (mapLoaded.value = true), 800);
   }
 });
@@ -111,7 +110,113 @@ onBeforeUnmount(() => {
   io?.disconnect();
   io = null;
 });
+
+/** ================= SEO (useHead) ================= */
+const SITE_NAME = "XOZMAG.RU";
+const HOME_URL = "https://xozmag.ru/";
+const PAGE_PATH = "/contact";
+const PAGE_URL = `${HOME_URL.replace(/\/$/, "")}${PAGE_PATH}`;
+
+const storeName = "Всё для дома";
+const ogImage = "https://xozmag.ru/android-chrome-512x512.png";
+
+const title = computed(() => `Контакты - ${storeName} | ${SITE_NAME}`);
+const description = computed(
+  () =>
+    "Контакты магазина «Всё для дома» в Москве (Северное Тушино): адрес, телефон, режим работы и карта проезда. Метро Сходненская / Планерная."
+);
+
+const addressStreet = "Улица Героев Панфиловцев, дом 3";
+const addressCity = "Москва";
+
+const ldContactPage = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "ContactPage",
+  name: `Контакты - ${storeName}`,
+  url: PAGE_URL,
+  description: description.value,
+  inLanguage: "ru-RU",
+  isPartOf: { "@type": "WebSite", name: SITE_NAME, url: HOME_URL },
+  primaryImageOfPage: { "@type": "ImageObject", url: ogImage },
+}));
+
+const ldBreadcrumbs = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Главная", item: HOME_URL },
+    { "@type": "ListItem", position: 2, name: "Контакты", item: PAGE_URL },
+  ],
+}));
+
+const ldStore = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "Store",
+  name: storeName,
+  url: HOME_URL,
+  image: ogImage,
+  description: description.value,
+  telephone: phoneHref.replace("tel:", ""),
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: addressStreet,
+    addressLocality: addressCity,
+    addressCountry: "RU",
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "20:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Saturday", "Sunday"],
+      opens: "10:00",
+      closes: "19:00",
+    },
+  ],
+  hasMap: mapsLink,
+  sameAs: [mapsLink],
+}));
+
+useHead(() => ({
+  title: title.value,
+  link: [
+    { rel: "canonical", href: PAGE_URL },
+    { rel: "alternate", href: PAGE_URL, hreflang: "ru" },
+    { rel: "alternate", href: PAGE_URL, hreflang: "x-default" },
+  ],
+  meta: [
+    { name: "description", content: description.value },
+    { name: "robots", content: "index,follow" },
+
+    // Open Graph
+    { property: "og:title", content: title.value },
+    { property: "og:description", content: description.value },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: PAGE_URL },
+    { property: "og:site_name", content: SITE_NAME },
+    { property: "og:locale", content: "ru_RU" },
+    { property: "og:image", content: ogImage },
+    { property: "og:image:alt", content: `Контакты магазина ${storeName}` },
+
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title.value },
+    { name: "twitter:description", content: description.value },
+    { name: "twitter:image", content: ogImage },
+  ],
+  script: [
+    { type: "application/ld+json", children: JSON.stringify(ldContactPage.value) },
+    { type: "application/ld+json", children: JSON.stringify(ldBreadcrumbs.value) },
+    { type: "application/ld+json", children: JSON.stringify(ldStore.value) },
+  ],
+}));
 </script>
+
+
 
 <style scoped>
 /* ===== CONTACTS (под твой :root) ===== */

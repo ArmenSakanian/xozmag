@@ -131,7 +131,7 @@
               class="select"
               @change="onAttributeChange(row)"
             >
-              <option value="">— Характеристика —</option>
+              <option value="">- Характеристика -</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
@@ -142,7 +142,7 @@
               class="select"
               :disabled="!row.attribute_id"
             >
-              <option value="">— Значение —</option>
+              <option value="">- Значение -</option>
               <option
                 v-for="o in attributeOptions[row.attribute_id] || []"
                 :key="o.id"
@@ -197,7 +197,7 @@
               class="select"
               @change="onAttributeChange(row)"
             >
-              <option value="">— Характеристика —</option>
+              <option value="">- Характеристика -</option>
               <option v-for="a in allAttributes" :key="a.id" :value="a.id">
                 {{ a.name }}
               </option>
@@ -208,7 +208,7 @@
               class="select"
               :disabled="!row.attribute_id"
             >
-              <option value="">— Значение —</option>
+              <option value="">- Значение -</option>
               <option
                 v-for="o in attributeOptions[row.attribute_id] || []"
                 :key="o.id"
@@ -252,7 +252,7 @@
                 </div>
               </div>
 
-              <div v-else class="bulk-empty">— нет характеристик —</div>
+              <div v-else class="bulk-empty">- нет характеристик -</div>
             </div>
           </div>
         </div>
@@ -875,7 +875,7 @@ const desktopColumns = [
       const p = cell.getRow().getData();
       return `
         <div class="cat-edit">
-          <span class="cat-text">${p.category_path || "— Без категории —"}</span>
+          <span class="cat-text">${p.category_path || "- Без категории -"}</span>
           <button class="mini-btn edit-cat">Изменить</button>
         </div>
       `;
@@ -894,7 +894,7 @@ const desktopColumns = [
     formatter: (cell) =>
       cell.getValue()
         ? `<span class="t-price">${cell.getValue()}</span>`
-        : `<span class="t-empty">—</span>`,
+        : `<span class="t-empty">-</span>`,
   },
   {
     title: "Штрихкод",
@@ -903,7 +903,7 @@ const desktopColumns = [
     formatter: (cell) =>
       cell.getValue()
         ? `<span class="t-barcode" title="Нажмите, чтобы скопировать">${cell.getValue()}</span>`
-        : `<span class="t-empty">—</span>`,
+        : `<span class="t-empty">-</span>`,
     cellClick: (e, cell) => {
       const value = cell.getValue();
       if (!value) return;
@@ -914,13 +914,13 @@ const desktopColumns = [
     title: "Бренд",
     field: "brand",
     headerFilter: "input",
-    formatter: (cell) => `<span class="t-brand">${cell.getValue() || "—"}</span>`,
+    formatter: (cell) => `<span class="t-brand">${cell.getValue() || "-"}</span>`,
   },
   {
     title: "Тип",
     field: "type",
     headerFilter: "input",
-    formatter: (cell) => `<span class="t-type">${cell.getValue() || "—"}</span>`,
+    formatter: (cell) => `<span class="t-type">${cell.getValue() || "-"}</span>`,
   },
 ];
 
@@ -1432,7 +1432,7 @@ onMounted(async () => {
 }
 
 .bulk-attr-row::before {
-  content: "—";
+  content: "-";
   margin-right: 6px;
   color: rgba(255, 255, 255, 0.35);
 }

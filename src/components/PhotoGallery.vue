@@ -1,6 +1,10 @@
 <template>
-  <section id="photo" class="full-slider" aria-label="Фото галерея">
-    <Swiper
+<section
+  ref="sliderEl"
+  id="photo"
+  class="full-slider"
+  aria-label="Фото галерея"
+>    <Swiper
       class="full-swiper"
       :modules="swiperModules"
       :slides-per-view="1"
@@ -24,7 +28,7 @@
       </SwiperSlide>
     </Swiper>
 
-    <!-- ✅ ПОИСК — ОДИН РАЗ, ПОВЕРХ ВСЕГО SWIPER (НЕ ВНУТРИ SLIDE) -->
+    <!-- ✅ ПОИСК - ОДИН РАЗ, ПОВЕРХ ВСЕГО SWIPER (НЕ ВНУТРИ SLIDE) -->
     <div class="search-layer" aria-label="Поиск по каталогу">
       <div
         class="search-shell"
@@ -52,12 +56,14 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import HomeSearch from "@/components/HomeSearch.vue";
 
+const sliderEl = ref(null);
+
 /** ✅ включать/выключать автолистание тут */
 const autoplayEnabled = true;
 
 const autoplayOptions = {
   delay: 5000,
-  disableOnInteraction: false, // мы вручную стопаем при uiLock
+  disableOnInteraction: false,
   pauseOnMouseEnter: true,
 };
 
@@ -66,27 +72,36 @@ const swiperModules = autoplayEnabled
   : [Navigation, Pagination];
 
 const slides = [
-  "/img/photo-shop/Slide1.png",
-  "/img/photo-shop/Slide2.png",
-  "/img/photo-shop/Slide3.png",
-  "/img/photo-shop/Slide4.png",
-  "/img/photo-shop/Slide5.png",
-  "/img/photo-shop/Slide6.png",
+  "/img/photo-shop/Slide1.webp",
+  "/img/photo-shop/Slide2.webp",
+  "/img/photo-shop/Slide3.webp",
+  "/img/photo-shop/Slide4.webp",
+  "/img/photo-shop/Slide5.webp",
+  "/img/photo-shop/Slide6.webp",
 ];
 
-/* header height -> css var */
-const setHeaderVar = () => {
+/* ✅ vars только на .full-slider (без html/body) */
+const setLocalVars = () => {
+  const el = sliderEl.value;
+  if (!el) return;
+
   const header = document.querySelector("header");
-  const h = header ? header.offsetHeight : 0;
-  document.documentElement.style.setProperty("--header-h", `${h}px`);
+  const headerH = header ? header.offsetHeight : 0;
+
+  // ширина скроллбара (обычно 0 на мобилках)
+  const sbw = window.innerWidth - document.documentElement.clientWidth;
+
+  el.style.setProperty("--header-h", `${headerH}px`);
+  el.style.setProperty("--sbw", `${sbw}px`);
 };
 
 onMounted(() => {
-  setHeaderVar();
-  window.addEventListener("resize", setHeaderVar, { passive: true });
+  setLocalVars();
+  window.addEventListener("resize", setLocalVars, { passive: true });
 });
+
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", setHeaderVar);
+  window.removeEventListener("resize", setLocalVars);
 });
 
 /* ===== Swiper control (freeze while dropdown/scanner open) ===== */
@@ -97,17 +112,14 @@ function onSwiper(sw) {
   swiperInstance.value = sw;
 }
 
-/** HomeSearch будет эмитить ui-lock true/false */
 function onUiLock(v) {
   uiLock.value = !!v;
 
   const sw = swiperInstance.value;
   if (!sw) return;
 
-  // touch move
   sw.allowTouchMove = !uiLock.value;
 
-  // autoplay
   if (autoplayEnabled && sw.autoplay) {
     if (uiLock.value) sw.autoplay.stop();
     else sw.autoplay.start();
@@ -115,14 +127,16 @@ function onUiLock(v) {
 }
 </script>
 
+
 <style scoped>
 /* ========= ROOT SLIDER ========= */
 .full-slider {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  overflow-x: clip; /* без гориз.скролла */
+  width: calc(100vw - var(--sbw, 0px));
+  margin-left: calc(50% - 50vw + (var(--sbw, 0px) / 2));
   position: relative;
+  overflow-x: clip; /* или hidden */
 }
+
 
 /* swiper wrapper */
 .full-swiper {
@@ -133,7 +147,7 @@ function onUiLock(v) {
   overflow: visible; /* dropdown не режем */
 }
 
-/* Swiper часто ставит overflow:hidden — переопределяем */
+/* Swiper часто ставит overflow:hidden - переопределяем */
 :global(.full-swiper .swiper),
 :global(.full-swiper .swiper-wrapper),
 :global(.full-swiper .swiper-slide) {
@@ -177,7 +191,7 @@ function onUiLock(v) {
   object-position: center;
 }
 
-/* затемнение (если надо темнее — см. ниже примечание) */
+/* затемнение (если надо темнее - см. ниже примечание) */
 .shade {
   position: absolute;
   inset: 0;
@@ -237,7 +251,7 @@ function onUiLock(v) {
   font-size: 14px;
 }
 
-/* сам инпут — без подсказок, просто поле */
+/* сам инпут - без подсказок, просто поле */
 .gallery-search:deep(.search-input) {
   color: rgba(255, 255, 255, 0.96);
   font-size: 15px;

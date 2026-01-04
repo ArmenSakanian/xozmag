@@ -48,7 +48,7 @@ async function submit() {
       return;
     }
 
-    // если админ — на /admin, иначе на /barcode
+    // если админ - на /admin, иначе на /barcode
     if (data?.user?.role === "admin") router.push("/admin");
     else router.push("/barcode");
   } else {

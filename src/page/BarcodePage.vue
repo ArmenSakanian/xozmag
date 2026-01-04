@@ -929,7 +929,7 @@ onMounted(async () => {
 
 <style scoped>
 /* =========================================================
-   BARCODE PAGE — PREMIUM LIGHT UI (под твой :root)
+   BARCODE PAGE - PREMIUM LIGHT UI (под твой :root)
    ========================================================= */
 
 .page{

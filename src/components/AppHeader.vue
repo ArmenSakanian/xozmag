@@ -19,7 +19,7 @@
         <nav class="nav">
           <RouterLink class="nav-item" to="/catalog">Каталог</RouterLink>
           <a class="nav-item" href="/aboutus">О нас</a>
-          <a class="nav-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+          <a class="nav-item" href="/contact">Контакты</a>
           <a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
         </nav>
 
@@ -41,7 +41,7 @@
     <div class="mobile-menu" :class="{ open: mobileOpen }">
       <RouterLink to="/catalog" class="mobile-item" @click="closeMenu">Каталог</RouterLink>
       <a class="mobile-item" href="/aboutus">О нас</a>
-      <a class="mobile-item" @click.prevent="scrollToSection('contact')">Контакты</a>
+      <a class="mobile-item" href="/contact">Контакты</a>
       <a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
     </div>
   </header>
@@ -281,14 +281,9 @@ onBeforeUnmount(() => {
 .mobile-menu {
   position: fixed;
   top: var(--hdr-h);
-  right: 12px;
-  left: 12px;
-
+width: 100%;
   background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-
   padding: 14px;
   display: grid;
   gap: 10px;

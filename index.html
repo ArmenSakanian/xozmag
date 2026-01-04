@@ -3,47 +3,117 @@
   <head>
     <meta charset="UTF-8" />
 
-    <!-- Yandex.Metrika counter -->
-    <script type="text/javascript">
-      (function (m, e, t, r, i, k, a) {
-        m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); };
-        m[i].l = 1 * new Date();
-        for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) { return; } }
-        k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k, a);
-      })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=106071478', 'ym');
-
-      ym(106071478, 'init', { ssr: true, webvisor: true, clickmap: true, ecommerce: "dataLayer", accurateTrackBounce: true, trackLinks: true });
-    </script>
-    <!-- /Yandex.Metrika counter -->
-
-    <!-- Иконки -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
-    <!-- PWA manifest (из favicon.io) -->
-    <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#ffffff" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet" />
-
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Base SEO (для главной; страницы дальше переопределяешь через useHead) -->
+    <title>Все Для Дома</title>
     <meta
       name="description"
       content="Все Для Дома на Сходненской и Планерной: хозтовары, сантехника, электрика, стройматериалы, крепеж, замки. Приходите в магазин или выбирайте в каталоге."
     />
-    <title>Все Для Дома</title>
+    <meta name="robots" content="index,follow" />
+
+    <!-- Canonical (для главной) -->
+    <link rel="canonical" href="https://xozmag.ru/" />
+
+    <!-- Иконки (максимально понятно для поисковиков) -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Все Для Дома" />
+    <meta
+      property="og:description"
+      content="Хозтовары, сантехника, электрика, стройматериалы, крепеж, замки. Магазин рядом с метро Сходненская и Планерная."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://xozmag.ru/" />
+    <meta property="og:site_name" content="Все Для Дома" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:image" content="https://xozmag.ru/android-chrome-512x512.png" />
+    <meta property="og:image:alt" content="Все Для Дома" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Все Для Дома" />
+    <meta
+      name="twitter:description"
+      content="Хозтовары, сантехника, электрика, стройматериалы, крепеж, замки. Магазин рядом с метро Сходненская и Планерная."
+    />
+    <meta name="twitter:image" content="https://xozmag.ru/android-chrome-512x512.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+      (function (m, e, t, r, i, k, a) {
+        m[i] =
+          m[i] ||
+          function () {
+            (m[i].a = m[i].a || []).push(arguments);
+          };
+        m[i].l = 1 * new Date();
+        for (var j = 0; j < document.scripts.length; j++) {
+          if (document.scripts[j].src === r) {
+            return;
+          }
+        }
+        k = e.createElement(t);
+        a = e.getElementsByTagName(t)[0];
+        k.async = 1;
+        k.src = r;
+        a.parentNode.insertBefore(k, a);
+      })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=106071478", "ym");
+
+      ym(106071478, "init", {
+        ssr: true,
+        webvisor: true,
+        clickmap: true,
+        ecommerce: "dataLayer",
+        accurateTrackBounce: true,
+        trackLinks: true,
+      });
+    </script>
+    <!-- /Yandex.Metrika counter -->
+
+    <!-- JSON-LD: WebSite + SearchAction -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Все Для Дома",
+        "url": "https://xozmag.ru/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://xozmag.ru/catalog?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
   </head>
 
   <body>
     <!-- Yandex.Metrika noscript -->
     <noscript>
       <div>
-        <img src="https://mc.yandex.ru/watch/106071478" style="position:absolute; left:-9var(--radius-lg);" alt="" />
+        <img
+          src="https://mc.yandex.ru/watch/106071478"
+          style="position: absolute; left: -9999px"
+          alt=""
+        />
       </div>
     </noscript>
     <!-- /Yandex.Metrika noscript -->

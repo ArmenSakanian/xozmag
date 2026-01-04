@@ -78,7 +78,7 @@ const isActivePath = computed(() => {
   return String(props.activeCat).startsWith(String(props.node.code));
 });
 
-// ✅ если где-то внутри выбраны подкатегории — тоже считаем «ветка активна» для автораскрытия
+// ✅ если где-то внутри выбраны подкатегории - тоже считаем «ветка активна» для автораскрытия
 const hasCheckedDescendant = computed(() => {
   const prefix = String(props.node.code);
   return (props.selectedCategories || []).some((c) => String(c).startsWith(prefix));
@@ -134,7 +134,7 @@ function toggleCheck() {
   background: rgba(4, 0, 255, 0.06);
 }
 
-/* когда выбрано — лёгкая подсветка текста */
+/* когда выбрано - лёгкая подсветка текста */
 .cat-item.checked > .cat-row {
   background: transparent;
 }

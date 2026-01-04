@@ -125,7 +125,7 @@ try {
     $offer->setAttribute("id", (string)$p["id"]);
     $offer->setAttribute("available", "true"); // раз qty >= 1
 
-    // url товара — по slug
+    // url товара - по slug
     $url = rtrim($BASE_URL, "/") . "/product/" . rawurlencode($slug);
     $offer->appendChild($doc->createElement("url", $url));
 
@@ -224,7 +224,7 @@ function parsePhotos($photoField): array {
     return array_values(array_unique($out));
   }
 
-  // не JSON — одна строка
+  // не JSON - одна строка
   $one = safe_rel_from_url_or_path($s);
   return $one ? [$one] : [];
 }

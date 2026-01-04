@@ -48,7 +48,7 @@ function start_secure_session(): void {
 }
 
 function client_ip(): string {
-  // Если у тебя Cloudflare/прокси — позже можно расширить.
+  // Если у тебя Cloudflare/прокси - позже можно расширить.
   return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 }
 
@@ -93,7 +93,7 @@ function login_rate_limit_fail(string $ip): void {
   $first = (int)($data['first'] ?? $now);
   $count = (int)($data['count'] ?? 0);
 
-  // если прошло больше 10 минут — сброс окна
+  // если прошло больше 10 минут - сброс окна
   if (($now - $first) > 600) {
     $first = $now;
     $count = 0;

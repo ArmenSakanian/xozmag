@@ -19,7 +19,7 @@ if (!is_dir($folder)) {
 }
 
 // ===== SETTINGS =====
-const LOCK_STALE_SEC = 900;      // 15 мин: если нет heartbeat — считаем lock "мертвым"
+const LOCK_STALE_SEC = 900;      // 15 мин: если нет heartbeat - считаем lock "мертвым"
 const JOB_TTL_SEC    = 86400;    // 24 часа: чистка старых job
 const TMP_TTL_SEC    = 3600;     // 1 час: чистка старых __tmp__
 const MAX_LOG_LINES  = 600;      // сколько строк логов храним
@@ -133,7 +133,7 @@ function acquire_lock($folder, $token, $dryRun) {
     if ($ts && (time() - $ts) <= LOCK_STALE_SEC) {
       return [false, $lock]; // уже запущено
     }
-    // stale lock — удалим и перехватим
+    // stale lock - удалим и перехватим
     @unlink($lp);
   }
 
@@ -181,7 +181,7 @@ function push_log(&$job, $line) {
 function send_and_detach(array $payload) {
   $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
 
-  // если есть буферы — закрыть
+  // если есть буферы - закрыть
   while (ob_get_level() > 0) { @ob_end_clean(); }
 
   header("Content-Type: application/json; charset=utf-8");
@@ -204,7 +204,7 @@ if (isset($_GET["status"]) && intval($_GET["status"]) === 1) {
 
   $token = isset($_GET["token"]) ? preg_replace("/[^a-f0-9]/", "", $_GET["token"]) : "";
   if (!$token) {
-    // если токен не дали — попробуем взять из lock
+    // если токен не дали - попробуем взять из lock
     $lock = read_json_file(lock_path($folder));
     if (!empty($lock["token"])) $token = $lock["token"];
   }
@@ -241,7 +241,7 @@ cleanup_stale($folder);
 
 $token = bin2hex(random_bytes(16));
 
-// если уже запущено — не стартуем второй раз
+// если уже запущено - не стартуем второй раз
 [$okLock, $lockInfo] = acquire_lock($folder, $token, $dryRun);
 if (!$okLock) {
   if (!empty($lockInfo["token"])) {
@@ -265,7 +265,7 @@ $queue = build_queue($folder);
 $total = count($queue);
 
 if ($total === 0) {
-  // нечего делать — снимем lock сразу
+  // нечего делать - снимем lock сразу
   release_lock($folder, $token);
   json_out([
     "done" => true,

@@ -53,7 +53,7 @@ const first = computed(() => {
   height: 100%;
   display: block;
   max-width: 100%;
-  object-fit: contain; /* если хочешь заполнение — поменяй на cover */
+  object-fit: contain; /* если хочешь заполнение - поменяй на cover */
   object-position: center;
   background: #fff;
 }

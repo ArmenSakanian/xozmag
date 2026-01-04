@@ -41,7 +41,7 @@ function evotor_catalog_build(array $opts = []): array
         "details" => null,
       ];
     }
-    // если кэш битый — идём получать заново
+    // если кэш битый - идём получать заново
   }
 
   // === ЭВОТОР ДАННЫЕ ===
@@ -66,7 +66,7 @@ function evotor_catalog_build(array $opts = []): array
   $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
   curl_close($ch);
 
-  // Если эвотор недоступен — попробуем отдать старый кэш (если есть)
+  // Если эвотор недоступен - попробуем отдать старый кэш (если есть)
   if ($curlErr || $httpCode >= 400) {
     if (is_file($cacheFile)) {
       $json = @file_get_contents($cacheFile);

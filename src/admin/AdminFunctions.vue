@@ -80,7 +80,7 @@
           </div>
 
           <div class="log-box">
-            <div v-if="!logs.length" class="log-empty">Лог пуст — нажми “Начать”.</div>
+            <div v-if="!logs.length" class="log-empty">Лог пуст - нажми “Начать”.</div>
             <div v-for="(l, i) in logs" :key="i" class="log-line">{{ l }}</div>
           </div>
 
@@ -206,7 +206,7 @@
           </div>
 
           <div class="log-box sync-log">
-            <div v-if="!syncLogs.length" class="log-empty">Лог пуст — нажми “Запустить”.</div>
+            <div v-if="!syncLogs.length" class="log-empty">Лог пуст - нажми “Запустить”.</div>
             <div v-for="(l, i) in syncLogs" :key="i" class="log-line">{{ l }}</div>
           </div>
         </section>
@@ -256,7 +256,7 @@
           </div>
 
           <div class="log-box sync-log">
-            <div v-if="!ymlLogs.length" class="log-empty">Лог пуст — нажми “Сгенерировать”.</div>
+            <div v-if="!ymlLogs.length" class="log-empty">Лог пуст - нажми “Сгенерировать”.</div>
             <div v-for="(l, i) in ymlLogs" :key="i" class="log-line">{{ l }}</div>
           </div>
 
@@ -301,7 +301,7 @@
                   Перетащи файл сюда или
                   <button class="link" :disabled="busy" @click="openMinPicker">выбери</button>
                 </div>
-                <div class="drop-t2">.xlsx / .csv — максимум 15MB</div>
+                <div class="drop-t2">.xlsx / .csv - максимум 15MB</div>
               </div>
 
               <div class="picked" v-if="minPickedName">
@@ -403,7 +403,7 @@
                     <div class="b1">Строка {{ b.row }}</div>
                     <div class="b2">
                       <span v-if="b.barcode" class="mono">{{ b.barcode }}</span>
-                      <span class="muted" v-else>—</span>
+                      <span class="muted" v-else>-</span>
                     </div>
                     <div class="b3">{{ b.error }}</div>
                   </div>
@@ -444,7 +444,7 @@
               <div class="cron-row-txt">
                 <div class="cron-k">Включено</div>
                 <div class="cron-v muted">
-                  Когда включено — tick-скрипт сам запускает пайплайн по интервалу.
+                  Когда включено - tick-скрипт сам запускает пайплайн по интервалу.
                 </div>
               </div>
             </div>
@@ -510,12 +510,12 @@
           </div>
 
           <div class="log-box sync-log">
-            <div v-if="!cronLogs.length" class="log-empty">Лог пуст — нажми “Обновить лог”.</div>
+            <div v-if="!cronLogs.length" class="log-empty">Лог пуст - нажми “Обновить лог”.</div>
             <div v-for="(l, i) in cronLogs" :key="i" class="log-line">{{ l }}</div>
           </div>
 
           <div class="panel-foot muted">
-            ⚠ Cron в Linux работает минимум раз в минуту. “10 секунд” через cron нельзя — используй “Запустить сейчас”.
+            ⚠ Cron в Linux работает минимум раз в минуту. “10 секунд” через cron нельзя - используй “Запустить сейчас”.
           </div>
         </section>
       </div>

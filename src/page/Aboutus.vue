@@ -14,8 +14,8 @@
           <h1 class="h1">О нас</h1>
 
           <p class="lead">
-            Магазин «Всё для дома» — розничный магазин хозяйственных и строительных
-            товаров. Работаем <b>более 10 лет</b>. В ассортименте — товары для ремонта,
+            Магазин «Всё для дома» - розничный магазин хозяйственных и строительных
+            товаров. Работаем <b>более 10 лет</b>. В ассортименте - товары для ремонта,
             монтажа и повседневных бытовых задач.
           </p>
 
@@ -49,7 +49,7 @@
             </div>
             <div class="miniFact">
               <div class="miniFactTitle">Парковка</div>
-              <div class="miniFactText">Шлагбаум — откроем по звонку</div>
+              <div class="miniFactText">Шлагбаум - откроем по звонку</div>
             </div>
           </div>
         </div>
@@ -71,21 +71,22 @@
         <div class="keyGrid">
           <article class="keyCard">
             <div class="keyTop">
-              <div class="keyIcon" aria-hidden="true">✓</div>
+              <div class="keyIcon" aria-hidden="true">  <Fa :icon="['fas','check']" />
+</div>
               <div class="keyTitle">Быстро подобрать</div>
             </div>
             <div class="keyText">
-              Подскажем совместимость, аналоги и что лучше под задачу — без “продажного” давления.
+              Подскажем совместимость, аналоги и что лучше под задачу - без “продажного” давления.
             </div>
           </article>
 
           <article class="keyCard">
             <div class="keyTop">
-              <div class="keyIcon" aria-hidden="true">⚙</div>
-              <div class="keyTitle">Товары для ремонта</div>
+              <div class="keyIcon" aria-hidden="true"><Fa :icon="['fas','basketshopping']" /></div>
+              <div class="keyTitle">Товары для всего</div>
             </div>
             <div class="keyText">
-              Для дома, сантехники, монтажа, электрики и мелких ремонтных работ — из реального спроса.
+              Для дома, сантехники, монтажа, электрики и мелких ремонтных работ - из реального спроса.
             </div>
           </article>
 
@@ -95,7 +96,7 @@
               <div class="keyTitle">Рядом с метро</div>
             </div>
             <div class="keyText">
-              Удобно забежать по дороге — Сходненская / Планерная, Северное Тушино.
+              Удобно забежать по дороге - Сходненская / Планерная, Северное Тушино.
             </div>
           </article>
         </div>
@@ -144,7 +145,7 @@
           <div class="ctaText">
             <div class="ctaTitle">Нужна консультация по выбору?</div>
             <div class="ctaSub">
-              Если не уверены в подборе или совместимости — позвоните, поможем.
+              Если не уверены в подборе или совместимости - позвоните, поможем.
             </div>
           </div>
 
@@ -160,10 +161,17 @@
 import { computed } from "vue";
 import { useHead } from "@vueuse/head";
 
+/** ===== Page data ===== */
+const SITE_NAME = "XOZMAG.RU";
+const HOME_URL = "https://xozmag.ru/";
+const PAGE_PATH = "/aboutus";
+const PAGE_URL = `${HOME_URL.replace(/\/$/, "")}${PAGE_PATH}`;
+
 const storeName = "Всё для дома";
 
-// ✅ путь как ты попросил
-const heroImg = "/img/photo-shop/Slide1.png";
+// путь как ты просил
+const heroImg = "/img/photo-shop/Slide1.webp";
+const OG_IMAGE = computed(() => new URL(heroImg, HOME_URL).toString());
 
 const yandexRating = "4.9";
 const yandexReviews = "308";
@@ -172,23 +180,158 @@ const yandexGrades = "969";
 const yandexLink =
   "https://yandex.ru/maps/213/moscow/?from=mapframe&ll=37.436739%2C55.854634&mode=poi&poi%5Bpoint%5D=37.437056%2C55.854563&poi%5Buri%5D=ymapsbm1%3A%2F%2Forg%3Foid%3D1728338739&source=mapframe&tab=reviews&utm_source=share&z=19";
 
-const title = computed(() => `О нас — ${storeName} | XOZMAG.RU`);
-const desc = computed(
+/** ===== Optional placeholders (если не хочешь - оставь как есть) ===== */
+const STORE_ADDRESS = "__АДРЕС_УЛИЦА_ДОМ__"; // "ул. ... , д. ..."
+const STORE_CITY = "__ГОРОД__"; // "Москва"
+const STORE_PHONE = "__ТЕЛЕФОН__"; // "+7..."
+const STORE_HOURS = "__ЧАСЫ_SCHEMA__"; // "Mo-Su 10:00-21:00"
+const MAP_URL = "__ССЫЛКА_НА_КАРТЫ__"; // можно оставить yandexLink или ссылку на Яндекс/Гугл карты
+
+function isPlaceholder(v) {
+  const s = String(v ?? "").trim();
+  return !s || (s.startsWith("__") && s.endsWith("__"));
+}
+
+/** ===== SEO texts ===== */
+const title = computed(() => `О нас - ${storeName} | ${SITE_NAME}`);
+const description = computed(
   () =>
-    "Магазин «Всё для дома» в Москве (Северное Тушино): сантехника, электрика, стройматериалы, крепёж, хозтовары. Более 10 лет. Оплата наличные/карта/QR, доставка по согласованию."
+    "Магазин «Всё для дома» в Москве (Северное Тушино, м. Сходненская / Планерная). Более 10 лет: сантехника, электрика, стройматериалы, крепёж, хозтовары. Оплата наличные/карта/QR, доставка по согласованию."
 );
 
+/** ===== JSON-LD ===== */
+
+// 1) WebPage
+const ldWebPage = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: `О нас - ${storeName}`,
+  url: PAGE_URL,
+  description: description.value,
+  inLanguage: "ru-RU",
+  isPartOf: {
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: HOME_URL,
+  },
+  primaryImageOfPage: {
+    "@type": "ImageObject",
+    url: OG_IMAGE.value,
+  },
+}));
+
+// 2) BreadcrumbList (Главная → О нас)
+const ldBreadcrumbs = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Главная",
+      item: HOME_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "О нас",
+      item: PAGE_URL,
+    },
+  ],
+}));
+
+// 3) Store / LocalBusiness (аккуратно, без обязательных полей)
+const ldStore = computed(() => {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: storeName,
+    url: HOME_URL,
+    image: OG_IMAGE.value,
+    description: description.value,
+    areaServed: { "@type": "City", name: "Москва" }, // поменяй, если не Москва
+  };
+
+  // address
+  if (!isPlaceholder(STORE_ADDRESS) && !isPlaceholder(STORE_CITY)) {
+    data.address = {
+      "@type": "PostalAddress",
+      streetAddress: String(STORE_ADDRESS).trim(),
+      addressLocality: String(STORE_CITY).trim(),
+      addressCountry: "RU",
+    };
+  }
+
+  // phone
+  if (!isPlaceholder(STORE_PHONE)) {
+    data.telephone = String(STORE_PHONE).trim();
+  }
+
+  // opening hours
+  if (!isPlaceholder(STORE_HOURS)) {
+    data.openingHours = [String(STORE_HOURS).trim()];
+  }
+
+  // maps / socials
+  const sameAs = [];
+  if (!isPlaceholder(MAP_URL)) sameAs.push(String(MAP_URL).trim());
+  // можно сразу использовать Яндекс-отзывы как sameAs
+  if (yandexLink) sameAs.push(yandexLink);
+  if (sameAs.length) data.sameAs = sameAs;
+
+  // rating (если уверен, что актуально)
+  const rv = Number(String(yandexRating).replace(",", "."));
+  const rc = Number(String(yandexGrades).replace(/\s/g, ""));
+  if (Number.isFinite(rv) && rv > 0 && Number.isFinite(rc) && rc > 0) {
+    data.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: rv,
+      bestRating: 5,
+      ratingCount: rc,
+    };
+  }
+
+  return data;
+});
+
+/** ===== Head ===== */
 useHead(() => ({
   title: title.value,
+  link: [
+    { rel: "canonical", href: PAGE_URL },
+
+    // nice-to-have (не обязательно)
+    { rel: "alternate", href: PAGE_URL, hreflang: "ru" },
+    { rel: "alternate", href: PAGE_URL, hreflang: "x-default" },
+  ],
   meta: [
-    { name: "description", content: desc.value },
+    { name: "description", content: description.value },
+    { name: "robots", content: "index,follow" },
+
+    // Open Graph
     { property: "og:title", content: title.value },
-    { property: "og:description", content: desc.value },
+    { property: "og:description", content: description.value },
     { property: "og:type", content: "website" },
-    { property: "og:url", content: "https://xozmag.ru/about" },
+    { property: "og:url", content: PAGE_URL },
+    { property: "og:site_name", content: SITE_NAME },
+    { property: "og:locale", content: "ru_RU" },
+    { property: "og:image", content: OG_IMAGE.value },
+    { property: "og:image:alt", content: `Магазин ${storeName}` },
+
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title.value },
+    { name: "twitter:description", content: description.value },
+    { name: "twitter:image", content: OG_IMAGE.value },
+  ],
+  script: [
+    { type: "application/ld+json", children: JSON.stringify(ldWebPage.value) },
+    { type: "application/ld+json", children: JSON.stringify(ldBreadcrumbs.value) },
+    { type: "application/ld+json", children: JSON.stringify(ldStore.value) },
   ],
 }));
 </script>
+
 
 <style scoped>
 .page {

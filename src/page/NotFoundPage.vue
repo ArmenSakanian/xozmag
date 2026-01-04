@@ -34,7 +34,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const goBack = () => {
-  // если истории нет — вернем на главную
+  // если истории нет - вернем на главную
   if (window.history.length > 1) router.back();
   else router.push("/");
 };

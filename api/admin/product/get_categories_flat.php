@@ -24,7 +24,7 @@ SELECT
     parent_id,
     level,
     code,
-    CONCAT(code, ' — ', name) AS full_name,
+    CONCAT(code, ' - ', name) AS full_name,
     photo_categories
 FROM categories
 ORDER BY code ASC
@@ -48,7 +48,7 @@ ORDER BY code ASC
         unset($r);
 
     } catch (PDOException $e) {
-        // если колонки нет — не ломаем сайт
+        // если колонки нет - не ломаем сайт
         if (strpos($e->getMessage(), "Unknown column") !== false || $e->getCode() === "42S22") {
             $sql = "
 SELECT
@@ -58,7 +58,7 @@ SELECT
     parent_id,
     level,
     code,
-    CONCAT(code, ' — ', name) AS full_name
+    CONCAT(code, ' - ', name) AS full_name
 FROM categories
 ORDER BY code ASC
 

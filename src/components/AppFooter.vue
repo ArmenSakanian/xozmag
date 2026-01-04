@@ -64,7 +64,7 @@
 
     <!-- НИЖНЯЯ ПОЛОСА -->
     <div class="footer-bottom">
-      © 2025 xozmag.ru — Все права защищены
+      © 2025 xozmag.ru - Все права защищены
     </div>
 
   </footer>

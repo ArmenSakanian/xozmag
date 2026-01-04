@@ -71,7 +71,6 @@ import {
 } from "@fortawesome/free-regular-svg-icons";
 
 library.add(
-  // fas
   faArrowLeft,
   faArrowRightArrowLeft,
   faBarcode,

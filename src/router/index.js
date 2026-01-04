@@ -1,58 +1,70 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-/* ✅ Главную страницу — НЕ lazy */
+/* ✅ Главную страницу - НЕ lazy */
 import HomePage from "../page/HomePage.vue";
 
-/* Остальные — lazy */
-const LoginPage   = () => import("../page/LoginPage.vue");
+/* Остальные - lazy */
+const LoginPage = () => import("../page/LoginPage.vue");
 const BarcodePage = () => import("../page/BarcodePage.vue");
-const ProductPage = () => import("../page/ProductPage.vue");
-const Catalog = () => import("../page/catalog.vue");
-const Aboutus = () => import("../page/aboutus.vue");
 
+const CatalogPage = () => import("../page/catalog.vue");
+const AboutusPage = () => import("../page/aboutus.vue");
+const ContactPage = () => import("../page/contact.vue");
 
+/* ✅ SEO карточка товара (то, что в sitemap: /product/:slug) */
+const ProductCartPage = () => import("@/page/ProductCartPage.vue");
+
+/* admin */
+const AdminPanel = () => import("@/admin/AdminPanel.vue");
+const AdminBarcodeLabelSizesPage = () => import("@/admin/BarcodeLabelSizesPage.vue");
+const AdminCategoriesPage = () => import("@/admin/AdminCategoriesPage.vue");
+const AdminProductsPage = () => import("@/admin/AdminProductsPage.vue");
+const AdminAttributes = () => import("@/admin/AdminAttributes.vue");
+const AdminFunctions = () => import("@/admin/AdminFunctions.vue");
+const AdminOrder = () => import("@/admin/AdminOrder.vue");
+
+const NotFoundPage = () => import("../page/NotFoundPage.vue");
 
 const routes = [
   { path: "/", name: "home", component: HomePage },
-  { path: "/product", name: "product_v1", component: ProductPage },
-  { path: "/aboutus", name: "aboutus", component: Aboutus },
 
-  { path: "/login", name: "login", component: LoginPage },
-  { path: "/catalog", name: "catalog", component: Catalog },
+  // ✅ Старый путь /product не используем: чтобы не было дублей - редиректим в каталог
+  { path: "/product", redirect: "/catalog" },
+
+  { path: "/catalog", name: "catalog", component: CatalogPage },
+  { path: "/aboutus", name: "aboutus", component: AboutusPage },
+  { path: "/contact", name: "contact", component: ContactPage },
+
+  // ✅ SEO карточка товара (именно этот URL у тебя в sitemap)
+  {
+    path: "/product/:slug",
+    name: "product",
+    component: ProductCartPage,
+    props: true,
+  },
+
+  // тех.страницы
+  { path: "/login", name: "login", component: LoginPage, meta: { noindex: true } },
+
   {
     path: "/barcode",
     name: "barcode",
     component: BarcodePage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, noindex: true },
   },
 
-  /* admin */
-  { path: "/admin", component: () => import("@/admin/AdminPanel.vue") },
-  { path: "/admin/barcode", component: () => import("@/admin/BarcodeLabelSizesPage.vue") },
-  { path: "/admin/categories", component: () => import("@/admin/AdminCategoriesPage.vue") },
-  { path: "/admin/products", component: () => import("@/admin/AdminProductsPage.vue") },
-  { path: "/admin/attributes", component: () => import("@/admin/AdminAttributes.vue") },
-  { path: "/admin/functions", component: () => import("@/admin/AdminFunctions.vue") },
-  { path: "/admin/order", component: () => import("@/admin/AdminOrder.vue") },
+  // admin (тех.раздел)
+  { path: "/admin", component: AdminPanel, meta: { noindex: true } },
+  { path: "/admin/barcode", component: AdminBarcodeLabelSizesPage, meta: { noindex: true } },
+  { path: "/admin/categories", component: AdminCategoriesPage, meta: { noindex: true } },
+  { path: "/admin/products", component: AdminProductsPage, meta: { noindex: true } },
+  { path: "/admin/attributes", component: AdminAttributes, meta: { noindex: true } },
+  { path: "/admin/functions", component: AdminFunctions, meta: { noindex: true } },
+  { path: "/admin/order", component: AdminOrder, meta: { noindex: true } },
 
-/* карточка товара v2 */
-{
-  path: "/product/:slug",
-  name: "product",
-  component: () => import("@/page/ProductCartPage.vue"),
-  props: true,
-},
-
-
-
-  // ✅ 404 — последний
-  {
-    path: "/:pathMatch(.*)*",
-    name: "notfound",
-    component: () => import("../page/NotFoundPage.vue"),
-  },
+  // ✅ 404 - последний
+  { path: "/:pathMatch(.*)*", name: "notfound", component: NotFoundPage, meta: { noindex: true } },
 ];
-
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,7 +83,7 @@ async function fetchMe() {
   const res = await fetch("/api/auth/me.php", {
     method: "GET",
     credentials: "same-origin",
-    headers: { "Accept": "application/json" },
+    headers: { Accept: "application/json" },
   }).catch(() => null);
 
   if (!res) return null;
@@ -104,7 +116,7 @@ router.beforeEach(async (to) => {
   const isAdminPath = to.path.startsWith("/admin");
   const needsAuth = Boolean(to.meta.requiresAuth) || isAdminPath;
 
-  // Если пользователь уже залогинен и лезет на /login — отправим дальше
+  // Если пользователь уже залогинен и лезет на /login - отправим дальше
   if (to.path === "/login") {
     const me = await getMe();
     if (me) {
@@ -123,7 +135,6 @@ router.beforeEach(async (to) => {
   }
 
   if (isAdminPath && me.role !== "admin") {
-    // не админ — в админку нельзя
     return "/";
   }
 

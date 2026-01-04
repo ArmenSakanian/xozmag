@@ -1,22 +1,19 @@
-# ================= CANONICAL: https + no-www (без петли за nginx) =================
+# ================= CANONICAL: https + no-www =================
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # www -> без www (сразу на https)
   RewriteCond %{HTTP_HOST} ^www\.xozmag\.ru$ [NC]
   RewriteRule ^ https://xozmag.ru%{REQUEST_URI} [R=301,L]
 
-  # http -> https (учитываем, что SSL может быть на nginx, поэтому проверяем X-Forwarded-Proto)
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
   RewriteRule ^ https://xozmag.ru%{REQUEST_URI} [R=301,L]
 
-  # ================= TRASH URLS: 410 Gone (чтобы исчезли из поиска) =================
+  # ================= TRASH URLS: 410 Gone =================
   RewriteRule ^jp(/|$) - [G,L]
   RewriteRule ^catalog/.*\.html$ - [G,L]
   RewriteRule ^catalog/cid/ - [G,L]
 
-  # ✅ помечаем admin/barcode как noindex (ENV)
   RewriteCond %{REQUEST_URI} ^/(admin|barcode)(/|$) [NC]
   RewriteRule ^ - [E=NOINDEX:1]
 </IfModule>
@@ -24,19 +21,20 @@
 # ================= NOINDEX HEADER for admin + barcode =================
 <IfModule mod_headers.c>
   Header always set X-Robots-Tag "noindex, nofollow" env=NOINDEX
-
-  # (опционально, но полезно) чтобы админка/сканер не кешировались в браузере
   Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=NOINDEX
+
+  # sitemap gz mime (не обязательно, но аккуратно)
+  <FilesMatch "\.xml\.gz$">
+    Header set Content-Type "application/gzip"
+  </FilesMatch>
 </IfModule>
 
 # ================= CACHE FOR STATIC =================
 <IfModule mod_headers.c>
-  # обычные статики (не обязательно хэшированные)
   <FilesMatch "\.(webp|png|jpe?g|gif|svg|css|js|woff2?|ttf)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 
-  # хэшированные ассеты сборки (/assets/...) — можно на год + immutable
   <If "%{REQUEST_URI} =~ m#^/assets/#">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </If>
@@ -46,8 +44,8 @@
   ExpiresActive On
   ExpiresByType image/webp "access plus 30 days"
   ExpiresByType image/jpeg "access plus 30 days"
-  ExpiresByType image/png  "access plus 30 days"
-  ExpiresByType image/gif  "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/gif "access plus 30 days"
   ExpiresByType image/svg+xml "access plus 30 days"
   ExpiresByType text/css "access plus 30 days"
   ExpiresByType application/javascript "access plus 30 days"
@@ -55,16 +53,20 @@
   ExpiresByType font/woff  "access plus 1 year"
 </IfModule>
 
-# ================= SPA ROUTES =================
+# ================= SPA ROUTES (ТОЛЬКО известные) =================
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # если файл/папка существует — не трогаем (важно для /api, /assets, картинок и т.д.)
+  # если файл/папка существует - не трогаем
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # все остальное -> index.html
+  # разрешаем SPA только на этих путях
+  RewriteCond %{REQUEST_URI} ^/(|catalog|product|aboutus|contact|login|barcode|admin)(/|$) [NC]
   RewriteRule . /index.html [L]
+
+  # всё остальное - честный 404
+  RewriteRule . - [R=404,L]
 </IfModule>

@@ -92,7 +92,7 @@
                 Поставщиков: <b>{{ filtered.length }}</b>
               </div>
               <div class="hint">
-                Нажми <b>«Открыть»</b> — покажет товары на сайте. Сверху будет
+                Нажми <b>«Открыть»</b> - покажет товары на сайте. Сверху будет
                 кнопка <b>«Выгрузить Excel»</b>.
               </div>
             </div>
@@ -224,7 +224,7 @@
 
                 <div class="kv">
                   <div class="k">Артикул</div>
-                  <div class="v mono">{{ p.article || "—" }}</div>
+                  <div class="v mono">{{ p.article || "-" }}</div>
                 </div>
 
                 <div class="kv">

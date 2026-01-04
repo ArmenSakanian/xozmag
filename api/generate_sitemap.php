@@ -1,17 +1,18 @@
 <?php
 // api/generate_sitemap.php
-// Результат: ../sitemap-data.xml и ../sitemap-data.xml.gz
-// Теперь:
-// - категории -> /catalog?cat=<slug> (если slug пустой -> code -> fallback id)
-// - товары    -> /product/<slug>     (если slug пустой -> id)
+// Пишет:
+// - ../sitemap-data.xml
+// - ../sitemap-data.xml.gz
+// - ../sitemap.xml (sitemap index)
 
 declare(strict_types=1);
 
 $BASE = "https://xozmag.ru";
 
-// ВАЖНО: не перетираем /sitemap.xml (он будет sitemap-index)
-$outPath   = __DIR__ . "/../sitemap-data.xml";
-$outGzPath = __DIR__ . "/../sitemap-data.xml.gz";
+$outDataPath   = __DIR__ . "/../sitemap-data.xml";
+$outDataGzPath = __DIR__ . "/../sitemap-data.xml.gz";
+$outIndexPath  = __DIR__ . "/../sitemap.xml";
+$staticPath    = __DIR__ . "/../sitemap-static.xml";
 
 if (php_sapi_name() !== "cli") {
   header("Content-Type: text/plain; charset=UTF-8");
@@ -97,13 +98,12 @@ function fetchIds(PDO $pdo, string $table, string $idCol = "id"): array {
 }
 
 /**
- * Категории: берём slug, если нет — code, если нет — id.
- * Возвращает массив "ключей", которые подставляются в URL (?cat=KEY)
+ * Категории: берём slug, если нет - code, если нет - id.
+ * URL: /catalog?cat=KEY
  */
 function fetchCategoryKeys(PDO $pdo, string $table): array {
   $cols = tableColumns($pdo, $table);
 
-  // идеальный вариант: slug + code
   if (in_array("slug", $cols, true) && in_array("code", $cols, true)) {
     $stmt = $pdo->query("SELECT slug, code FROM `" . str_replace("`","``",$table) . "` ORDER BY code ASC");
     $out = [];
@@ -116,7 +116,6 @@ function fetchCategoryKeys(PDO $pdo, string $table): array {
     return array_values(array_unique($out));
   }
 
-  // если slug нет, но есть code — используем code (лучше чем id)
   if (in_array("code", $cols, true)) {
     $stmt = $pdo->query("SELECT code FROM `" . str_replace("`","``",$table) . "` ORDER BY code ASC");
     $out = [];
@@ -127,13 +126,12 @@ function fetchCategoryKeys(PDO $pdo, string $table): array {
     return array_values(array_unique($out));
   }
 
-  // крайний fallback: id
   return fetchIds($pdo, $table, "id");
 }
 
 /**
- * Товары: берём slug, если пусто — id.
- * Возвращает массив "ключей", которые подставляются в URL (/product/KEY)
+ * Товары: берём slug, если пусто - id.
+ * URL: /product/KEY
  */
 function fetchProductKeys(PDO $pdo, string $table): array {
   $cols = tableColumns($pdo, $table);
@@ -150,7 +148,6 @@ function fetchProductKeys(PDO $pdo, string $table): array {
     return array_values(array_unique($out));
   }
 
-  // если slug колонки нет — старый режим
   return fetchIds($pdo, $table, "id");
 }
 
@@ -186,6 +183,7 @@ $urls = array_values(array_unique($urls));
 
 $today = gmdate("Y-m-d");
 
+// data sitemap
 $xml = [];
 $xml[] = '<?xml version="1.0" encoding="UTF-8"?>';
 $xml[] = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
@@ -200,8 +198,28 @@ foreach ($urls as $u) {
 $xml[] = "</urlset>";
 $xmlStr = implode("\n", $xml) . "\n";
 
-atomicWrite($outPath, $xmlStr);
-atomicWrite($outGzPath, gzencode($xmlStr, 9));
+atomicWrite($outDataPath, $xmlStr);
+atomicWrite($outDataGzPath, gzencode($xmlStr, 9));
 
 echo "OK: wrote sitemap-data.xml (" . strlen($xmlStr) . " bytes)\n";
 echo "OK: wrote sitemap-data.xml.gz\n";
+
+// sitemap index (авто-обновление lastmod)
+$staticLastmod = file_exists($staticPath) ? gmdate("Y-m-d", filemtime($staticPath)) : $today;
+$dataLastmod   = file_exists($outDataGzPath) ? gmdate("Y-m-d", filemtime($outDataGzPath)) : $today;
+
+$idx = [];
+$idx[] = '<?xml version="1.0" encoding="UTF-8"?>';
+$idx[] = '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+$idx[] = '  <sitemap>';
+$idx[] = '    <loc>' . xmlEscape($BASE . '/sitemap-static.xml') . '</loc>';
+$idx[] = '    <lastmod>' . $staticLastmod . '</lastmod>';
+$idx[] = '  </sitemap>';
+$idx[] = '  <sitemap>';
+$idx[] = '    <loc>' . xmlEscape($BASE . '/sitemap-data.xml.gz') . '</loc>';
+$idx[] = '    <lastmod>' . $dataLastmod . '</lastmod>';
+$idx[] = '  </sitemap>';
+$idx[] = '</sitemapindex>';
+
+atomicWrite($outIndexPath, implode("\n", $idx) . "\n");
+echo "OK: wrote sitemap.xml (index)\n";
