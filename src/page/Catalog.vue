@@ -65,7 +65,7 @@
 
           <!-- ✅ TYPE (только если выбрана категория 1 уровня) -->
           <div
-            v-if="isRootCategorySelected === true"
+v-if="isRootCategorySelected === true && typeOptions.length"
             class="filter-block filter-type"
             :class="{ open: openFilters.type }"
           >
@@ -457,7 +457,7 @@
           <!-- ROOT MENU -->
           <div v-if="mobileView === 'root'" class="mfil-list">
             <div
-              v-if="isRootCategorySelected === true"
+v-if="isRootCategorySelected === true && typeOptions.length"
               class="mfil-item"
               @click="mobileView = 'type'"
             >
@@ -1155,13 +1155,24 @@ const isRootCategorySelected = computed(() => {
   if (!n) return false;
   return !n.parent;
 });
+const isRootLeafCategory = computed(() => {
+  if (isRootCategorySelected.value !== true) return false;
+  const n = selectedCatNode.value;
+  return !!n && (!n.children || n.children.length === 0);
+});
 
 /* ✅ атрибуты: только если НЕ root или root + выбран хотя бы 1 type */
 const allowAttrFilters = computed(() => {
   if (!hasActiveCategory.value) return false;
   if (isRootCategorySelected.value === null) return false;
+
+  // ✅ root и нет подкатегорий -> показываем атрибуты сразу
+  if (isRootLeafCategory.value) return true;
+
+  // обычная логика
   return isRootCategorySelected.value === false || typeModel.value.length > 0;
 });
+
 
 /* ✅ TYPE options = ВСЕ потомки root категории (1.1, 1.1.1, ...) */
 const typeOptions = computed(() => {

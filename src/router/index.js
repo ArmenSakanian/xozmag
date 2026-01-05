@@ -22,7 +22,7 @@ const AdminProductsPage = () => import("@/admin/AdminProductsPage.vue");
 const AdminAttributes = () => import("@/admin/AdminAttributes.vue");
 const AdminFunctions = () => import("@/admin/AdminFunctions.vue");
 const AdminOrder = () => import("@/admin/AdminOrder.vue");
-
+const AdminPhotoGallery = () => import("@/admin/AdminPhotoGallery.vue");
 const NotFoundPage = () => import("../page/NotFoundPage.vue");
 
 const routes = [
@@ -61,6 +61,7 @@ const routes = [
   { path: "/admin/attributes", component: AdminAttributes, meta: { noindex: true } },
   { path: "/admin/functions", component: AdminFunctions, meta: { noindex: true } },
   { path: "/admin/order", component: AdminOrder, meta: { noindex: true } },
+  { path: "/admin/photogallery", component: AdminPhotoGallery, meta: { noindex: true } },
 
   // ✅ 404 - последний
   { path: "/:pathMatch(.*)*", name: "notfound", component: NotFoundPage, meta: { noindex: true } },

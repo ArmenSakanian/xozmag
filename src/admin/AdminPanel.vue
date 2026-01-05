@@ -61,6 +61,14 @@
         </span>
         <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
+      <a href="/admin/photogallery" class="tile">
+        <span class="ico"><Fa :icon="['fa','image']" /></span>
+        <span class="t">
+          <span class="t-title">Слайдер</span>
+          <span class="t-desc">добавить/удалить изображения слайдера</span>
+        </span>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
+      </a>
     </section>
   </div>
 </template>

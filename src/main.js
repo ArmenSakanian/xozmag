@@ -8,6 +8,7 @@ import './assets/admin.css'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
+import "swiper/css/effect-fade";
 import './assets/swiper-custom.css'
 
 import './fontawesome'

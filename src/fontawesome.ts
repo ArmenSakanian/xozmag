@@ -47,7 +47,6 @@ import {
   faClock,
   faCircleXmark,
   faExpand,
-  // ✅ ДОБАВИТЬ (нужно для AdminFunctions.vue)
   faArrowsRotate,
   faFileCode,
   faFileArrowUp,
@@ -57,8 +56,7 @@ import {
   faWandMagicSparkles,
   faFloppyDisk,
   faScroll,
-  // (не обязательно) если хочешь оставить ['fas','image']
-  // faImage,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -66,7 +64,6 @@ import {
   faFaceMeh,
   faFileExcel as faFileExcelR,
   faFileLines,
-  faImage,
   faRectangleList,
 } from "@fortawesome/free-regular-svg-icons";
 
@@ -116,7 +113,6 @@ library.add(
   faClock,
   faCircleXmark,
   faExpand,
-  // ✅ ДОБАВИТЬ
   faArrowsRotate,
   faFileCode,
   faFileArrowUp,
@@ -126,8 +122,6 @@ library.add(
   faWandMagicSparkles,
   faFloppyDisk,
   faScroll,
-
-  // far
   faCopyR,
   faFaceMeh,
   faFileExcelR,

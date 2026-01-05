@@ -22,9 +22,10 @@
           <div class="heroActions">
             <RouterLink class="btn primary" to="/catalog">Открыть каталог</RouterLink>
 
-            <RouterLink class="btn ghost" :to="{ path: '/', query: { scroll: 'contact' } }">
-              Контакты
-            </RouterLink>
+<RouterLink class="btn ghost" to="/contact">
+  Контакты
+</RouterLink>
+
 
             <a class="btn link" :href="yandexLink" target="_blank" rel="noopener">
               Читать отзывы

@@ -1,24 +1,30 @@
 <template>
-<section
-  ref="sliderEl"
-  id="photo"
-  class="full-slider"
-  aria-label="Фото галерея"
->    <Swiper
-      class="full-swiper"
-      :modules="swiperModules"
-      :slides-per-view="1"
-      :loop="slides.length > 1"
-      :speed="650"
-      navigation
-      :pagination="{ clickable: true }"
-      :autoplay="autoplayEnabled ? autoplayOptions : false"
-      :allow-touch-move="!uiLock"
-      @swiper="onSwiper"
-    >
-      <SwiperSlide v-for="(src, i) in slides" :key="i">
+  <section
+    ref="sliderEl"
+    id="photo"
+    class="full-slider"
+    aria-label="Фото галерея"
+  >
+    <!-- ✅ Если есть фото — показываем Swiper -->
+<Swiper
+  v-if="slides.length"
+  :key="swiperKey"
+  class="full-swiper"
+  :modules="swiperModules"
+  :slides-per-view="1"
+  :loop="slides.length > 1"
+  :speed="1100"
+  effect="fade"
+  :fade-effect="{ crossFade: true }"
+  navigation
+  :pagination="{ clickable: true }"
+  :autoplay="autoplayEnabled ? autoplayOptions : false"
+  :allow-touch-move="!uiLock"
+  @swiper="onSwiper"
+>
+
+      <SwiperSlide v-for="(src, i) in slides" :key="src + ':' + i">
         <div class="slide">
-          <!-- clip только для картинки/blur -->
           <div class="clip">
             <div class="bg" :style="{ backgroundImage: `url(${src})` }" aria-hidden="true"></div>
             <img class="slide-img" :src="src" :alt="`Slide ${i + 1}`" loading="lazy" decoding="async" />
@@ -27,8 +33,11 @@
         </div>
       </SwiperSlide>
     </Swiper>
+    <div v-else class="full-swiper empty-hero" aria-hidden="true">
+      <div class="empty-bg"></div>
+      <div class="shade"></div>
+    </div>
 
-    <!-- ✅ ПОИСК - ОДИН РАЗ, ПОВЕРХ ВСЕГО SWIPER (НЕ ВНУТРИ SLIDE) -->
     <div class="search-layer" aria-label="Поиск по каталогу">
       <div
         class="search-shell"
@@ -53,10 +62,12 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Navigation, Pagination, Autoplay, EffectFade } from "swiper/modules";
 import HomeSearch from "@/components/HomeSearch.vue";
 
 const sliderEl = ref(null);
+
+const API_GET = "/api/admin/photogallery/get_photo_gallery.php";
 
 /** ✅ включать/выключать автолистание тут */
 const autoplayEnabled = true;
@@ -68,17 +79,30 @@ const autoplayOptions = {
 };
 
 const swiperModules = autoplayEnabled
-  ? [Navigation, Pagination, Autoplay]
-  : [Navigation, Pagination];
+  ? [Navigation, Pagination, Autoplay, EffectFade]
+  : [Navigation, Pagination, EffectFade];
 
-const slides = [
-  "/img/photo-shop/Slide1.webp",
-  "/img/photo-shop/Slide2.webp",
-  "/img/photo-shop/Slide3.webp",
-  "/img/photo-shop/Slide4.webp",
-  "/img/photo-shop/Slide5.webp",
-  "/img/photo-shop/Slide6.webp",
-];
+
+const slides = ref([]);
+const swiperKey = ref(0);
+
+/* ===== Load slides from API ===== */
+async function loadSlides() {
+  try {
+    const r = await fetch(API_GET);
+    const j = await r.json();
+
+    const urls = (j?.ok && Array.isArray(j.items))
+      ? j.items.map(x => x.url).filter(Boolean)
+      : [];
+
+    slides.value = urls; // ✅ НИКАКИХ fallback
+    swiperKey.value++;   // пересборка Swiper при изменении набора
+  } catch (e) {
+    slides.value = [];   // ✅ при ошибке тоже пусто
+    swiperKey.value++;
+  }
+}
 
 /* ✅ vars только на .full-slider (без html/body) */
 const setLocalVars = () => {
@@ -88,7 +112,6 @@ const setLocalVars = () => {
   const header = document.querySelector("header");
   const headerH = header ? header.offsetHeight : 0;
 
-  // ширина скроллбара (обычно 0 на мобилках)
   const sbw = window.innerWidth - document.documentElement.clientWidth;
 
   el.style.setProperty("--header-h", `${headerH}px`);
@@ -97,6 +120,7 @@ const setLocalVars = () => {
 
 onMounted(() => {
   setLocalVars();
+  loadSlides();
   window.addEventListener("resize", setLocalVars, { passive: true });
 });
 
@@ -127,16 +151,14 @@ function onUiLock(v) {
 }
 </script>
 
-
 <style scoped>
 /* ========= ROOT SLIDER ========= */
 .full-slider {
   width: calc(100vw - var(--sbw, 0px));
   margin-left: calc(50% - 50vw + (var(--sbw, 0px) / 2));
   position: relative;
-  overflow-x: clip; /* или hidden */
+  overflow-x: clip;
 }
-
 
 /* swiper wrapper */
 .full-swiper {
@@ -144,7 +166,7 @@ function onUiLock(v) {
   min-height: 320px;
   background: #0f1115;
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-  overflow: visible; /* dropdown не режем */
+  overflow: visible;
 }
 
 /* Swiper часто ставит overflow:hidden - переопределяем */
@@ -187,11 +209,11 @@ function onUiLock(v) {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover; /* максимум видно */
+  object-fit: cover;
   object-position: center;
 }
 
-/* затемнение (если надо темнее - см. ниже примечание) */
+/* затемнение */
 .shade {
   position: absolute;
   inset: 0;
@@ -200,6 +222,18 @@ function onUiLock(v) {
   background:
     radial-gradient(1200px 420px at 50% 70%, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0) 55%),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.46) 0%, rgba(0, 0, 0, 0.22) 42%, rgba(0, 0, 0, 0.88) 100%);
+}
+
+/* ========= EMPTY HERO ========= */
+.empty-hero {
+  position: relative;
+}
+.empty-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 360px at 50% 40%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(to bottom, #0f1115, #0b0d10);
 }
 
 /* ========= SEARCH LAYER ========= */
@@ -214,13 +248,12 @@ function onUiLock(v) {
 
   pointer-events: none;
 
-  /* ✅ выше и компактнее */
   padding: 10px;
   padding-top: clamp(10px, 4.2vh, 46px);
 }
 
 .search-shell {
-  width: min(520px, 92vw); /* короче */
+  width: min(520px, 92vw);
   pointer-events: auto;
 }
 
@@ -251,7 +284,6 @@ function onUiLock(v) {
   font-size: 14px;
 }
 
-/* сам инпут - без подсказок, просто поле */
 .gallery-search:deep(.search-input) {
   color: rgba(255, 255, 255, 0.96);
   font-size: 15px;
@@ -260,7 +292,6 @@ function onUiLock(v) {
   color: rgba(255, 255, 255, 0.40);
 }
 
-/* кнопки стекло */
 .gallery-search:deep(.search-scan),
 .gallery-search:deep(.search-clear) {
   width: 38px;
@@ -277,7 +308,7 @@ function onUiLock(v) {
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* ========= DROPDOWN (glass + читаемо + норм скролл) ========= */
+/* ========= DROPDOWN ========= */
 .gallery-search:deep(.dd) {
   z-index: 9999;
 
@@ -297,7 +328,6 @@ function onUiLock(v) {
   padding: 8px 8px 12px;
 }
 
-/* читаемость */
 .gallery-search:deep(.dd-title),
 .gallery-search:deep(.dd-pill),
 .gallery-search:deep(.dd-code) {
