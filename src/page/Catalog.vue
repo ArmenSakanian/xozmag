@@ -1670,7 +1670,9 @@ function resetAllFilters() {
 
 /* ================= navigation ================= */
 function openProduct(p) {
-  router.push({ name: "product", params: { slug: p.slug || String(p.id) } });
+  const slug = p.slug || String(p.id);
+  const href = router.resolve({ name: "product", params: { slug } }).href;
+  window.location.href = href;
 }
 
 /* ================= BODY LOCK (only filters modal) ================= */
@@ -1858,7 +1860,6 @@ watch(showMobileFilters, (open) => {
   transform: translateY(-1px);
 }
 
-/* ✅ когда открыт список - радиус только сверху (низ = 0) */
 .filter-block.open {
   z-index: 200;
   border-radius: 14px 14px 0 0;
@@ -1918,7 +1919,6 @@ watch(showMobileFilters, (open) => {
   color: white;
 }
 
-/* ✅ чтобы визуально “сливалось” при открытом списке */
 .filter-block.open .filter-dropdown {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;

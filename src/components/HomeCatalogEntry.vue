@@ -152,9 +152,12 @@ watch(
   display:grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+  margin: 0 auto;
 }
 
 .cat-card{
+  width: 250px;
+  height: auto;
   text-align:left;
   border: 1px solid var(--border-soft);
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.90));
@@ -168,13 +171,12 @@ watch(
   flex-direction: column;
   gap: 10px;
 
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  transition: .6s;
 }
 
 .cat-card:hover{
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: rgba(4,0,255,.16);
+  transform: translateY(-5px);
+  box-shadow: 0 0 1px 1px rgb(4 0 255 / 40%);
 }
 
 .cat-photo{

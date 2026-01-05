@@ -9,18 +9,17 @@
       <div class="header-top-container">
         <!-- LOGO -->
         <div class="logo">
-          <a href="/">
-            <img src="@/assets/logo.webp" alt="Logo" />
+          <RouterLink to="/" class="logo-link" @click="closeMenu">
+            <img src="@/assets/logo.webp" alt="Логотип" />
             <h1>Все Для Дома</h1>
-          </a>
+          </RouterLink>
         </div>
 
         <!-- DESKTOP NAV -->
-        <nav class="nav">
+        <nav class="nav" aria-label="Навигация по сайту">
           <RouterLink class="nav-item" to="/catalog">Каталог</RouterLink>
-          <a class="nav-item" href="/aboutus">О нас</a>
-          <a class="nav-item" href="/contact">Контакты</a>
-          <a class="nav-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
+          <RouterLink class="nav-item" to="/aboutus">О нас</RouterLink>
+          <RouterLink class="nav-item" to="/contact">Контакты</RouterLink>
         </nav>
 
         <!-- BURGER (mobile) -->
@@ -28,7 +27,8 @@
           class="burger"
           type="button"
           @click="mobileOpen = !mobileOpen"
-          aria-label="Открыть меню"
+          :aria-label="mobileOpen ? 'Закрыть меню' : 'Открыть меню'"
+          :aria-expanded="mobileOpen"
         >
           <span :class="{ open: mobileOpen }"></span>
           <span :class="{ open: mobileOpen }"></span>
@@ -40,9 +40,8 @@
     <!-- ===== MOBILE MENU ===== -->
     <div class="mobile-menu" :class="{ open: mobileOpen }">
       <RouterLink to="/catalog" class="mobile-item" @click="closeMenu">Каталог</RouterLink>
-      <a class="mobile-item" href="/aboutus">О нас</a>
-      <a class="mobile-item" href="/contact">Контакты</a>
-      <a class="mobile-item" @click.prevent="scrollToSection('photo')">Фотографии</a>
+      <RouterLink to="/aboutus" class="mobile-item" @click="closeMenu">О нас</RouterLink>
+      <RouterLink to="/contact" class="mobile-item" @click="closeMenu">Контакты</RouterLink>
     </div>
   </header>
 </template>
@@ -69,34 +68,6 @@ function handleResize() {
   updateHeaderH();
 }
 
-/* =========================
-   SCROLL NAVIGATION
-========================= */
-function scrollToSection(id) {
-  const currentPath = route.path;
-
-  if (currentPath !== "/") {
-    mobileOpen.value = false;
-    window.location.href = `/?scroll=${id}`;
-    return;
-  }
-  doScroll(id);
-}
-
-function doScroll(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  const hh = headerRef.value?.offsetHeight || 0;
-
-  window.scrollTo({
-    top: el.offsetTop - hh,
-    behavior: "smooth",
-  });
-
-  mobileOpen.value = false;
-}
-
 function closeMenu() {
   mobileOpen.value = false;
 }
@@ -120,10 +91,6 @@ watch(mobileOpen, () => updateHeaderH());
 onMounted(() => {
   updateHeaderH();
   window.addEventListener("resize", handleResize, { passive: true });
-
-  const params = new URLSearchParams(window.location.search);
-  const section = params.get("scroll");
-  if (section) setTimeout(() => doScroll(section), 400);
 });
 
 onBeforeUnmount(() => {
@@ -146,7 +113,9 @@ onBeforeUnmount(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: #1e1e1e;
+
+  /* Чуть спокойнее и “дороже”, чем чисто черный */
+  background: rgba(17, 24, 39, 0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: -1;
@@ -154,7 +123,7 @@ onBeforeUnmount(() => {
 
 /* ===== TOP ROW ===== */
 .header-top {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .header-top-container {
@@ -165,7 +134,6 @@ onBeforeUnmount(() => {
 
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 14px;
 }
 
@@ -173,12 +141,12 @@ onBeforeUnmount(() => {
 .logo {
   margin-right: auto;
 }
-.logo a {
+
+.logo-link{
   display: flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: var(--text-main);
   white-space: nowrap;
 }
 
@@ -193,12 +161,12 @@ onBeforeUnmount(() => {
 .logo h1 {
   margin: 0;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 1000;
   letter-spacing: -0.02em;
   color: var(--secondary-accent);
 }
 
-/* DESKTOP NAV */
+/* ===== DESKTOP NAV ===== */
 .nav {
   margin-left: auto;
   display: flex;
@@ -206,49 +174,43 @@ onBeforeUnmount(() => {
   gap: 18px;
 }
 
+/* Ссылки “профессионально”: без кнопок, с тонким underline */
 .nav-item {
   position: relative;
   text-decoration: none;
   cursor: pointer;
 
-  color: var(--secondary-accent);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 14.5px;
-  font-weight: 800;
-  padding: 10px 10px;
-  border-radius: 12px;
+  font-weight: 850;
 
-  transition: background 0.18s ease, transform 0.18s ease;
+  padding: 10px 6px;
+  border-bottom: 2px solid transparent;
+
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .nav-item:hover {
+  color: rgba(255, 255, 255, 0.95);
+  border-bottom-color: rgba(252, 200, 34, 0.55);
   transform: translateY(-1px);
 }
 
-.nav-item::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  width: 0;
-  height: 2px;
-  background: white;
-  transform: translateX(-50%);
-  transition: width 0.2s ease;
-  opacity: 0.9;
-}
-.nav-item:hover::after {
-  width: 60%;
+/* Активная как в футере: выделение + underline */
+.nav-item.router-link-active {
+  color: var(--secondary-accent);
+  border-bottom-color: rgba(252, 200, 34, 0.85);
+  transform: none;
 }
 
-/* BURGER */
+/* ===== BURGER ===== */
 .burger {
   display: none;
   margin-left: auto;
 
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 12px;
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
 
   width: 44px;
@@ -264,7 +226,7 @@ onBeforeUnmount(() => {
   position: absolute;
   width: 22px;
   height: 2px;
-  background: var(--text-main);
+  background: rgba(255,255,255,0.92);
   border-radius: 3px;
   transition: transform 0.25s ease, opacity 0.2s ease;
 }
@@ -281,10 +243,13 @@ onBeforeUnmount(() => {
 .mobile-menu {
   position: fixed;
   top: var(--hdr-h);
-width: 100%;
+  left: 0;
+  right: 0;
+
   background: var(--bg-panel);
   box-shadow: var(--shadow-lg);
   padding: 14px;
+
   display: grid;
   gap: 10px;
 
@@ -308,7 +273,6 @@ width: 100%;
   justify-content: space-between;
 
   text-decoration: none;
-  cursor: pointer;
 
   padding: 12px 12px;
   border-radius: 14px;
@@ -319,7 +283,7 @@ width: 100%;
 
   color: var(--text-main);
   font-size: 15.5px;
-  font-weight: 900;
+  font-weight: 1000;
 
   transition: transform 0.18s ease, filter 0.18s ease;
 }
@@ -328,16 +292,23 @@ width: 100%;
   transform: translateY(-1px);
   filter: brightness(1.02);
 }
+
 .mobile-item::after {
   content: "›";
   font-size: 18px;
   color: var(--text-muted);
 }
 
+/* Активный пункт в мобиле */
+.mobile-item.router-link-active{
+  border-color: rgba(252, 200, 34, 0.45);
+  background: rgba(252, 200, 34, 0.10);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
   .logo h1 { font-size: 16px; }
-  .nav { gap: 10px; }
+  .nav { gap: 12px; }
 }
 
 @media (max-width: 768px) {

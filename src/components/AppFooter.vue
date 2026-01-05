@@ -1,274 +1,213 @@
 <template>
-  <footer class="footer">
+  <footer class="footer" role="contentinfo">
+    <div class="footer-wrap">
+      <!-- Бренд -->
+      <div class="brand">
+        <img
+          src="@/assets/logo.webp"
+          class="logo"
+          alt="Логотип xozmag.ru"
+          width="118"
+          height="118"
+          decoding="async"
+        />
 
-    <div class="footer-inner">
-
-      <!-- ЛОГОТИП + ОПИСАНИЕ -->
-      <div class="footer-col footer-logo">
-<img
-  src="@/assets/logo.webp"
-  class="logo"
-  alt="Логотип"
-  width="118"
-  height="118"
-  decoding="async"
-/>
-
-
-        <p class="footer-desc">
-          Магазин Все Для Дома.<br>
-          Более 5000 товаров в наличии.
-        </p>
+        <div class="brand-text">
+          <p class="brand-title">Все Для Дома</p>
+          <p class="brand-desc">Более 5000 товаров в наличии.</p>
+        </div>
       </div>
 
-      <!-- МЕНЮ -->
-      <div class="footer-col footer-nav">
-        <h3 class="footer-title">Меню</h3>
+      <!-- Меню -->
+      <nav class="nav" aria-label="Навигация по сайту">
+        <p class="nav-title">Меню</p>
 
-        <a href="/catalog" class="menu-link">Каталог</a>
+        <RouterLink class="nav-link" to="/catalog">Каталог</RouterLink>
+        <RouterLink class="nav-link" to="/aboutus">О нас</RouterLink>
+        <RouterLink class="nav-link" to="/contact">Контакты</RouterLink>
+      </nav>
 
-        <a href="#about" class="menu-link"
-           @click.prevent="scrollToSection('about')">
-          О нас
-        </a>
+      <!-- Контакты -->
+      <div class="contact">
+        <p class="contact-title">Контакты</p>
 
-        <a href="#contact" class="menu-link"
-           @click.prevent="scrollToSection('contact')">
-          Контакты
-        </a>
+        <a class="phone" href="tel:+79258693416">+7 (925) 869-34-16</a>
 
-        <a href="#photo" class="menu-link"
-           @click.prevent="scrollToSection('photo')">
-          Фотографии
-        </a>
-      </div>
-
-      <!-- КОНТАКТЫ -->
-      <div class="footer-col footer-contact">
-        <h3 class="footer-title">Контакты</h3>
-
-        <p class="contact-line">
-          Телефон:<br>
-          <a href="tel:+79258693416" class="phone">
-            +7 (925) 869-34-16
-          </a>
-        </p>
-
-        <p class="contact-line">
-          Адрес:<br>
+        <p class="address">
           Улица Героев Панфиловцев, дом 3
         </p>
       </div>
-
     </div>
 
-    <!-- НИЖНЯЯ ПОЛОСА -->
-    <div class="footer-bottom">
-      © 2025 xozmag.ru - Все права защищены
-    </div>
-
+    <!-- тонкая линия снизу (без текста) -->
+    <div class="footer-line" aria-hidden="true"></div>
   </footer>
 </template>
 
 <script setup>
-function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth" });
-  }
-}
+// ничего не нужно — без скроллов и лишней логики
 </script>
 
 <style scoped>
-/* ===== FOOTER (под твой :root) ===== */
+/* ===== FOOTER (минимал, профессионально, под твой :root) ===== */
 
 .footer{
   background: var(--bg-panel);
   border-top: 1px solid var(--border-soft);
-  box-shadow: 0 -1px 0 rgba(0,0,0,0.02);
   color: var(--text-main);
 }
 
-/* Внутренние отступы */
-.footer-inner{
+.footer-wrap{
   max-width: 1200px;
   margin: 0 auto;
-  padding: 26px 16px 18px;
+  padding: 22px 16px;
 
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  gap: 18px;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 22px;
+  align-items: start;
 }
 
-/* Колонки */
-.footer-col{
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 16px 16px;
-
+/* Brand */
+.brand{
   display: flex;
-  flex-direction: column;
+  gap: 14px;
   align-items: center;
-  text-align: center;
+  min-width: 0;
 }
 
-/* Лого */
 .logo{
-  width: 120px;
-  aspect-ratio: 1 / 1;     /* резервируем высоту сразу */
-  height: auto;
+  width: 74px;
+  height: 74px;
   object-fit: contain;
-  display: block;
 
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
   box-shadow: var(--shadow-sm);
-  margin-bottom: 12px;
+  flex: 0 0 auto;
 }
 
-.footer-desc{
-  margin: 0;
-  max-width: 320px;
+.brand-text{
+  min-width: 0;
+}
 
+.brand-title{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 1000;
+  letter-spacing: -0.01em;
+}
+
+.brand-desc{
+  margin: 6px 0 0;
   font-size: 13.5px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--text-muted);
 }
 
-/* Заголовки */
-.footer-title{
-  margin: 0 0 10px;
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  color: var(--text-main);
+/* Nav */
+.nav{
+  display: grid;
+  align-content: start;
+  gap: 10px;
 }
 
-/* Меню-ссылки */
-.menu-link{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 10px;
-
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
-  box-shadow: var(--shadow-sm);
-
+.nav-title{
+  margin: 0;
+  font-size: 13px;
+  font-weight: 1000;
   color: var(--text-main);
+  letter-spacing: 0.01em;
+}
+
+.nav-link{
+  width: fit-content;
   text-decoration: none;
+
+  color: var(--text-muted);
+  font-weight: 850;
   font-size: 14px;
-  font-weight: 800;
+
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+
+  transition: color .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.nav-link:hover{
+  color: var(--accent);
+  border-bottom-color: rgba(4, 0, 231, 0.22);
+  transform: translateY(-1px);
+}
+
+.nav-link.router-link-active{
+  color: var(--text-main);
+  border-bottom-color: var(--border-soft);
+}
+
+/* Contact */
+.contact{
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.contact-title{
+  margin: 0;
+  font-size: 13px;
+  font-weight: 1000;
+  color: var(--text-main);
+  letter-spacing: 0.01em;
+}
+
+.phone{
+  width: fit-content;
+  display: inline-flex;
+  text-decoration: none;
+
+  color: var(--accent);
+  font-weight: 1000;
+  font-size: 14px;
+
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(4, 0, 231, 0.18);
 
   transition: transform .18s ease, filter .18s ease, border-color .18s ease;
 }
 
-.menu-link:last-child{ margin-bottom: 0; }
-
-.menu-link:hover{
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-  border-color: rgba(4, 0, 231, 0.22);
-}
-
-.menu-link:active{
-  transform: translateY(0);
-}
-
-/* Контакты */
-.contact-line{
-  margin: 0 0 12px;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
-
-.contact-line:last-child{ margin-bottom: 0; }
-
-.phone{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-top: 6px;
-  padding: 8px 12px;
-
-  background: rgba(4, 0, 231, 0.06);
-  border: 1px solid rgba(4, 0, 231, 0.16);
-  border-radius: var(--radius-lg);
-
-  color: var(--accent);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 900;
-
-  transition: transform .18s ease, filter .18s ease;
-}
-
 .phone:hover{
   transform: translateY(-1px);
-  filter: brightness(1.05);
+  filter: brightness(1.03);
+  border-bottom-color: rgba(4, 0, 231, 0.30);
 }
 
-.phone:active{
-  transform: translateY(0);
+.address{
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 340px;
 }
 
-/* Нижняя полоса */
-.footer-bottom{
-  text-align: center;
-  padding: 14px 16px 18px;
-
-  color: var(--text-light);
-  font-size: 13px;
-
+/* bottom line */
+.footer-line{
+  height: 10px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(240,242,247,1));
   border-top: 1px solid var(--border-soft);
-  background: linear-gradient(to bottom, rgba(244,246,251,0), rgba(244,246,251,1));
 }
 
-/* ===== Responsive ===== */
+/* Responsive */
 @media (max-width: 980px){
-  .footer-inner{
+  .footer-wrap{
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 18px 12px 14px;
-  }
-}
-
-@media (max-width: 600px){
-  .footer-col{
-    padding: 14px 14px;
+    gap: 18px;
+    padding: 18px 12px;
   }
 
-.logo{ 
-  width: 110px; 
-}
-
-  .footer-title{
-    font-size: 15px;
-  }
-
-  .menu-link{
-    font-size: 13.5px;
-    padding: 10px 12px;
-  }
-
-  .footer-desc,
-  .contact-line{
-    font-size: 13px;
-  }
-
-  .footer-bottom{
-    font-size: 12.5px;
-    padding: 12px 12px 16px;
+  .logo{
+    width: 68px;
+    height: 68px;
   }
 }
 </style>
-
