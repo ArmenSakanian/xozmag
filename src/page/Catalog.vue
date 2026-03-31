@@ -11,7 +11,6 @@
             catalog-path="/catalog"
             :server-limit="30"
             :dropdown-limit="12"
-            @search-hits="searchHits = $event"
             @categories-loaded="onCategoriesLoaded"
             @categories-loading="catsLoading = $event"
           />
@@ -741,6 +740,119 @@ const catsLoading = ref(false);
 
 const searchHits = ref([]);
 
+const HOMO_EN2RU = {
+  A: "А", a: "а",
+  B: "В", b: "в",
+  C: "С", c: "с",
+  E: "Е", e: "е",
+  H: "Н", h: "н",
+  K: "К", k: "к",
+  M: "М", m: "м",
+  O: "О", o: "о",
+  P: "Р", p: "р",
+  T: "Т", t: "т",
+  X: "Х", x: "х",
+  Y: "У", y: "у",
+};
+
+const HOMO_RU2EN = {
+  А: "A", а: "a",
+  В: "B", в: "b",
+  С: "C", с: "c",
+  Е: "E", е: "e",
+  Н: "H", н: "h",
+  К: "K", к: "k",
+  М: "M", м: "m",
+  О: "O", о: "o",
+  Р: "P", р: "p",
+  Т: "T", т: "t",
+  Х: "X", х: "x",
+  У: "Y", у: "y",
+};
+
+const KB_EN2RU = {
+  "`": "ё", "~": "Ё", "q": "й", "w": "ц", "e": "у", "r": "к", "t": "е", "y": "н", "u": "г", "i": "ш", "o": "щ", "p": "з", "[": "х", "]": "ъ",
+  "a": "ф", "s": "ы", "d": "в", "f": "а", "g": "п", "h": "р", "j": "о", "k": "л", "l": "д", ";": "ж", "'": "э",
+  "z": "я", "x": "ч", "c": "с", "v": "м", "b": "и", "n": "т", "m": "ь", ",": "б", ".": "ю", "/": ".",
+  "@": '"', "#": "№", "$": ";", "^": ":", "&": "?",
+
+  "Q": "Й", "W": "Ц", "E": "У", "R": "К", "T": "Е", "Y": "Н", "U": "Г", "I": "Ш", "O": "Щ", "P": "З", "{": "Х", "}": "Ъ",
+  "A": "Ф", "S": "Ы", "D": "В", "F": "А", "G": "П", "H": "Р", "J": "О", "K": "Л", "L": "Д", ":": "Ж", '"': "Э",
+  "Z": "Я", "X": "Ч", "C": "С", "V": "М", "B": "И", "N": "Т", "M": "Ь", "<": "Б", ">": "Ю", "?": ",",
+};
+
+const KB_RU2EN = Object.fromEntries(
+  Object.entries(KB_EN2RU).map(([k, v]) => [v, k])
+);
+
+function mapChars(str, map) {
+  return String(str || "")
+    .split("")
+    .map((ch) => map[ch] ?? ch)
+    .join("");
+}
+
+function swapLayout(str, dir = "en2ru") {
+  const map = dir === "en2ru" ? KB_EN2RU : KB_RU2EN;
+  return mapChars(str, map);
+}
+
+function makeSearchVariants(input) {
+  const s = String(input || "").trim();
+  if (!s) return [];
+
+  const base = s;
+  const baseN = normalize(s);
+
+  return [
+    base,
+    baseN,
+    mapChars(base, HOMO_EN2RU),
+    mapChars(base, HOMO_RU2EN),
+    swapLayout(base, "en2ru"),
+    swapLayout(base, "ru2en"),
+  ].filter((value, index, arr) => {
+    const item = String(value || "").trim();
+    return item && arr.findIndex((x) => String(x || "").trim() === item) === index;
+  });
+}
+
+function canSearchProducts(text) {
+  const norm = normalize(text);
+  if (/^\d{5,}$/.test(norm)) return true;
+  return norm.length >= 2;
+}
+
+function mapSearchProduct(p) {
+  return {
+    id: p.id,
+    slug: p.slug ?? null,
+    name: p.name,
+    price: p.price,
+    brand: p.brand,
+    barcode: p.barcode,
+    article: p.article ?? null,
+    quantity_value: p.quantity_value ?? null,
+    measureName: p.measureName ?? p.measure_name ?? null,
+    thumb: p.thumb || p.image || null,
+    images: p.images || null,
+  };
+}
+
+async function fetchSearchProducts(qText, signal) {
+  const r = await fetch(
+    `/api/admin/product/search_products.php?q=${encodeURIComponent(qText)}&limit=30`,
+    {
+      headers: { Accept: "application/json" },
+      signal,
+    }
+  );
+  const data = await r.json();
+  const list = Array.isArray(data) ? data : data.products || data.items || [];
+
+  return (list || []).filter(Boolean).map(mapSearchProduct).filter((p) => p.id != null && p.name);
+}
+
 /* ================= URL SOURCE OF TRUTH ================= */
 // cat в URL теперь SLUG (или старый code для совместимости)
 const currentCategoryParam = computed(() => {
@@ -768,6 +880,52 @@ const searchQ = computed(() => {
   const v = route.query.q;
   return v ? String(Array.isArray(v) ? v[0] : v) : "";
 });
+
+let searchHitsReqId = 0;
+let searchHitsAbort = null;
+
+watch(
+  searchQ,
+  async (value) => {
+    const qText = String(value || "").trim();
+
+    if (searchHitsAbort) {
+      searchHitsAbort.abort();
+      searchHitsAbort = null;
+    }
+
+    if (!qText || !canSearchProducts(qText)) {
+      searchHits.value = [];
+      return;
+    }
+
+    const reqId = ++searchHitsReqId;
+    const controller = new AbortController();
+    searchHitsAbort = controller;
+
+    try {
+      const variants = makeSearchVariants(qText);
+      let mapped = [];
+
+      for (const variant of variants) {
+        mapped = await fetchSearchProducts(variant, controller.signal);
+        if (mapped.length) break;
+      }
+
+      if (reqId !== searchHitsReqId) return;
+      searchHits.value = mapped;
+    } catch (e) {
+      if (e?.name === "AbortError") return;
+      if (reqId !== searchHitsReqId) return;
+      searchHits.value = [];
+    } finally {
+      if (reqId === searchHitsReqId && searchHitsAbort === controller) {
+        searchHitsAbort = null;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 const currentCategoryName = computed(() => {
   if (!currentCategory.value) return null;
@@ -1227,6 +1385,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize);
+  if (searchHitsAbort) searchHitsAbort.abort();
   unlockBody();
 });
 
