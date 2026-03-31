@@ -23,8 +23,10 @@ const AdminAttributes = () => import("@/admin/AdminAttributes.vue");
 const AdminFunctions = () => import("@/admin/AdminFunctions.vue");
 const AdminOrder = () => import("@/admin/AdminOrder.vue");
 const AdminPhotoGallery = () => import("@/admin/AdminPhotoGallery.vue");
+const AdminTelegramUsersPage = () => import("@/admin/AdminTelegramUsersPage.vue");
 const NotFoundPage = () => import("../page/NotFoundPage.vue");
 const PrivacyPolicyPage = () => import("../page/PrivacyPolicyPage.vue");
+const TelegramBotPrivacyPage = () => import("../page/TelegramBotPrivacyPage.vue");
 const routes = [
   { path: "/", name: "home", component: HomePage },
 
@@ -62,7 +64,9 @@ const routes = [
   { path: "/admin/functions", component: AdminFunctions, meta: { noindex: true } },
   { path: "/admin/order", component: AdminOrder, meta: { noindex: true } },
   { path: "/admin/photogallery", component: AdminPhotoGallery, meta: { noindex: true } },
-  { path: "/privacy", name: "privacy", component: PrivacyPolicyPage, },
+  { path: "/admin/telegram", component: AdminTelegramUsersPage, meta: { noindex: true } },
+  { path: "/privacy", name: "privacy", component: PrivacyPolicyPage },
+  { path: "/telegram-bot-privacy", name: "telegram-bot-privacy", component: TelegramBotPrivacyPage, meta: { noindex: true } },
   // ✅ 404 - последний
   { path: "/:pathMatch(.*)*", name: "notfound", component: NotFoundPage, meta: { noindex: true } },
 ];

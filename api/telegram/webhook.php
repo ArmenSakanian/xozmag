@@ -21,6 +21,10 @@ if (!is_array($update)) {
 try {
     global $pdo;
 
+    $isText = static function (string $value, array $variants): bool {
+        return in_array($value, $variants, true);
+    };
+
     if (!empty($update['callback_query']) && is_array($update['callback_query'])) {
         $callback = $update['callback_query'];
         $callbackId = (string)($callback['id'] ?? '');
@@ -36,9 +40,50 @@ try {
             tg_json_response(['ok' => true]);
         }
 
+        $stateRow = tg_get_user_state($pdo, $chatId);
+        tg_touch_user(
+            $pdo,
+            $chatId,
+            $from,
+            (string)($stateRow['state'] ?? ''),
+            is_array($stateRow['payload'] ?? null) ? $stateRow['payload'] : null
+        );
+
+        if ($data === 'consent:accept') {
+            tg_accept_user_consent($pdo, $chatId, $from);
+            tg_clear_user_state($pdo, $chatId, $from);
+            tg_log_action($pdo, $chatId, $from, 'consent_accept', 'Пользователь принял политику конфиденциальности');
+            tg_send_main_menu($chatId, 'Благодарим. Политика конфиденциальности принята.\n\nТеперь вы можете пользоваться ботом.');
+            tg_json_response(['ok' => true]);
+        }
+
+        if ($data === 'consent:decline') {
+            tg_decline_user_consent($pdo, $chatId, $from);
+            tg_clear_user_state($pdo, $chatId, $from);
+            tg_log_action($pdo, $chatId, $from, 'consent_decline', 'Пользователь отказался от политики конфиденциальности');
+            tg_send_consent_declined_message($chatId);
+            tg_json_response(['ok' => true]);
+        }
+
+        if (!tg_user_has_consent($pdo, $chatId)) {
+            tg_log_action($pdo, $chatId, $from, 'consent_required', 'Попытка использовать бота без принятия политики', [
+                'callback' => $data,
+            ]);
+            tg_send_consent_prompt($chatId);
+            tg_json_response(['ok' => true]);
+        }
+
         if ($data === 'menu') {
             tg_clear_user_state($pdo, $chatId, $from);
+            tg_log_action($pdo, $chatId, $from, 'open_main_menu', 'Открыл главное меню');
             tg_send_main_menu($chatId);
+            tg_json_response(['ok' => true]);
+        }
+
+        if ($data === 'search_menu') {
+            tg_clear_user_state($pdo, $chatId, $from);
+            tg_log_action($pdo, $chatId, $from, 'open_search_menu', 'Открыл меню поиска');
+            tg_send_search_menu($chatId, 'Выберите способ поиска товара.');
             tg_json_response(['ok' => true]);
         }
 
@@ -46,6 +91,10 @@ try {
             $product = tg_fetch_product_by_id($pdo, (int)$m[1]);
             if ($product) {
                 tg_clear_user_state($pdo, $chatId, $from);
+                tg_log_action($pdo, $chatId, $from, 'view_product', 'Открыл карточку товара из списка', [
+                    'product_id' => (int)$product['id'],
+                    'product_name' => (string)($product['name'] ?? ''),
+                ]);
                 tg_send_product_card($chatId, $product);
             } else {
                 tg_send_message($chatId, 'Товар не найден. Возможно, он был удалён или временно скрыт.', [
@@ -80,50 +129,80 @@ try {
 
     $stateRow = tg_get_user_state($pdo, $chatId);
     $state = (string)($stateRow['state'] ?? '');
+    tg_touch_user(
+        $pdo,
+        $chatId,
+        $from,
+        $state,
+        is_array($stateRow['payload'] ?? null) ? $stateRow['payload'] : null
+    );
+
+    $hasConsent = tg_user_has_consent($pdo, $chatId);
 
     if ($text === '/start' || $text === '/menu' || $text === '/help') {
+        if (!$hasConsent) {
+            tg_log_action($pdo, $chatId, $from, 'start_consent_required', 'Запросил старт до принятия политики');
+            tg_send_consent_prompt($chatId);
+            tg_json_response(['ok' => true]);
+        }
+
         tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'start', 'Открыл бота через /start');
         tg_send_main_menu($chatId);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'Назад в меню') {
+    if (!$hasConsent) {
+        tg_log_action($pdo, $chatId, $from, 'blocked_before_consent', 'Попытка использовать бота без принятия политики', [
+            'text' => mb_substr($text, 0, 250, 'UTF-8'),
+        ]);
+        tg_send_consent_prompt($chatId);
+        tg_json_response(['ok' => true]);
+    }
+
+    if ($isText($text, ['Назад в меню', '↩️ Назад в меню'])) {
         tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'open_main_menu', 'Открыл главное меню');
         tg_send_main_menu($chatId);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'Связаться с магазином') {
+    if ($isText($text, ['Связаться с магазином', '📞 Связаться с магазином'])) {
         tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'contacts', 'Открыл контакты магазина');
         tg_send_contacts($chatId);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'Найти товар') {
+    if ($isText($text, ['Найти товар', '🔎 Найти товар'])) {
         tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'open_search_menu', 'Открыл меню поиска');
         tg_send_search_menu($chatId);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'По названию') {
+    if ($isText($text, ['По названию', '📝 По названию'])) {
         tg_set_user_state($pdo, $chatId, $from, 'wait_name');
-        tg_send_message($chatId, 'Укажите название товара одним сообщением.', [
+        tg_log_action($pdo, $chatId, $from, 'choose_name_search', 'Выбрал поиск по названию');
+        tg_send_message($chatId, 'Введите название товара одним сообщением.', [
             'reply_markup' => tg_reply_back_only_keyboard(),
         ]);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'По штрих-коду') {
+    if ($isText($text, ['По штрих-коду', '🔢 По штрих-коду'])) {
         tg_set_user_state($pdo, $chatId, $from, 'wait_barcode');
-        tg_send_message($chatId, 'Укажите штрих-код товара одним сообщением.', [
+        tg_log_action($pdo, $chatId, $from, 'choose_barcode_search', 'Выбрал поиск по штрих-коду');
+        tg_send_message($chatId, 'Введите штрих-код товара одним сообщением.', [
             'reply_markup' => tg_reply_back_only_keyboard(),
         ]);
         tg_json_response(['ok' => true]);
     }
 
-    if ($text === 'По артикулу') {
+    if ($isText($text, ['По артикулу', '🏷️ По артикулу'])) {
         tg_set_user_state($pdo, $chatId, $from, 'wait_article');
-        tg_send_message($chatId, 'Укажите артикул товара одним сообщением.', [
+        tg_log_action($pdo, $chatId, $from, 'choose_article_search', 'Выбрал поиск по артикулу');
+        tg_send_message($chatId, 'Введите артикул товара одним сообщением.', [
             'reply_markup' => tg_reply_back_only_keyboard(),
         ]);
         tg_json_response(['ok' => true]);
@@ -142,6 +221,9 @@ try {
         $limit = max(10, (int)(tg_config()['search_results_limit'] ?? 10));
         $products = tg_search_products_by_name($pdo, $text, $limit);
         if (empty($products)) {
+            tg_log_action($pdo, $chatId, $from, 'name_search_no_results', 'Поиск по названию без результатов', [
+                'query' => $text,
+            ]);
             tg_send_message($chatId, 'По указанному запросу товары не найдены. Уточните название и отправьте его ещё раз.', [
                 'reply_markup' => tg_reply_back_only_keyboard(),
             ]);
@@ -150,8 +232,17 @@ try {
 
         tg_clear_user_state($pdo, $chatId, $from);
         if (count($products) === 1) {
+            tg_log_action($pdo, $chatId, $from, 'name_search_one_result', 'Поиск по названию: найден один товар', [
+                'query' => $text,
+                'product_id' => (int)$products[0]['id'],
+                'product_name' => (string)($products[0]['name'] ?? ''),
+            ]);
             tg_send_product_card($chatId, $products[0]);
         } else {
+            tg_log_action($pdo, $chatId, $from, 'name_search_many_results', 'Поиск по названию: показан список товаров', [
+                'query' => $text,
+                'count' => count($products),
+            ]);
             tg_send_product_choices($chatId, $products, $text);
         }
         tg_json_response(['ok' => true]);
@@ -160,6 +251,9 @@ try {
     if ($state === 'wait_barcode') {
         $product = tg_find_product_by_barcode($pdo, $text);
         if (!$product) {
+            tg_log_action($pdo, $chatId, $from, 'barcode_search_no_results', 'Поиск по штрих-коду без результата', [
+                'barcode' => $text,
+            ]);
             tg_send_message($chatId, 'Товар с таким штрих-кодом не найден. Проверьте код и отправьте его ещё раз.', [
                 'reply_markup' => tg_reply_back_only_keyboard(),
             ]);
@@ -167,6 +261,11 @@ try {
         }
 
         tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'barcode_search_result', 'Поиск по штрих-коду: открыт товар', [
+            'barcode' => $text,
+            'product_id' => (int)$product['id'],
+            'product_name' => (string)($product['name'] ?? ''),
+        ]);
         tg_send_product_card($chatId, $product);
         tg_json_response(['ok' => true]);
     }
@@ -175,6 +274,9 @@ try {
         $limit = max(10, (int)(tg_config()['search_results_limit'] ?? 10));
         $products = tg_search_products_by_article($pdo, $text, $limit);
         if (empty($products)) {
+            tg_log_action($pdo, $chatId, $from, 'article_search_no_results', 'Поиск по артикулу без результата', [
+                'article' => $text,
+            ]);
             tg_send_message($chatId, 'Товар с таким артикулом не найден. Проверьте артикул и отправьте его ещё раз.', [
                 'reply_markup' => tg_reply_back_only_keyboard(),
             ]);
@@ -183,13 +285,25 @@ try {
 
         tg_clear_user_state($pdo, $chatId, $from);
         if (count($products) === 1) {
+            tg_log_action($pdo, $chatId, $from, 'article_search_one_result', 'Поиск по артикулу: найден один товар', [
+                'article' => $text,
+                'product_id' => (int)$products[0]['id'],
+                'product_name' => (string)($products[0]['name'] ?? ''),
+            ]);
             tg_send_product_card($chatId, $products[0]);
         } else {
+            tg_log_action($pdo, $chatId, $from, 'article_search_many_results', 'Поиск по артикулу: показан список товаров', [
+                'article' => $text,
+                'count' => count($products),
+            ]);
             tg_send_product_choices($chatId, $products, $text);
         }
         tg_json_response(['ok' => true]);
     }
 
+    tg_log_action($pdo, $chatId, $from, 'fallback_menu', 'Возврат в главное меню после произвольного сообщения', [
+        'text' => mb_substr($text, 0, 250, 'UTF-8'),
+    ]);
     tg_send_main_menu($chatId, 'Выберите действие с помощью кнопок ниже.');
     tg_json_response(['ok' => true]);
 } catch (Throwable $e) {

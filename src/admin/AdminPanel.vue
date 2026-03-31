@@ -69,6 +69,15 @@
         </span>
         <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
+
+      <a href="/admin/telegram" class="tile">
+        <span class="ico"><Fa :icon="['fas','shield-halved']" /></span>
+        <span class="t">
+          <span class="t-title">Telegram-бот</span>
+          <span class="t-desc">Пользователи, согласия и журнал действий</span>
+        </span>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
+      </a>
     </section>
   </div>
 </template>
