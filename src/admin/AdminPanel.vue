@@ -74,7 +74,7 @@
         <span class="ico"><Fa :icon="['fas','shield-halved']" /></span>
         <span class="t">
           <span class="t-title">Telegram-бот</span>
-          <span class="t-desc">Пользователи, согласия и журнал действий</span>
+          <span class="t-desc">Пользователи, согласия, журнал и техподдержка</span>
         </span>
         <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
