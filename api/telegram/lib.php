@@ -189,8 +189,8 @@ function tg_reply_main_keyboard(): array
 {
     return [
         'keyboard' => [
-            [['text' => 'Найти товар']],
-            [['text' => 'Связаться с магазином']],
+            [['text' => '🔎 Найти товар']],
+            [['text' => '📞 Связаться с магазином']],
         ],
         'resize_keyboard' => true,
         'is_persistent' => true,
@@ -202,9 +202,9 @@ function tg_reply_search_keyboard(): array
 {
     return [
         'keyboard' => [
-            [['text' => 'По названию'], ['text' => 'По штрих-коду']],
-            [['text' => 'По артикулу']],
-            [['text' => 'Назад в меню']],
+            [['text' => '📝 По названию'], ['text' => '🔢 По штрих-коду']],
+            [['text' => '🏷️ По артикулу']],
+            [['text' => '↩️ Назад в меню']],
         ],
         'resize_keyboard' => true,
         'is_persistent' => true,
@@ -216,7 +216,7 @@ function tg_reply_back_only_keyboard(): array
 {
     return [
         'keyboard' => [
-            [['text' => 'Назад в меню']],
+            [['text' => '↩️ Назад в меню']],
         ],
         'resize_keyboard' => true,
         'is_persistent' => true,
@@ -246,6 +246,84 @@ function tg_send_search_menu(int|string $chatId, string $text = ''): void
     ]);
 }
 
+
+function tg_reply_remove_keyboard(): array
+{
+    return [
+        'remove_keyboard' => true,
+    ];
+}
+
+function tg_policy_version(): string
+{
+    return 'telegram-bot-policy-v1';
+}
+
+function tg_policy_url(): string
+{
+    return tg_detect_base_url() . '/telegram-bot-privacy';
+}
+
+function tg_consent_keyboard(): array
+{
+    return [
+        'inline_keyboard' => [
+            [[
+                'text' => 'Открыть политику конфиденциальности',
+                'url' => tg_policy_url(),
+            ]],
+            [[
+                'text' => 'Принимаю',
+                'callback_data' => 'consent:accept',
+            ]],
+            [[
+                'text' => 'Не принимаю',
+                'callback_data' => 'consent:decline',
+            ]],
+        ],
+    ];
+}
+
+function tg_send_consent_prompt(int|string $chatId, string $text = ''): void
+{
+    if ($text === '') {
+        $text = 'Для дальнейшего использования Telegram-бота необходимо ознакомиться и согласиться с <a href="' . tg_escape_html(tg_policy_url()) . '">Политикой конфиденциальности</a>.
+
+После ознакомления нажмите «Принимаю». До принятия политики использование бота недоступно.';
+    }
+
+    tg_send_message($chatId, $text, [
+        'reply_markup' => tg_consent_keyboard(),
+        'disable_web_page_preview' => false,
+    ]);
+}
+
+function tg_send_consent_declined_message(int|string $chatId): void
+{
+    tg_send_message($chatId, 'К сожалению, использование бота недоступно, пока не принята политика конфиденциальности.
+
+Чтобы вернуться к запросу согласия, нажмите /start.', [
+        'reply_markup' => tg_reply_remove_keyboard(),
+    ]);
+}
+
+function tg_table_has_column(PDO $pdo, string $table, string $column): bool
+{
+    $st = $pdo->prepare(
+        'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+    );
+    $st->execute([$table, $column]);
+    return (bool)$st->fetchColumn();
+}
+
+function tg_add_column_if_missing(PDO $pdo, string $table, string $column, string $definition): void
+{
+    if (tg_table_has_column($pdo, $table, $column)) {
+        return;
+    }
+    $pdo->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+}
+
 function tg_ensure_tables(PDO $pdo): void
 {
     static $done = false;
@@ -265,6 +343,33 @@ function tg_ensure_tables(PDO $pdo): void
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (chat_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'consent_accepted', "TINYINT(1) NOT NULL DEFAULT 0 AFTER last_name");
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'consent_at', "DATETIME NULL DEFAULT NULL AFTER consent_accepted");
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'consent_version', "VARCHAR(64) NOT NULL DEFAULT '' AFTER consent_at");
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'last_action', "VARCHAR(64) NOT NULL DEFAULT '' AFTER state_payload");
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'last_action_label', "VARCHAR(255) NOT NULL DEFAULT '' AFTER last_action");
+    tg_add_column_if_missing($pdo, 'telegram_user_states', 'last_payload', "MEDIUMTEXT NULL DEFAULT NULL AFTER last_action_label");
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS telegram_activity_log (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            chat_id BIGINT NOT NULL,
+            user_id BIGINT NULL,
+            username VARCHAR(191) NULL,
+            first_name VARCHAR(191) NULL,
+            last_name VARCHAR(191) NULL,
+            action_code VARCHAR(64) NOT NULL DEFAULT '',
+            action_label VARCHAR(255) NOT NULL DEFAULT '',
+            payload_json MEDIUMTEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_chat_id (chat_id),
+            KEY idx_user_id (user_id),
+            KEY idx_action_code (action_code),
+            KEY idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
@@ -334,6 +439,87 @@ function tg_set_user_state(PDO $pdo, int|string $chatId, array $from, string $st
 function tg_clear_user_state(PDO $pdo, int|string $chatId, array $from = []): void
 {
     tg_touch_user($pdo, $chatId, $from, '', null);
+}
+
+
+function tg_get_user_profile(PDO $pdo, int|string $chatId): array
+{
+    tg_ensure_tables($pdo);
+
+    $st = $pdo->prepare('SELECT * FROM telegram_user_states WHERE chat_id = ? LIMIT 1');
+    $st->execute([(string)$chatId]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return is_array($row) ? $row : [];
+}
+
+function tg_user_has_consent(PDO $pdo, int|string $chatId): bool
+{
+    $row = tg_get_user_profile($pdo, $chatId);
+    if (empty($row)) {
+        return false;
+    }
+
+    return (int)($row['consent_accepted'] ?? 0) === 1
+        && (string)($row['consent_version'] ?? '') === tg_policy_version();
+}
+
+function tg_accept_user_consent(PDO $pdo, int|string $chatId, array $from = []): void
+{
+    tg_touch_user($pdo, $chatId, $from, '', null);
+    $st = $pdo->prepare(
+        'UPDATE telegram_user_states
+         SET consent_accepted = 1,
+             consent_at = COALESCE(consent_at, NOW()),
+             consent_version = ?
+         WHERE chat_id = ?'
+    );
+    $st->execute([tg_policy_version(), (string)$chatId]);
+}
+
+function tg_decline_user_consent(PDO $pdo, int|string $chatId, array $from = []): void
+{
+    tg_touch_user($pdo, $chatId, $from, '', null);
+    $st = $pdo->prepare(
+        'UPDATE telegram_user_states
+         SET consent_accepted = 0,
+             consent_version = ?
+         WHERE chat_id = ?'
+    );
+    $st->execute([tg_policy_version(), (string)$chatId]);
+}
+
+function tg_log_action(PDO $pdo, int|string $chatId, array $from, string $actionCode, string $actionLabel, ?array $payload = null): void
+{
+    tg_ensure_tables($pdo);
+
+    $stateRow = tg_get_user_state($pdo, $chatId);
+    tg_touch_user($pdo, $chatId, $from, (string)($stateRow['state'] ?? ''), is_array($stateRow['payload'] ?? null) ? $stateRow['payload'] : null);
+
+    $payloadJson = $payload === null ? null : json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    $insert = $pdo->prepare(
+        'INSERT INTO telegram_activity_log (chat_id, user_id, username, first_name, last_name, action_code, action_label, payload_json)
+         VALUES (:chat_id, :user_id, :username, :first_name, :last_name, :action_code, :action_label, :payload_json)'
+    );
+    $insert->execute([
+        ':chat_id' => (string)$chatId,
+        ':user_id' => isset($from['id']) ? (string)$from['id'] : null,
+        ':username' => $from['username'] ?? null,
+        ':first_name' => $from['first_name'] ?? null,
+        ':last_name' => $from['last_name'] ?? null,
+        ':action_code' => $actionCode,
+        ':action_label' => $actionLabel,
+        ':payload_json' => $payloadJson,
+    ]);
+
+    $update = $pdo->prepare(
+        'UPDATE telegram_user_states
+         SET last_action = ?,
+             last_action_label = ?,
+             last_payload = ?
+         WHERE chat_id = ?'
+    );
+    $update->execute([$actionCode, $actionLabel, $payloadJson, (string)$chatId]);
 }
 
 function tg_escape_html(string $value): string
@@ -567,11 +753,15 @@ function tg_product_open_button(array $product): array
     return [
         'inline_keyboard' => [
             [[
-                'text' => 'Открыть товар на сайте',
+                'text' => '🔗 Открыть товар на сайте',
                 'url' => tg_product_url($product),
             ]],
             [[
-                'text' => 'Главное меню',
+                'text' => '🔎 Найти ещё',
+                'callback_data' => 'search_menu',
+            ]],
+            [[
+                'text' => '🏠 Главное меню',
                 'callback_data' => 'menu',
             ]],
         ],
@@ -595,12 +785,17 @@ function tg_product_choices_keyboard(array $products, string $query): array
     }
 
     $rows[] = [[
-        'text' => 'Смотреть все результаты в каталоге',
+        'text' => '🌐 Смотреть все результаты в каталоге',
         'url' => tg_catalog_search_url($query),
     ]];
 
     $rows[] = [[
-        'text' => 'Главное меню',
+        'text' => '🔎 Найти ещё',
+        'callback_data' => 'search_menu',
+    ]];
+
+    $rows[] = [[
+        'text' => '🏠 Главное меню',
         'callback_data' => 'menu',
     ]];
 
@@ -682,18 +877,25 @@ function tg_search_products_by_article(PDO $pdo, string $article, int $limit = 1
 function tg_send_contacts(int|string $chatId): void
 {
     $phone = trim((string)(tg_config()['store_phone'] ?? ''));
-    $text = 'Связь с магазином';
+    $text = '📞 <b>Связь с магазином</b>';
     if ($phone !== '') {
-        $text .= "\nТелефон: <b>" . tg_escape_html($phone) . '</b>';
+        $text .= "
+Телефон: <b>" . tg_escape_html($phone) . '</b>';
     }
-    $text .= "\n\nОткройте страницу контактов, чтобы посмотреть адрес, телефон и схему проезда.";
+    $text .= "
+
+Откройте страницу контактов, чтобы посмотреть адрес, телефон и схему проезда.";
 
     tg_send_message($chatId, $text, [
         'reply_markup' => [
             'inline_keyboard' => [
                 [[
-                    'text' => 'Открыть страницу контактов',
+                    'text' => '📍 Открыть страницу контактов',
                     'url' => tg_contact_url(),
+                ]],
+                [[
+                    'text' => '🔎 Найти товар',
+                    'callback_data' => 'search_menu',
                 ]],
             ],
         ],
@@ -725,7 +927,9 @@ function tg_send_product_card(int|string $chatId, array $product): void
 function tg_send_product_choices(int|string $chatId, array $products, string $query): void
 {
     $text = 'По запросу <b>' . tg_escape_html($query) . '</b> найдено несколько товаров.'
-        . "\n\nВыберите нужный вариант или откройте все результаты в каталоге.";
+        . "
+
+Выберите нужный вариант из списка ниже или откройте все результаты в каталоге.";
 
     tg_send_message($chatId, $text, [
         'reply_markup' => tg_product_choices_keyboard($products, $query),

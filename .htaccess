@@ -1,3 +1,4 @@
+ErrorDocument 404 /index.html
 # ================= CANONICAL: https + no-www =================
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -64,7 +65,7 @@
   RewriteRule ^ - [L]
 
   # разрешаем SPA только на этих путях
-  RewriteCond %{REQUEST_URI} ^/(|catalog|product|aboutus|contact|login|barcode|admin)(/|$) [NC]
+  RewriteCond %{REQUEST_URI} ^/(|catalog|product|aboutus|contact|login|barcode|admin|privacy|telegram-bot-privacy)(/|$) [NC]
   RewriteRule . /index.html [L]
 
   # всё остальное - честный 404
