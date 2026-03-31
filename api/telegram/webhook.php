@@ -31,11 +31,9 @@ try {
         $data = trim((string)($callback['data'] ?? ''));
         $message = $callback['message'] ?? [];
         $chatId = $message['chat']['id'] ?? null;
+        $messageId = $message['message_id'] ?? null;
         $from = is_array($callback['from'] ?? null) ? $callback['from'] : [];
 
-        if ($callbackId !== '') {
-            tg_answer_callback($callbackId);
-        }
         if ($chatId === null) {
             tg_json_response(['ok' => true]);
         }
@@ -50,10 +48,28 @@ try {
         );
 
         if ($data === 'consent:accept') {
+            if (tg_user_has_consent($pdo, $chatId)) {
+                if ($messageId !== null) {
+                    tg_edit_message_reply_markup($chatId, $messageId);
+                }
+                if ($callbackId !== '') {
+                    tg_answer_callback($callbackId, 'Политика конфиденциальности уже принята.');
+                }
+                tg_json_response(['ok' => true]);
+            }
+
             tg_accept_user_consent($pdo, $chatId, $from);
             tg_clear_user_state($pdo, $chatId, $from);
             tg_log_action($pdo, $chatId, $from, 'consent_accept', 'Пользователь принял политику конфиденциальности');
-            tg_send_main_menu($chatId, 'Благодарим. Политика конфиденциальности принята.\n\nТеперь вы можете пользоваться ботом.');
+            if ($messageId !== null) {
+                tg_edit_message_reply_markup($chatId, $messageId);
+            }
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId, 'Политика конфиденциальности принята.');
+            }
+            tg_send_main_menu($chatId, "Благодарим. Политика конфиденциальности принята.
+
+Теперь вы можете пользоваться ботом.");
             tg_json_response(['ok' => true]);
         }
 
@@ -61,6 +77,12 @@ try {
             tg_decline_user_consent($pdo, $chatId, $from);
             tg_clear_user_state($pdo, $chatId, $from);
             tg_log_action($pdo, $chatId, $from, 'consent_decline', 'Пользователь отказался от политики конфиденциальности');
+            if ($messageId !== null) {
+                tg_edit_message_reply_markup($chatId, $messageId);
+            }
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId);
+            }
             tg_send_consent_declined_message($chatId);
             tg_json_response(['ok' => true]);
         }
@@ -69,6 +91,9 @@ try {
             tg_log_action($pdo, $chatId, $from, 'consent_required', 'Попытка использовать бота без принятия политики', [
                 'callback' => $data,
             ]);
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId);
+            }
             tg_send_consent_prompt($chatId);
             tg_json_response(['ok' => true]);
         }
@@ -76,6 +101,9 @@ try {
         if ($data === 'menu') {
             tg_clear_user_state($pdo, $chatId, $from);
             tg_log_action($pdo, $chatId, $from, 'open_main_menu', 'Открыл главное меню');
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId);
+            }
             tg_send_main_menu($chatId);
             tg_json_response(['ok' => true]);
         }
@@ -83,6 +111,9 @@ try {
         if ($data === 'search_menu') {
             tg_clear_user_state($pdo, $chatId, $from);
             tg_log_action($pdo, $chatId, $from, 'open_search_menu', 'Открыл меню поиска');
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId);
+            }
             tg_send_search_menu($chatId, 'Выберите способ поиска товара.');
             tg_json_response(['ok' => true]);
         }
@@ -95,8 +126,14 @@ try {
                     'product_id' => (int)$product['id'],
                     'product_name' => (string)($product['name'] ?? ''),
                 ]);
+                if ($callbackId !== '') {
+                    tg_answer_callback($callbackId);
+                }
                 tg_send_product_card($chatId, $product);
             } else {
+                if ($callbackId !== '') {
+                    tg_answer_callback($callbackId);
+                }
                 tg_send_message($chatId, 'Товар не найден. Возможно, он был удалён или временно скрыт.', [
                     'reply_markup' => tg_reply_main_keyboard(),
                 ]);
@@ -104,6 +141,9 @@ try {
             tg_json_response(['ok' => true]);
         }
 
+        if ($callbackId !== '') {
+            tg_answer_callback($callbackId);
+        }
         tg_json_response(['ok' => true]);
     }
 
@@ -171,6 +211,13 @@ try {
         tg_clear_user_state($pdo, $chatId, $from);
         tg_log_action($pdo, $chatId, $from, 'contacts', 'Открыл контакты магазина');
         tg_send_contacts($chatId);
+        tg_json_response(['ok' => true]);
+    }
+
+    if ($isText($text, ['Написать сотрудникам магазина', '💬 Написать сотрудникам магазина'])) {
+        tg_clear_user_state($pdo, $chatId, $from);
+        tg_log_action($pdo, $chatId, $from, 'open_support_redirect', 'Открыл переход в бот техподдержки');
+        tg_send_support_redirect($chatId);
         tg_json_response(['ok' => true]);
     }
 

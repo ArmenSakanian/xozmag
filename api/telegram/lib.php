@@ -82,6 +82,88 @@ function tg_catalog_search_url(string $query): string
     return tg_detect_base_url() . '/catalog?q=' . rawurlencode(trim($query));
 }
 
+
+function tg_support_config(): array
+{
+    static $config = null;
+    if ($config !== null) {
+        return $config;
+    }
+
+    $path = __DIR__ . '/../telegram_support/config.php';
+    if (!is_file($path)) {
+        $config = [];
+        return $config;
+    }
+
+    $loaded = require $path;
+    $config = is_array($loaded) ? $loaded : [];
+    return $config;
+}
+
+function tg_support_bot_username(): string
+{
+    return ltrim(trim((string)(tg_support_config()['bot_username'] ?? '')), '@');
+}
+
+function tg_support_bot_url(): string
+{
+    $username = tg_support_bot_username();
+    if ($username === '') {
+        return '';
+    }
+
+    return 'https://t.me/' . $username . '?start=support';
+}
+
+function tg_support_is_available(): bool
+{
+    return tg_support_bot_username() !== '';
+}
+
+function tg_support_open_keyboard(): array
+{
+    $url = tg_support_bot_url();
+    if ($url === '') {
+        return [
+            'inline_keyboard' => [
+                [[
+                    'text' => '↩️ Назад в меню',
+                    'callback_data' => 'menu',
+                ]],
+            ],
+        ];
+    }
+
+    return [
+        'inline_keyboard' => [
+            [[
+                'text' => '💬 Открыть бот техподдержки',
+                'url' => $url,
+            ]],
+            [[
+                'text' => '↩️ Назад в меню',
+                'callback_data' => 'menu',
+            ]],
+        ],
+    ];
+}
+
+function tg_send_support_redirect(int|string $chatId): void
+{
+    if (!tg_support_is_available()) {
+        tg_send_message($chatId, 'Раздел техподдержки временно недоступен. Попробуйте обратиться позже или воспользуйтесь контактами магазина.', [
+            'reply_markup' => tg_reply_main_keyboard(),
+        ]);
+        return;
+    }
+
+    tg_send_message($chatId, 'Для обращения в техподдержку откройте отдельный бот и нажмите «Старт». После этого Вы сможете отправить Ваш вопрос сотрудникам магазина.', [
+        'reply_markup' => tg_support_open_keyboard(),
+        'disable_web_page_preview' => true,
+    ]);
+}
+
 function tg_api_request(string $method, array $payload = []): array
 {
     $url = 'https://api.telegram.org/bot' . tg_bot_token() . '/' . $method;
@@ -165,6 +247,21 @@ function tg_answer_callback(string $callbackId, string $text = '', bool $alert =
     }
 }
 
+function tg_edit_message_reply_markup(int|string $chatId, int|string $messageId, ?array $replyMarkup = null): void
+{
+    $payload = [
+        'chat_id' => $chatId,
+        'message_id' => $messageId,
+        'reply_markup' => $replyMarkup ?? ['inline_keyboard' => []],
+    ];
+
+    try {
+        tg_api_request('editMessageReplyMarkup', $payload);
+    } catch (Throwable $e) {
+        error_log('Telegram editMessageReplyMarkup failed: ' . $e->getMessage());
+    }
+}
+
 function tg_send_message(int|string $chatId, string $text, array $extra = []): array
 {
     return tg_api_request('sendMessage', array_merge([
@@ -191,6 +288,7 @@ function tg_reply_main_keyboard(): array
         'keyboard' => [
             [['text' => '🔎 Найти товар']],
             [['text' => '📞 Связаться с магазином']],
+            [['text' => '💬 Написать сотрудникам магазина']],
         ],
         'resize_keyboard' => true,
         'is_persistent' => true,
