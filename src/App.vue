@@ -6,11 +6,15 @@
   </main>
 
   <AppFooter />
+
+  <!-- ✅ Баннер cookies (глобально) -->
+  <CookieConsent />
 </template>
 
 <script setup>
 import AppHeader from "@/components/AppHeader.vue";
 import AppFooter from "@/components/AppFooter.vue";
+import CookieConsent from "@/components/CookieConsent.vue";
 </script>
 
 <style>

@@ -16,6 +16,10 @@ $OUT_GZ  = $_SERVER['DOCUMENT_ROOT'] . "/yml.xml.gz";
 
 $SECRET_TOKEN = ""; // например "mySecret123". Пусто = без защиты
 
+// Категория по умолчанию для товаров без category_id
+$DEFAULT_CATEGORY_ID   = "99999";
+$DEFAULT_CATEGORY_NAME = "Другое";
+
 // ====== ПРОВЕРКА ТОКЕНА ======
 if ($SECRET_TOKEN !== "") {
   $token = $_GET['token'] ?? '';
@@ -49,7 +53,7 @@ try {
   $cats = $pdo->query("SELECT id, name, parent_id FROM categories ORDER BY id ASC")
               ->fetchAll(PDO::FETCH_ASSOC);
 
-  // ====== ТОВАРЫ: только с фото, ценой, категорией, остатком >=1, и slug (чтобы URL был /product/slug) ======
+  // ====== ТОВАРЫ: только с фото, ценой и slug, name; category_id может отсутствовать; quantity не учитываем ======
   $sql = "
     SELECT
       id, slug, name, article, brand, type, price, quantity, barcode, description, photo, category_id
@@ -65,9 +69,6 @@ try {
       AND name <> ''
       AND price IS NOT NULL
       AND price > 0
-      AND category_id IS NOT NULL
-      AND quantity IS NOT NULL
-      AND quantity >= 1
   ";
   $products = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
@@ -96,6 +97,7 @@ try {
 
   // categories
   $categoriesEl = $doc->createElement("categories");
+
   foreach ($cats as $c) {
     $catEl = $doc->createElement("category");
     $catEl->setAttribute("id", (string)$c["id"]);
@@ -105,6 +107,22 @@ try {
     $catEl->appendChild($doc->createTextNode((string)$c["name"]));
     $categoriesEl->appendChild($catEl);
   }
+
+  // добавляем категорию "Другое" (для товаров без category_id), если её нет среди существующих id
+  $existsDefault = false;
+  foreach ($cats as $c) {
+    if ((string)$c["id"] === (string)$DEFAULT_CATEGORY_ID) {
+      $existsDefault = true;
+      break;
+    }
+  }
+  if (!$existsDefault) {
+    $catEl = $doc->createElement("category");
+    $catEl->setAttribute("id", (string)$DEFAULT_CATEGORY_ID);
+    $catEl->appendChild($doc->createTextNode($DEFAULT_CATEGORY_NAME));
+    $categoriesEl->appendChild($catEl);
+  }
+
   $shop->appendChild($categoriesEl);
 
   // offers
@@ -115,15 +133,23 @@ try {
     $pictures = parsePhotos($p["photo"] ?? "");
     if (!$pictures) continue; // железно пропускаем без фото
 
-    $qty = (int)($p["quantity"] ?? 0);
-    if ($qty < 1) continue; // страховка (даже если SQL уже фильтрует)
-
     $slug = trim((string)($p["slug"] ?? ""));
     if ($slug === "") continue; // URL у нас строго /product/slug
 
+    // availability: теперь остаток не фильтруем; если qty >= 1 -> true, иначе false
+    $qty = (int)($p["quantity"] ?? 0);
+    $available = ($qty >= 1) ? "true" : "false";
+
+    // category: если нет category_id -> DEFAULT_CATEGORY_ID (99999)
+    $catId = (string)($p["category_id"] ?? "");
+    $catId = trim($catId);
+    if ($catId === "" || $catId === "0") {
+      $catId = (string)$DEFAULT_CATEGORY_ID;
+    }
+
     $offer = $doc->createElement("offer");
     $offer->setAttribute("id", (string)$p["id"]);
-    $offer->setAttribute("available", "true"); // раз qty >= 1
+    $offer->setAttribute("available", $available);
 
     // url товара - по slug
     $url = rtrim($BASE_URL, "/") . "/product/" . rawurlencode($slug);
@@ -132,7 +158,7 @@ try {
     // price / currency / category
     $offer->appendChild($doc->createElement("price", formatPrice($p["price"])));
     $offer->appendChild($doc->createElement("currencyId", $CURRENCY_ID));
-    $offer->appendChild($doc->createElement("categoryId", (string)$p["category_id"]));
+    $offer->appendChild($doc->createElement("categoryId", $catId));
 
     // picture (берём первое)
     $firstPic = $pictures[0] ?? "";
@@ -181,7 +207,7 @@ try {
   file_put_contents($OUT_GZ . ".tmp", $gz);
   rename($OUT_GZ . ".tmp", $OUT_GZ);
 
-  echo "OK. categories=" . count($cats) . " offers=" . $added . "\n";
+  echo "OK. categories=" . (count($cats) + ($existsDefault ? 0 : 1)) . " offers=" . $added . "\n";
   echo "Saved: $OUT_XML\n";
   echo "Saved: $OUT_GZ\n";
 

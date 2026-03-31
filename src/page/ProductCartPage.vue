@@ -227,8 +227,15 @@
                 </div>
               </div>
             </div>
-            <div class="stockRow">
+<div class="stockRow">
   Остаток: <b>{{ qtyPretty }}</b>
+</div>
+
+<div class="productNotice">
+  <span>
+    Обратите внимание: фотографии товаров на сайте и информация об остатках могут отличаться от фактических. Для уточнения наличия и деталей свяжитесь с нами через страницу
+    <router-link to="/contact" class="productNoticeLink">«Контакты»</router-link>.
+  </span>
 </div>
 
           </div>
@@ -1188,6 +1195,28 @@ watch(pkey, loadOne);
   font-size: 13px;
   color: rgba(15, 23, 42, 0.78);
   font-weight: 800;
+}
+
+.productNotice {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--accent);
+  background: rgba(4, 0, 255, 0.05);
+  color: rgba(15, 23, 42, 0.88);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.productNoticeLink {
+  color: var(--accent);
+  font-weight: 900;
+  text-decoration: underline;
+}
+
+.productNoticeLink:hover {
+  opacity: 0.85;
 }
 
 .ik {

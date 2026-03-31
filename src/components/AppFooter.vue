@@ -25,6 +25,7 @@
         <RouterLink class="nav-link" to="/catalog">Каталог</RouterLink>
         <RouterLink class="nav-link" to="/aboutus">О нас</RouterLink>
         <RouterLink class="nav-link" to="/contact">Контакты</RouterLink>
+        <RouterLink class="nav-link" to="/privacy">Политика конфиденциальности</RouterLink>
       </nav>
 
       <!-- Контакты -->

@@ -310,7 +310,13 @@ v-if="isRootCategorySelected === true && typeOptions.length"
           </button>
         </div>
       </div>
-
+<!-- ===== INFO NOTICE ===== -->
+<div v-if="hasActiveCategory || searchQ" class="catalog-notice">
+  <span>
+    Обратите внимание: фотографии товаров на сайте и информация об остатках могут отличаться от фактических. Для уточнения наличия и деталей свяжитесь с нами через страницу
+    <router-link to="/contact" class="catalog-notice-link">«Контакты»</router-link>.
+  </span>
+</div>
       <!-- ================= PRODUCTS ================= -->
       <div class="catalog-products">
         <div v-if="loading" class="catalog-loader">
@@ -2134,6 +2140,27 @@ watch(showMobileFilters, (open) => {
 
 .mobile-filter-btn:active {
   transform: scale(0.99);
+}
+
+.catalog-notice {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, white);
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.catalog-notice-link {
+  color: var(--accent);
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.catalog-notice-link:hover {
+  opacity: 0.85;
 }
 
 /* ========================= PRODUCTS ========================= */

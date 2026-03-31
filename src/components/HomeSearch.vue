@@ -6,107 +6,51 @@
 
       <!-- ✅ CATALOG BUTTON INSIDE SEARCH (ONLY /catalog) -->
       <div v-if="showCatalogButton" class="catpick-wrap" ref="catPickRef">
-        <button
-          class="catpick-btn"
-          :class="{ on: showCatPopover && !isMobile }"
-          :disabled="!catsList.length"
-          type="button"
-          title="Каталог"
-          aria-label="Каталог"
-          @click.prevent="toggleCatPopover"
-        >
+        <button class="catpick-btn" :class="{ on: showCatPopover && !isMobile }" :disabled="!catsList.length"
+          type="button" title="Каталог" aria-label="Каталог" @click.prevent="toggleCatPopover">
           <span class="catpick-text">Каталог</span>
           <Fa class="catpick-ico" :icon="['fas', 'bars-staggered']" />
         </button>
       </div>
 
       <!-- ✅ DESKTOP POPOVER CATEGORIES -->
-      <div
-        v-if="
-          showCatalogButton && catsList.length && showCatPopover && !isMobile
-        "
-        class="catpop"
-        ref="catPopRef"
-      >
+      <div v-if="showCatalogButton && catsList.length && showCatPopover && !isMobile" class="catpop" ref="catPopRef">
         <div class="catpop-head">
           <div class="catpop-title">Категории</div>
 
-          <button
-            class="catpop-close"
-            type="button"
-            @click="closeCatPopover"
-            title="Закрыть"
-          >
+          <button class="catpop-close" type="button" @click="closeCatPopover" title="Закрыть">
             <Fa :icon="['fas', 'xmark']" />
           </button>
         </div>
 
         <div class="catpop-cols">
-          <div
-            v-for="(col, level) in desktopColumns"
-            :key="colKey(level)"
-            class="catpop-col"
-            :ref="(el) => setColRef(el, level)"
-          >
-            <button
-              v-for="n in col"
-              :key="n.id"
-              class="catpop-item"
-              :class="{
-                active: isCatActive(n),
-                picked: isCatPicked(n),
-              }"
-              @mouseenter="desktopHover(level, n)"
-              @click="pickCategory(n)"
-              :title="n.name"
-              type="button"
-            >
+          <div v-for="(col, level) in desktopColumns" :key="colKey(level)" class="catpop-col"
+            :ref="(el) => setColRef(el, level)">
+            <button v-for="n in col" :key="n.id" class="catpop-item" :class="{
+              active: isCatActive(n),
+              picked: isCatPicked(n),
+            }" @mouseenter="desktopHover(level, n)" @click="pickCategory(n)" :title="n.name" type="button">
               <span class="catpop-text">{{ n.name }}</span>
-              <Fa
-                v-if="n.children?.length"
-                class="catpop-chev"
-                :icon="['fas', 'chevron-right']"
-              />
+              <Fa v-if="n.children?.length" class="catpop-chev" :icon="['fas', 'chevron-right']" />
             </button>
           </div>
         </div>
       </div>
 
       <!-- ✅ INPUT -->
-      <input
-        v-model="q"
-        class="search-input"
-        type="text"
-        :placeholder="placeholder"
-        @input="onInput"
-        @keydown.down.prevent="move(1)"
-        @keydown.up.prevent="move(-1)"
-        @keydown.enter.prevent="enterPick"
-        @focus="q && (openDd = true)"
-        @blur="onBlur"
-      />
+      <input v-model="q" class="search-input" type="text" :placeholder="placeholder" @input="onInput($event)"
+        @compositionstart="onCompStart" @compositionend="onCompEnd" @change="onInput($event)"
+        @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter.prevent="enterPick"
+        @focus="q && (openDd = true)" @blur="onBlur" />
 
       <!-- ✅ SCAN BARCODE -->
-      <button
-        v-if="canScan"
-        class="search-scan"
-        @click="openScanner"
-        title="Сканировать штрихкод"
-        type="button"
-        aria-label="Сканировать штрихкод"
-      >
+      <button v-if="canScan" class="search-scan" @click="openScanner" title="Сканировать штрихкод" type="button"
+        aria-label="Сканировать штрихкод">
         <Fa :icon="['fas', 'expand']" />
       </button>
 
       <!-- ✅ CLEAR -->
-      <button
-        v-if="q"
-        class="search-clear"
-        @click="clear"
-        title="Очистить"
-        type="button"
-        aria-label="Очистить"
-      >
+      <button v-if="q" class="search-clear" @click="clear" title="Очистить" type="button" aria-label="Очистить">
         <Fa :icon="['fas', 'xmark']" />
       </button>
     </div>
@@ -116,24 +60,11 @@
       <div class="dd-list">
         <div v-if="!results.length" class="dd-empty">Ничего не найдено</div>
 
-        <button
-          v-for="(r, idx) in results"
-          :key="r.id"
-          class="dd-item"
-          :class="{ active: idx === activeIdx }"
-          @mousedown.prevent="goProduct(r)"
-          :ref="(el) => (itemRefs[idx] = el)"
-          type="button"
-        >
+        <button v-for="(r, idx) in results" :key="r.id" class="dd-item" :class="{ active: idx === activeIdx }"
+          @mousedown.prevent="goProduct(r)" :ref="(el) => (itemRefs[idx] = el)" type="button">
           <div class="dd-thumb-wrap">
-            <img
-              v-if="thumbUrl(r) && !thumbErr[r.id]"
-              class="dd-thumb"
-              :src="thumbUrl(r)"
-              :alt="r.name"
-              loading="lazy"
-              @error="thumbErr[r.id] = true"
-            />
+            <img v-if="thumbUrl(r) && !thumbErr[r.id]" class="dd-thumb" :src="thumbUrl(r)" :alt="r.name" loading="lazy"
+              @error="thumbErr[r.id] = true" />
             <div v-else class="dd-thumb dd-thumb-ph" aria-hidden="true">
               <Fa :icon="['far', 'image']" />
             </div>
@@ -143,18 +74,13 @@
             <div class="dd-title">{{ r.name }}</div>
             <div class="dd-sub">
               <span v-if="r.brand" class="dd-pill">{{ r.brand }}</span>
-              <span v-if="r.price != null" class="dd-price"
-                >{{ r.price }} ₽</span
-              >
+              <span v-if="r.article" class="dd-code">арт: {{ r.article }}</span>
+              <span v-if="r.price != null" class="dd-price">{{ r.price }} ₽</span>
               <span v-if="r.barcode" class="dd-code">{{ r.barcode }}</span>
             </div>
           </div>
 
-          <Fa
-            aria-hidden="true"
-            class="dd-arrow"
-            :icon="['fas', 'chevron-right']"
-          />
+          <Fa aria-hidden="true" class="dd-arrow" :icon="['fas', 'chevron-right']" />
         </button>
       </div>
 
@@ -168,30 +94,18 @@
     </div>
 
     <!-- ✅ MOBILE CATEGORIES PANEL -->
-    <div
-      v-if="showCatalogButton && catsList.length && showMobileCats"
-      class="moverlay-overlay"
-      @click.self="closeMobileCats"
-    >
+    <div v-if="showCatalogButton && catsList.length && showMobileCats" class="moverlay-overlay"
+      @click.self="closeMobileCats">
       <div class="moverlay-panel">
         <div class="moverlay-header">
-          <button
-            class="moverlay-btn moverlay-back"
-            :class="{ ghost: !mobileCatsStack.length }"
-            :disabled="!mobileCatsStack.length"
-            @click="mobileCatsStack.length && backMobileCat()"
-            title="Назад"
-          >
+          <button class="moverlay-btn moverlay-back" :class="{ ghost: !mobileCatsStack.length }"
+            :disabled="!mobileCatsStack.length" @click="mobileCatsStack.length && backMobileCat()" title="Назад">
             <Fa :icon="['fas', 'arrow-left']" />
           </button>
 
           <span class="moverlay-title">{{ mobileCatsTitle }}</span>
 
-          <button
-            class="moverlay-btn moverlay-close"
-            @click="closeMobileCats"
-            title="Закрыть"
-          >
+          <button class="moverlay-btn moverlay-close" @click="closeMobileCats" title="Закрыть">
             ✕
           </button>
         </div>
@@ -199,49 +113,28 @@
         <div class="moverlay-body">
           <div class="mcat-list">
             <div v-for="c in mobileCatsList" :key="c.id" class="mcat-item">
-              <button
-                class="mcat-check"
-                :class="{
-                  on: String(c.code) === String(currentCategory || ''),
-                }"
-                @click.stop="pickCategory(c, { close: true })"
-                :title="
-                  String(c.code) === String(currentCategory || '')
+              <button class="mcat-check" :class="{ on: String(c.code) === String(currentCategory || '') }"
+                @click.stop="pickCategory(c, { close: true })" :title="String(c.code) === String(currentCategory || '')
                     ? 'Активно'
                     : 'Выбрать категорию'
-                "
-                type="button"
-              >
-                <Fa
-                  v-if="String(c.code) === String(currentCategory || '')"
-                  :icon="['fas', 'check']"
-                />
+                  " type="button">
+                <Fa v-if="String(c.code) === String(currentCategory || '')" :icon="['fas', 'check']" />
               </button>
 
-              <div
-                class="mcat-name"
-                @click="
-                  hasChildren(c)
-                    ? openMobileCat(c)
-                    : pickCategory(c, { close: true })
-                "
-              >
+              <div class="mcat-name" @click="
+                hasChildren(c)
+                  ? openMobileCat(c)
+                  : pickCategory(c, { close: true })
+                ">
                 {{ c.name }}
               </div>
 
-              <button
-                v-if="hasChildren(c)"
-                class="mcat-next"
-                @click.stop="openMobileCat(c)"
-                title="Подкатегории"
-              >
+              <button v-if="hasChildren(c)" class="mcat-next" @click.stop="openMobileCat(c)" title="Подкатегории">
                 <Fa :icon="['fas', 'chevron-right']" />
               </button>
             </div>
 
-            <div v-if="!mobileCatsList.length" class="mcat-empty">
-              Нет подкатегорий
-            </div>
+            <div v-if="!mobileCatsList.length" class="mcat-empty">Нет подкатегорий</div>
           </div>
         </div>
 
@@ -264,55 +157,29 @@
         <div class="scan-head">
           <div class="scan-title">Сканирование штрих-кода</div>
 
-          <button
-            class="scan-close"
-            type="button"
-            @click="closeScanner"
-            title="Закрыть"
-          >
+          <button class="scan-close" type="button" @click="closeScanner" title="Закрыть">
             <Fa :icon="['fas', 'xmark']" />
           </button>
         </div>
 
         <div class="scan-video-wrap">
-          <video
-            ref="scanVideoRef"
-            class="scan-video"
-            :class="{ flip: camFlip }"
-            autoplay
-            playsinline
-            muted
-          ></video>
+          <video ref="scanVideoRef" class="scan-video" :class="{ flip: camFlip }" autoplay playsinline muted></video>
 
           <!-- ✅ TORCH BUTTON (OVER VIDEO) -->
-          <button
-            v-if="torchSupported"
-            class="scan-torch"
-            :class="{ on: torchOn }"
-            type="button"
-            @click.stop="toggleTorch"
-            :title="torchOn ? 'Выключить фонарь' : 'Включить фонарь'"
-            :aria-label="torchOn ? 'Выключить фонарь' : 'Включить фонарь'"
-          >
+          <button v-if="torchSupported" class="scan-torch" :class="{ on: torchOn }" type="button"
+            @click.stop="toggleTorch" :title="torchOn ? 'Выключить фонарь' : 'Включить фонарь'"
+            :aria-label="torchOn ? 'Выключить фонарь' : 'Включить фонарь'">
             <Fa :icon="['fas', 'bolt']" />
           </button>
+
           <!-- ✅ SWITCH CAMERA BUTTON (BOTTOM RIGHT) -->
-          <button
-            class="scan-switch"
-            type="button"
-            @click.stop="switchCameraAnimated"
-            title="Сменить камеру"
-            aria-label="Сменить камеру"
-          >
+          <button class="scan-switch" type="button" @click.stop="switchCameraAnimated" title="Сменить камеру"
+            aria-label="Сменить камеру">
             <Fa :icon="['fas', 'camera-rotate']" />
           </button>
 
           <!-- рамка/анимация -->
-          <div
-            class="scan-frame"
-            :class="{ bad: scanBad, ok: scanState === 'found' }"
-            aria-hidden="true"
-          >
+          <div class="scan-frame" :class="{ bad: scanBad, ok: scanState === 'found' }" aria-hidden="true">
             <div class="scan-corner tl"></div>
             <div class="scan-corner tr"></div>
             <div class="scan-corner bl"></div>
@@ -327,10 +194,7 @@
               <span class="scan-btxt">{{ scanBadgeText }}</span>
             </div>
 
-            <div
-              class="scan-msg"
-              :class="{ bad: scanBad || scanState === 'error' }"
-            >
+            <div class="scan-msg" :class="{ bad: scanBad || scanState === 'error' }">
               <div class="scan-msg-top">
                 <div class="scan-msg-title">{{ scanTitleText }}</div>
                 <div v-if="scanCode" class="scan-code">{{ scanCode }}</div>
@@ -346,21 +210,13 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  watch,
-  nextTick,
-  onMounted,
-  onBeforeUnmount,
-} from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getCategoriesOnce } from "@/composables/useCategories";
 
 const route = useRoute();
 const router = useRouter();
 
-/* ================== PROPS / EMITS ================== */
 const props = defineProps({
   showCategory: { type: Boolean, default: false },
   categories: { type: Array, default: () => [] },
@@ -373,18 +229,14 @@ const props = defineProps({
 
   placeholder: {
     type: String,
-    default: "Поиск по названию / бренду / штрихкоду…",
+    default: "Поиск по названию / артикулу / штрихкоду…",
   },
 
   dropdownLimit: { type: Number, default: 12 },
   serverLimit: { type: Number, default: 30 },
 });
 
-const emit = defineEmits([
-  "search-hits",
-  "categories-loaded",
-  "categories-loading",
-]);
+const emit = defineEmits(["search-hits", "categories-loaded", "categories-loading"]);
 
 /* ================== SHOW BUTTON ONLY ON /catalog ================== */
 const showCatalogButton = computed(() => {
@@ -404,9 +256,7 @@ const catsList = computed(() => {
 const currentCategorySlug = computed(() => {
   const code = props.currentCategory;
   if (code == null || String(code) === "") return "";
-  const found = (catsList.value || []).find(
-    (c) => String(c.code) === String(code)
-  );
+  const found = (catsList.value || []).find((c) => String(c.code) === String(code));
   return found?.slug ? String(found.slug) : String(code);
 });
 
@@ -423,7 +273,6 @@ async function ensureCategories() {
   localCatsLoading.value = true;
   emit("categories-loading", true);
 
-  // ✅ теперь общий кеш/фетч живёт в composable
   localCats.value = await getCategoriesOnce();
 
   localCatsLoading.value = false;
@@ -461,7 +310,6 @@ function pulseCamFlip() {
   camFlip.value = true;
   setTimeout(() => (camFlip.value = false), 260);
 }
-
 async function switchCameraAnimated() {
   pulseCamFlip();
   await switchCamera();
@@ -490,9 +338,91 @@ function canSearch(text) {
   if (isDigits) return true;
   return norm.length >= 2;
 }
+// 1) Похожие буквы (EN -> RU)
+const HOMO_EN2RU = {
+  A:"А", a:"а",
+  B:"В", b:"в",
+  C:"С", c:"с",
+  E:"Е", e:"е",
+  H:"Н", h:"н",
+  K:"К", k:"к",
+  M:"М", m:"м",
+  O:"О", o:"о",
+  P:"Р", p:"р",
+  T:"Т", t:"т",
+  X:"Х", x:"х",
+  Y:"У", y:"у",
+};
+
+// 2) Похожие буквы (RU -> EN)
+const HOMO_RU2EN = {
+  А:"A", а:"a",
+  В:"B", в:"b",
+  С:"C", с:"c",
+  Е:"E", е:"e",
+  Н:"H", н:"h",
+  К:"K", к:"k",
+  М:"M", м:"m",
+  О:"O", о:"o",
+  Р:"P", р:"p",
+  Т:"T", т:"t",
+  Х:"X", х:"x",
+  У:"Y", у:"y",
+};
+
+function mapChars(str, map){
+  return String(str || "").split("").map(ch => map[ch] ?? ch).join("");
+}
+
+// 3) Перекладка клавиатуры (EN->RU и RU->EN) по физическим клавишам
+const KB_EN2RU = {
+  "`":"ё","~":"Ё","q":"й","w":"ц","e":"у","r":"к","t":"е","y":"н","u":"г","i":"ш","o":"щ","p":"з","[":"х","]":"ъ",
+  "a":"ф","s":"ы","d":"в","f":"а","g":"п","h":"р","j":"о","k":"л","l":"д",";":"ж","'":"э",
+  "z":"я","x":"ч","c":"с","v":"м","b":"и","n":"т","m":"ь",",":"б",".":"ю","/":".",
+  "@":"\"", "#":"№", "$":";", "^":":", "&":"?",
+
+  "Q":"Й","W":"Ц","E":"У","R":"К","T":"Е","Y":"Н","U":"Г","I":"Ш","O":"Щ","P":"З","{":"Х","}":"Ъ",
+  "A":"Ф","S":"Ы","D":"В","F":"А","G":"П","H":"Р","J":"О","K":"Л","L":"Д",":":"Ж","\"":"Э",
+  "Z":"Я","X":"Ч","C":"С","V":"М","B":"И","N":"Т","M":"Ь","<":"Б",">":"Ю","?":",",
+};
+const KB_RU2EN = Object.fromEntries(Object.entries(KB_EN2RU).map(([k,v]) => [v,k]));
+
+function swapLayout(str, dir = "en2ru"){
+  const map = dir === "en2ru" ? KB_EN2RU : KB_RU2EN;
+  return mapChars(str, map);
+}
+
+function makeSearchVariants(input){
+  const s = String(input || "").trim();
+  if (!s) return [];
+
+  const base = s;
+  const baseN = normalize(s);
+
+  const v = [
+    base,
+    baseN,
+    mapChars(base, HOMO_EN2RU),
+    mapChars(base, HOMO_RU2EN),
+    swapLayout(base, "en2ru"),
+    swapLayout(base, "ru2en"),
+  ];
+
+  return [...new Set(v.map(x => String(x || "").trim()).filter(Boolean))];
+}
+
 
 let t = null;
 let ac = null;
+const isComposing = ref(false);
+
+function onCompStart() {
+  isComposing.value = true;
+}
+function onCompEnd(e) {
+  isComposing.value = false;
+  onInput(e, { force: true });
+}
 
 function setRouteQ(nextQ) {
   const next = { ...route.query };
@@ -501,13 +431,17 @@ function setRouteQ(nextQ) {
   router.replace({ path: route.path, query: next });
 }
 
-function onInput() {
+function onInput(e, { force = false } = {}) {
   clearTimeout(t);
 
   closeCatPopover();
   closeMobileCats();
 
-  const s = qTrim.value;
+  const raw = e?.target?.value ?? q.value ?? "";
+  if (raw !== q.value) q.value = raw;
+
+  const s = String(raw).trim();
+
   if (!s) {
     openDd.value = false;
     results.value = [];
@@ -520,10 +454,14 @@ function onInput() {
   }
 
   openDd.value = true;
+
+  // Android/IME: чуть больше задержка пока идет composition, чтобы не дёргалось
+  const delay = isComposing.value && !force ? 380 : 220;
+
   t = setTimeout(() => {
     if (props.syncRoute) setRouteQ(s);
     else doSearch(s);
-  }, 220);
+  }, delay);
 }
 
 watch(activeIdx, async () => {
@@ -572,6 +510,34 @@ watch(
   { immediate: true }
 );
 
+async function fetchSearch(qText) {
+  const r = await fetch(
+    `/api/admin/product/search_products.php?q=${encodeURIComponent(qText)}&limit=${encodeURIComponent(String(props.serverLimit || 30))}`,
+    { headers: { Accept: "application/json" }, signal: ac?.signal }
+  );
+  const data = await r.json();
+  const list = Array.isArray(data) ? data : data.products || data.items || [];
+
+  return (list || [])
+    .filter(Boolean)
+    .slice(0, Number(props.serverLimit || 30))
+    .map((p) => ({
+      id: p.id,
+      slug: p.slug ?? null,
+      name: p.name,
+      price: p.price,
+      brand: p.brand,
+      barcode: p.barcode,
+      article: p.article ?? null,
+      quantity_value: p.quantity_value ?? null,
+      measureName: p.measureName ?? p.measure_name ?? null,
+      thumb: p.thumb || p.image || null,
+      images: p.images || null,
+    }))
+    .filter((p) => p.id != null && p.name);
+}
+let searchReqId = 0;
+
 async function doSearch(text) {
   const s = String(text || "").trim();
   if (!s) return;
@@ -585,40 +551,27 @@ async function doSearch(text) {
     return;
   }
 
+  const reqId = ++searchReqId;
+
   if (ac) ac.abort();
   ac = new AbortController();
 
   loadingSearch.value = true;
+
   try {
-    const r = await fetch(
-      `/api/admin/product/search_products.php?q=${encodeURIComponent(
-        s
-      )}&limit=${encodeURIComponent(String(props.serverLimit || 30))}`,
-      { headers: { Accept: "application/json" }, signal: ac.signal }
-    );
+    const variants = makeSearchVariants(s);
 
-    const data = await r.json();
-    const list = Array.isArray(data) ? data : data.products || data.items || [];
+    let mapped = await fetchSearch(variants[0]);
 
-    const mapped = (list || [])
-      .filter(Boolean)
-      .slice(0, Number(props.serverLimit || 30))
-      .map((p) => ({
-        id: p.id,
-        slug: p.slug ?? null,
+    if (!mapped.length && variants.length > 1) {
+      for (let i = 1; i < variants.length; i++) {
+        mapped = await fetchSearch(variants[i]);
+        if (mapped.length) break;
+      }
+    }
 
-        name: p.name,
-        price: p.price,
-        brand: p.brand,
-        barcode: p.barcode,
-
-        quantity_value: p.quantity_value ?? null,
-        measureName: p.measureName ?? p.measure_name ?? null,
-
-        thumb: p.thumb || p.image || null,
-        images: p.images || null,
-      }))
-      .filter((p) => p.id != null && p.name);
+    // ✅ если это уже не актуальный запрос — ничего не трогаем
+    if (reqId !== searchReqId) return;
 
     allHits.value = mapped;
     emit("search-hits", mapped);
@@ -631,20 +584,24 @@ async function doSearch(text) {
       if (x?.id != null) nextErr[x.id] = false;
     });
     thumbErr.value = nextErr;
-
     itemRefs.value = [];
   } catch (e) {
-    if (e?.name !== "AbortError") {
-      results.value = [];
-      allHits.value = [];
-      activeIdx.value = -1;
-      itemRefs.value = [];
-      emit("search-hits", []);
-    }
+    // если отменили — просто выходим (без очистки)
+    if (e?.name === "AbortError") return;
+
+    if (reqId !== searchReqId) return;
+
+    results.value = [];
+    allHits.value = [];
+    activeIdx.value = -1;
+    itemRefs.value = [];
+    emit("search-hits", []);
   } finally {
-    loadingSearch.value = false;
+    // ✅ только самый свежий запрос имеет право выключать loading
+    if (reqId === searchReqId) loadingSearch.value = false;
   }
 }
+
 
 function clear() {
   q.value = "";
@@ -738,17 +695,14 @@ const treeData = computed(() => {
   list.forEach((c) => {
     const n = byId.get(String(c.id));
     if (!n) return;
-    const parent =
-      c.parent == null || String(c.parent) === "" ? null : String(c.parent);
+    const parent = c.parent == null || String(c.parent) === "" ? null : String(c.parent);
     if (!parent) roots.push(n);
     else byId.get(String(parent))?.children.push(n);
   });
 
   const sortNode = (n) => {
     n.children.sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", {
-        sensitivity: "base",
-      })
+      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
     );
     n.children.forEach(sortNode);
   };
@@ -784,10 +738,7 @@ function hydrateHoverPathFromActive() {
   let cur = node;
   while (cur) {
     path.unshift(cur);
-    const parent =
-      cur.parent == null || String(cur.parent) === ""
-        ? null
-        : String(cur.parent);
+    const parent = cur.parent == null || String(cur.parent) === "" ? null : String(cur.parent);
     if (!parent) break;
     cur = treeData.value.byId.get(String(parent));
     if (!cur) break;
@@ -860,9 +811,7 @@ const childrenByParent = computed(() => {
   });
   Object.keys(map).forEach((k) =>
     map[k].sort((a, b) =>
-      String(a.name).localeCompare(String(b.name), "ru", {
-        sensitivity: "base",
-      })
+      String(a.name).localeCompare(String(b.name), "ru", { sensitivity: "base" })
     )
   );
   return map;
@@ -951,17 +900,11 @@ function onDocDown(e) {
   const pop = catPopRef.value;
   const btn = catPickRef.value;
 
-  const inside =
-    (box && box.contains(t)) ||
-    (pop && pop.contains(t)) ||
-    (btn && btn.contains(t));
-
+  const inside = (box && box.contains(t)) || (pop && pop.contains(t)) || (btn && btn.contains(t));
   if (!inside) closeCatPopover();
 }
 
-onMounted(() =>
-  document.addEventListener("mousedown", onDocDown, { passive: true })
-);
+onMounted(() => document.addEventListener("mousedown", onDocDown, { passive: true }));
 onBeforeUnmount(() => document.removeEventListener("mousedown", onDocDown));
 
 /* ================= TOAST ================= */
@@ -979,12 +922,13 @@ function showToast(text, kind = "info", ms = 2400) {
 }
 
 /* ================= BARCODE SCANNER ================= */
+const isAndroid = computed(() => {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent || "");
+});
+
 const canScan = computed(() => {
-  return (
-    typeof window !== "undefined" &&
-    window.isSecureContext &&
-    navigator?.mediaDevices?.getUserMedia
-  );
+  return typeof window !== "undefined" && window.isSecureContext && navigator?.mediaDevices?.getUserMedia;
 });
 
 const showScanner = ref(false);
@@ -999,10 +943,22 @@ const torchSupported = ref(false);
 const torchOn = ref(false);
 const facingMode = ref("environment");
 
-let zxingReader = null;
-let zxingControls = null;
+// engine state
 let currentTrack = null;
 
+// Native BarcodeDetector (preferred on Android)
+let bdDetector = null;
+let bdCanvas = null;
+let bdCtx = null;
+let bdTimer = null;
+let bdInFlight = false;
+let usingBarcodeDetector = false;
+
+// ZXing fallback
+let zxingReader = null;
+let zxingControls = null;
+
+// de-bounce reads
 let scanLock = false;
 let lastHandledCode = "";
 let lastHandledAt = 0;
@@ -1048,16 +1004,31 @@ const scanPanelClass = computed(() => {
   };
 });
 
+function hasBarcodeDetector() {
+  return typeof window !== "undefined" && "BarcodeDetector" in window;
+}
+
+function buildVideoConstraints() {
+  // меньше нагрузка на Android
+  const w = isAndroid.value ? 960 : 1280;
+  const h = isAndroid.value ? 540 : 720;
+  const fps = isAndroid.value ? 24 : 30;
+
+  return {
+    facingMode: { ideal: facingMode.value },
+    width: { ideal: w },
+    height: { ideal: h },
+    frameRate: { ideal: fps, max: fps },
+  };
+}
+
 async function openScanner() {
   openDd.value = false;
   closeCatPopover();
   closeMobileCats();
 
   if (!canScan.value) {
-    showToast(
-      "Камера недоступна: требуется HTTPS и разрешение на доступ.",
-      "err"
-    );
+    showToast("Камера недоступна: требуется HTTPS и разрешение на доступ.", "err");
     return;
   }
 
@@ -1070,11 +1041,11 @@ async function openScanner() {
   await nextTick();
 
   try {
-    await startZXing();
+    await startScannerEngine();
     scanState.value = "scanning";
     scanMessage.value = torchSupported.value
-      ? "Держите штрих-код в рамке. Если код читается плохо - поднесите ближе или включите фонарь."
-      : "Держите штрих-код в рамке. Если код читается плохо - поднесите ближе и держите код ровно.";
+      ? "Держите штрих-код в рамке. Если код читается плохо — поднесите ближе или включите фонарь."
+      : "Держите штрих-код в рамке. Если код читается плохо — поднесите ближе и держите код ровно.";
   } catch (e) {
     scanState.value = "error";
     scanBad.value = true;
@@ -1085,18 +1056,203 @@ async function openScanner() {
 
 function closeScanner() {
   showScanner.value = false;
-  stopZXing();
+  stopScannerEngine();
+
   scanState.value = "idle";
   scanMessage.value = "";
   scanCode.value = "";
   scanBad.value = false;
+
   torchSupported.value = false;
   torchOn.value = false;
   currentTrack = null;
+
   scanLock = false;
 }
 
-async function startZXing() {
+async function startScannerEngine() {
+  stopScannerEngine();
+
+  const videoEl = scanVideoRef.value;
+  if (!videoEl) throw new Error("No video element");
+
+  // ✅ На Android сначала пробуем BarcodeDetector (меньше лагов)
+  usingBarcodeDetector = hasBarcodeDetector() && isAndroid.value;
+
+  if (usingBarcodeDetector) {
+    await startNativeDetector(videoEl);
+    return;
+  }
+
+  // ✅ Иначе ZXing (как было, но с меньшей нагрузкой на Android)
+  await startZXing(videoEl);
+}
+
+function stopScannerEngine() {
+  stopNativeDetector();
+  stopZXing();
+}
+
+async function refreshTorchSupport() {
+  torchSupported.value = false;
+  torchOn.value = false;
+
+  const track = currentTrack;
+  if (!track || typeof track.applyConstraints !== "function") return;
+
+  // 1) нормальный путь: capabilities
+  try {
+    const caps = track.getCapabilities?.();
+    if (caps && "torch" in caps) {
+      torchSupported.value = !!caps.torch;
+      return;
+    }
+  } catch { }
+
+  // 2) "probe": на части Android caps не отдается, но torch работает
+  if (facingMode.value !== "environment") return;
+
+  try {
+    await track.applyConstraints({ advanced: [{ torch: false }] });
+    torchSupported.value = true;
+  } catch {
+    torchSupported.value = false;
+  }
+}
+
+/* ---------- Native BarcodeDetector ---------- */
+async function startNativeDetector(videoEl) {
+  const constraints = { audio: false, video: buildVideoConstraints() };
+
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  videoEl.srcObject = stream;
+
+  // play может падать в некоторых браузерах — не валим все
+  try {
+    await videoEl.play();
+  } catch { }
+
+  currentTrack = stream?.getVideoTracks?.()?.[0] || null;
+  await refreshTorchSupport();
+
+  // Создаем detector
+  let formatsWanted = [
+    "ean_13",
+    "ean_8",
+    "upc_a",
+    "upc_e",
+    "code_128",
+    "code_39",
+    "itf",
+    "codabar",
+  ];
+
+  try {
+    // если браузер умеет — фильтруем под реально поддерживаемые
+    const BD = window.BarcodeDetector;
+    if (typeof BD.getSupportedFormats === "function") {
+      const sup = await BD.getSupportedFormats();
+      formatsWanted = formatsWanted.filter((f) => sup.includes(f));
+      if (!formatsWanted.length) formatsWanted = sup;
+    }
+
+    bdDetector = new window.BarcodeDetector({ formats: formatsWanted });
+  } catch (e) {
+    // если по какой-то причине детектор не создался — падаем на ZXing
+    usingBarcodeDetector = false;
+    stopNativeDetector();
+    await startZXing(videoEl);
+    return;
+  }
+
+  if (!bdCanvas) {
+    bdCanvas = document.createElement("canvas");
+    bdCtx = bdCanvas.getContext("2d", { willReadFrequently: true });
+  }
+
+  bdInFlight = false;
+
+  // частота детекта (Android: чуть реже)
+  const interval = isAndroid.value ? 140 : 120;
+  const tick = async () => {
+    if (!showScanner.value) return;
+    if (!bdDetector || !bdCtx || !videoEl) return;
+
+    // если видео еще не готово
+    if (videoEl.readyState < 2) {
+      bdTimer = setTimeout(tick, interval);
+      return;
+    }
+
+    if (bdInFlight) {
+      bdTimer = setTimeout(tick, interval);
+      return;
+    }
+
+    bdInFlight = true;
+    try {
+      const vw = videoEl.videoWidth || 0;
+      const vh = videoEl.videoHeight || 0;
+      if (!vw || !vh) {
+        bdInFlight = false;
+        bdTimer = setTimeout(tick, interval);
+        return;
+      }
+
+      // рисуем кадр в меньшем размере (быстрее)
+      const targetW = 640;
+      const targetH = Math.round((vh * targetW) / vw);
+
+      bdCanvas.width = targetW;
+      bdCanvas.height = targetH;
+      bdCtx.drawImage(videoEl, 0, 0, targetW, targetH);
+
+      const codes = await bdDetector.detect(bdCanvas);
+      if (codes && codes.length) {
+        const raw = String(codes[0]?.rawValue || "").trim();
+        if (raw) {
+          const now = Date.now();
+          if (!scanLock && !(raw === lastHandledCode && now - lastHandledAt < 1600)) {
+            lastHandledCode = raw;
+            lastHandledAt = now;
+            await processCode(raw);
+          }
+        }
+      }
+    } catch {
+      // молча
+    } finally {
+      bdInFlight = false;
+      bdTimer = setTimeout(tick, interval);
+    }
+  };
+
+  bdTimer = setTimeout(tick, interval);
+}
+
+function stopNativeDetector() {
+  if (bdTimer) clearTimeout(bdTimer);
+  bdTimer = null;
+  bdInFlight = false;
+
+  bdDetector = null;
+
+  const videoEl = scanVideoRef.value;
+  if (videoEl && videoEl.srcObject) {
+    try {
+      const stream = videoEl.srcObject;
+      stream?.getTracks?.().forEach((t) => t.stop());
+    } catch { }
+    videoEl.srcObject = null;
+  }
+
+  currentTrack = null;
+  torchSupported.value = false;
+  torchOn.value = false;
+}
+
+/* ---------- ZXing fallback ---------- */
+async function startZXing(videoEl) {
   stopZXing();
 
   const ZX = await import("@zxing/browser");
@@ -1115,49 +1271,38 @@ async function startZXing() {
     ZL.BarcodeFormat.CODABAR,
   ]);
 
-  zxingReader = new ZX.BrowserMultiFormatReader(hints);
-
-  const videoEl = scanVideoRef.value;
-  if (!videoEl) throw new Error("No video element");
+  // ✅ меньше нагрузка: делаем паузу между попытками
+  zxingReader = new ZX.BrowserMultiFormatReader(hints, isAndroid.value ? 250 : 150);
 
   const constraints = {
     audio: false,
-    video: {
-      facingMode: { ideal: facingMode.value },
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-    },
+    video: buildVideoConstraints(),
   };
 
-  zxingControls = await zxingReader.decodeFromConstraints(
-    constraints,
-    videoEl,
-    async (result) => {
-      if (!result) return;
+  zxingControls = await zxingReader.decodeFromConstraints(constraints, videoEl, async (result) => {
+    if (!result) return;
 
-      const text = String(result.getText?.() ?? result.text ?? "").trim();
-      if (!text) return;
+    const text = String(result.getText?.() ?? result.text ?? "").trim();
+    if (!text) return;
 
-      const now = Date.now();
-      if (scanLock) return;
-      if (text === lastHandledCode && now - lastHandledAt < 1600) return;
+    const now = Date.now();
+    if (scanLock) return;
+    if (text === lastHandledCode && now - lastHandledAt < 1600) return;
 
-      lastHandledCode = text;
-      lastHandledAt = now;
+    lastHandledCode = text;
+    lastHandledAt = now;
 
-      await processCode(text);
-    }
-  );
+    await processCode(text);
+  });
 
+  // torch capability
   try {
     const stream = videoEl.srcObject;
     const track = stream?.getVideoTracks?.()?.[0] || null;
     currentTrack = track;
-
-    const caps = track?.getCapabilities?.();
-    torchSupported.value = !!caps?.torch;
-    torchOn.value = false;
+    await refreshTorchSupport();
   } catch {
+    currentTrack = null;
     torchSupported.value = false;
     torchOn.value = false;
   }
@@ -1165,15 +1310,13 @@ async function startZXing() {
 
 function stopZXing() {
   try {
-    if (zxingControls && typeof zxingControls.stop === "function")
-      zxingControls.stop();
-  } catch {}
+    if (zxingControls && typeof zxingControls.stop === "function") zxingControls.stop();
+  } catch { }
   zxingControls = null;
 
   try {
-    if (zxingReader && typeof zxingReader.reset === "function")
-      zxingReader.reset();
-  } catch {}
+    if (zxingReader && typeof zxingReader.reset === "function") zxingReader.reset();
+  } catch { }
   zxingReader = null;
 
   const v = scanVideoRef.value;
@@ -1181,11 +1324,13 @@ function stopZXing() {
     try {
       const stream = v.srcObject;
       stream?.getTracks?.().forEach((t) => t.stop());
-    } catch {}
+    } catch { }
     v.srcObject = null;
   }
 
   currentTrack = null;
+  torchSupported.value = false;
+  torchOn.value = false;
 }
 
 async function toggleTorch() {
@@ -1193,20 +1338,18 @@ async function toggleTorch() {
   if (!track) return;
 
   try {
-    await track.applyConstraints({
-      advanced: [{ torch: !torchOn.value }],
-    });
+    await track.applyConstraints({ advanced: [{ torch: !torchOn.value }] });
     torchOn.value = !torchOn.value;
-
     if (navigator.vibrate) navigator.vibrate(10);
   } catch {
+    // если probe дал кнопку, но реально torch не поддерживается — покажем ошибку
     showToast("Фонарь недоступен на этом устройстве.", "err");
+    torchOn.value = false;
   }
 }
 
 async function switchCamera() {
-  facingMode.value =
-    facingMode.value === "environment" ? "user" : "environment";
+  facingMode.value = facingMode.value === "environment" ? "user" : "environment";
 
   scanBad.value = false;
   scanCode.value = "";
@@ -1215,10 +1358,10 @@ async function switchCamera() {
   scanLock = true;
 
   try {
-    await startZXing();
+    await startScannerEngine();
     scanState.value = "scanning";
     scanMessage.value = "Наведите штрих-код в рамку.";
-  } catch (e) {
+  } catch {
     scanState.value = "error";
     scanBad.value = true;
     scanMessage.value = "Не удалось переключить камеру.";
@@ -1271,15 +1414,13 @@ async function processCode(codeRaw, { manual = false } = {}) {
 
     setTimeout(() => {
       if (!showScanner.value) return;
-      if (scanState.value === "scanning") {
-        scanMessage.value = "Наведите штрих-код в рамку.";
-      }
+      if (scanState.value === "scanning") scanMessage.value = "Наведите штрих-код в рамку.";
     }, 3000);
 
     setTimeout(() => {
       scanLock = false;
     }, 700);
-  } catch (e) {
+  } catch {
     scanState.value = "error";
     scanBad.value = true;
     scanMessage.value =
@@ -1292,12 +1433,9 @@ async function processCode(codeRaw, { manual = false } = {}) {
 }
 
 async function findProductByBarcode(code) {
-  const r = await fetch(
-    `/api/admin/product/search_products.php?q=${encodeURIComponent(
-      code
-    )}&limit=1`,
-    { headers: { Accept: "application/json" } }
-  );
+  const r = await fetch(`/api/admin/product/search_products.php?q=${encodeURIComponent(code)}&limit=1`, {
+    headers: { Accept: "application/json" },
+  });
   const data = await r.json();
   const list = Array.isArray(data) ? data : data.products || data.items || [];
   return list?.[0] || null;
@@ -1334,11 +1472,10 @@ watch([showMobileCats, showScanner], ([m, s]) => {
   bodyLocked.value = should;
 });
 
-/* cleanup */
 onBeforeUnmount(() => {
   clearTimeout(t);
   if (ac) ac.abort();
-  stopZXing();
+  stopScannerEngine();
   clearTimeout(toastTimer);
 });
 </script>
@@ -1393,13 +1530,16 @@ onBeforeUnmount(() => {
   justify-content: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
 .search-clear:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
+
 .search-box {
   gap: 8px;
 }
+
 .search-clear,
 .search-scan {
   flex: 0 0 auto;
@@ -1411,18 +1551,14 @@ onBeforeUnmount(() => {
   height: 34px;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(2, 6, 23, 0.08);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 1),
-    rgba(247, 248, 255, 1)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(247, 248, 255, 1));
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease,
-    border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
+
 .search-scan:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 28px rgba(2, 6, 23, 0.12);
@@ -1526,6 +1662,7 @@ onBeforeUnmount(() => {
     opacity: 0;
     transform: translateX(-50%) translateY(-6px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -1555,11 +1692,7 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.1);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.96),
-    rgba(255, 255, 255, 0.88)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
 }
 
 .catpop-title {
@@ -1579,9 +1712,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    border-color 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
+
 .catpop-close:hover {
   transform: translateY(-1px);
   border-color: rgba(4, 0, 255, 0.22);
@@ -1602,13 +1735,10 @@ onBeforeUnmount(() => {
   flex: 0 0 280px;
   padding: 10px 10px 30px 12px;
   border-right: 1px solid rgba(15, 23, 42, 0.08);
-  background: radial-gradient(
-      600px 220px at 50% -140px,
-      rgba(4, 0, 255, 0.08),
-      transparent 60%
-    ),
+  background: radial-gradient(600px 220px at 50% -140px, rgba(4, 0, 255, 0.08), transparent 60%),
     rgba(255, 255, 255, 0.86);
 }
+
 .catpop-col:last-child {
   border-right: none;
 }
@@ -1627,30 +1757,35 @@ onBeforeUnmount(() => {
   gap: 10px;
   color: var(--text-main);
   font-weight: 900;
-  transition: background 0.12s ease, border-color 0.12s ease,
-    transform 0.12s ease, box-shadow 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
+
 .catpop-item:hover {
   background: rgba(4, 0, 255, 0.06);
   border-color: rgba(4, 0, 255, 0.14);
   transform: translateY(-1px);
   box-shadow: 0 10px 22px rgba(2, 6, 23, 0.1);
 }
+
 .catpop-item.active {
   background: rgba(4, 0, 255, 0.08);
   border-color: rgba(4, 0, 255, 0.18);
 }
+
 .catpop-item.picked {
   color: var(--accent);
   background: rgba(4, 0, 255, 0.1);
   border-color: rgba(4, 0, 255, 0.26);
 }
+
 .catpop-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .catpop-chev {
   opacity: 0.35;
   font-size: 12px;
@@ -1658,13 +1793,18 @@ onBeforeUnmount(() => {
 
 /* ===== hint ===== */
 .search-hint {
+  width: 80px;
   margin-top: 10px;
+  padding: 3px;
+  border-radius: 10px;
   font-size: 12px;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 8px;
+  background-color: var(--bg-panel);
 }
+
 .search-hint .dot {
   width: 7px;
   height: 7px;
@@ -1722,17 +1862,19 @@ onBeforeUnmount(() => {
   padding: 10px 10px;
   border-radius: 14px;
 
-  transition: background 0.12s ease, border-color 0.12s ease,
-    transform 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
 }
+
 .dd-item:hover {
   background: rgba(4, 0, 255, 0.05);
   border-color: rgba(4, 0, 255, 0.1);
 }
+
 .dd-item.active {
   background: rgba(4, 0, 255, 0.08);
   border-color: rgba(4, 0, 255, 0.18);
 }
+
 .dd-item:active {
   transform: scale(0.997);
 }
@@ -1783,9 +1925,11 @@ onBeforeUnmount(() => {
   font-weight: 900;
   color: var(--text-main);
   line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
 }
 
 .dd-sub {
@@ -1825,8 +1969,8 @@ onBeforeUnmount(() => {
   border: 1px solid #e5e7eb;
   padding: 5px 10px;
   border-radius: var(--radius-lg);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .dd-arrow {
@@ -1848,6 +1992,7 @@ onBeforeUnmount(() => {
   color: var(--accent);
   transition: background 0.12s ease;
 }
+
 .dd-all:hover {
   background: rgba(4, 0, 255, 0.05);
 }
@@ -1907,6 +2052,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   font-weight: 900;
 }
+
 .moverlay-btn.ghost {
   opacity: 0.35;
 }
@@ -1964,17 +2110,20 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
 }
+
 .mcat-check.on {
   border-color: rgba(4, 0, 255, 0.25);
   background: rgba(4, 0, 255, 0.08);
   color: var(--accent);
 }
+
 .mcat-name {
   color: var(--text-main);
   line-height: 1.2;
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+
 .mcat-next {
   width: 40px;
   height: 40px;
@@ -1987,6 +2136,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   opacity: 0.8;
 }
+
 .mcat-empty {
   padding: 14px 8px;
   text-align: center;
@@ -2011,12 +2161,15 @@ onBeforeUnmount(() => {
   max-width: min(92vw, 520px);
   text-align: center;
 }
+
 .toast.ok {
   color: #0f766e;
 }
+
 .toast.err {
   color: #b91c1c;
 }
+
 .toast.info {
   color: var(--text-main);
 }
@@ -2025,11 +2178,13 @@ onBeforeUnmount(() => {
 .toast-leave-active {
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
+
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
 }
+
 /* torch button (over video) */
 .scan-torch {
   position: absolute;
@@ -2054,8 +2209,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
 
-  transition: transform 0.12s ease, background 0.12s ease,
-    border-color 0.12s ease;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
 }
 
 .scan-torch:hover {
@@ -2078,11 +2232,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   z-index: 5000;
-  background: radial-gradient(
-      900px 420px at 50% 0%,
-      rgba(255, 255, 255, 0.1),
-      transparent 60%
-    ),
+  background: radial-gradient(900px 420px at 50% 0%, rgba(255, 255, 255, 0.1), transparent 60%),
     rgba(15, 23, 42, 0.62);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -2102,19 +2252,23 @@ onBeforeUnmount(() => {
   transform: translateY(0);
   animation: scanPop 0.18s ease-out;
 }
+
 @keyframes scanPop {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.985);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
+
 .scan-panel.bad {
   box-shadow: 0 34px 110px rgba(185, 28, 28, 0.22);
 }
+
 .scan-panel.ok {
   box-shadow: 0 34px 110px rgba(16, 185, 129, 0.22);
 }
@@ -2126,11 +2280,7 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding: 12px 12px;
   border-bottom: 1px solid var(--border-soft);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(255, 255, 255, 0.9)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
 }
 
 .scan-title {
@@ -2183,20 +2333,15 @@ onBeforeUnmount(() => {
   aspect-ratio: 3 / 2;
   border-radius: 20px;
   border: 1px dashed rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 0 9var (--radius-lg) rgba(2, 6, 23, 0.18) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.1), 0 18px 50px rgba(0, 0, 0, 0.25);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .scan-frame.bad::before {
   border-color: rgba(239, 68, 68, 0.95);
-  box-shadow: 0 0 0 9var (--radius-lg) rgba(185, 28, 28, 0.18) inset,
-    0 0 0 1px rgba(239, 68, 68, 0.35), 0 18px 50px rgba(185, 28, 28, 0.2);
 }
+
 .scan-frame.ok::before {
   border-color: rgba(34, 197, 94, 0.95);
-  box-shadow: 0 0 0 9var (--radius-lg) rgba(16, 185, 129, 0.18) inset,
-    0 0 0 1px rgba(34, 197, 94, 0.35), 0 18px 50px rgba(16, 185, 129, 0.18);
 }
 
 /* уголки */
@@ -2208,9 +2353,11 @@ onBeforeUnmount(() => {
   border-radius: 7px;
   transition: border-color 0.18s ease;
 }
+
 .scan-frame.bad .scan-corner {
   border-color: rgba(239, 68, 68, 0.95);
 }
+
 .scan-frame.ok .scan-corner {
   border-color: rgba(34, 197, 94, 0.95);
 }
@@ -2220,16 +2367,19 @@ onBeforeUnmount(() => {
   border-right: 0;
   border-bottom: 0;
 }
+
 .scan-corner.tr {
   transform: translate(min(39%, 235px), calc(-1 * min(26%, 150px)));
   border-left: 0;
   border-bottom: 0;
 }
+
 .scan-corner.bl {
   transform: translate(calc(-1 * min(39%, 235px)), min(26%, 150px));
   border-right: 0;
   border-top: 0;
 }
+
 .scan-corner.br {
   transform: translate(min(39%, 235px), min(26%, 150px));
   border-left: 0;
@@ -2242,12 +2392,7 @@ onBeforeUnmount(() => {
   width: min(76%, 455px);
   height: 2px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.95),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
   opacity: 0.95;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.28));
   animation: scanLine 1.25s ease-in-out infinite;
@@ -2258,9 +2403,11 @@ onBeforeUnmount(() => {
     transform: translateY(calc(-1 * min(20%, 120px)));
     opacity: 0.25;
   }
+
   45% {
     opacity: 0.95;
   }
+
   100% {
     transform: translateY(min(20%, 120px));
     opacity: 0.25;
@@ -2294,13 +2441,16 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
+
 .scan-badge.checking {
   background: rgba(4, 0, 255, 0.26);
 }
+
 .scan-badge.ok {
   background: rgba(16, 185, 129, 0.22);
   border-color: rgba(34, 197, 94, 0.25);
 }
+
 .scan-badge.bad {
   background: rgba(127, 29, 29, 0.22);
   border-color: rgba(239, 68, 68, 0.25);
@@ -2313,19 +2463,23 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.92);
   opacity: 0.9;
 }
+
 .scan-badge.scanning .scan-bdot {
   animation: pulseDot 1s ease-in-out infinite;
 }
+
 .scan-badge.checking .scan-bdot {
   animation: pulseDot 0.7s ease-in-out infinite;
 }
 
 @keyframes pulseDot {
+
   0%,
   100% {
     transform: scale(0.9);
     opacity: 0.6;
   }
+
   50% {
     transform: scale(1.15);
     opacity: 1;
@@ -2343,6 +2497,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
 }
+
 .scan-msg.bad {
   background: rgba(127, 29, 29, 0.3);
   border-color: rgba(239, 68, 68, 0.28);
@@ -2355,14 +2510,16 @@ onBeforeUnmount(() => {
   gap: 10px;
   margin-bottom: 6px;
 }
+
 .scan-msg-title {
   font-weight: 950;
   font-size: 13px;
   letter-spacing: 0.01em;
 }
+
 .scan-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   font-size: 12px;
   font-weight: 900;
   padding: 5px 10px;
@@ -2374,6 +2531,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .scan-msg-sub {
   font-size: 12px;
   font-weight: 850;
@@ -2386,6 +2544,7 @@ onBeforeUnmount(() => {
 .catpick-btn:active {
   transform: translateY(1px) scale(0.99);
 }
+
 /* switch camera (bottom-right) */
 .scan-switch {
   position: absolute;
@@ -2432,10 +2591,12 @@ onBeforeUnmount(() => {
     transform: scale(1) rotateY(0deg);
     filter: blur(0px);
   }
+
   45% {
     transform: scale(0.985) rotateY(18deg);
     filter: blur(1px);
   }
+
   100% {
     transform: scale(1) rotateY(0deg);
     filter: blur(0px);
