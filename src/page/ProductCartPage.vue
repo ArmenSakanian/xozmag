@@ -122,27 +122,15 @@
 
           <!-- DETAILS UNDER GALLERY -->
           <div class="card details">
-            <div class="tabs">
-              <button class="tab" :class="{ on: tab === 'desc' }" @click="tab = 'desc'">
-                <Fa :icon="['far', 'file-lines']" />
-                Описание
-              </button>
-
-              <button class="tab" :class="{ on: tab === 'attrs' }" @click="tab = 'attrs'">
-                <Fa :icon="['fas', 'list-check']" />
-                Характеристики
-                <span v-if="attrs.length" class="count">{{ attrs.length }}</span>
-              </button>
-
-              <button class="tab" :class="{ on: tab === 'info' }" @click="tab = 'info'">
-                <Fa :icon="['fas', 'circle-info']" />
-                Инфо
-              </button>
+            <div class="infoSectionHead">
+              <Fa :icon="['fas', 'circle-info']" />
+              <span>Информация о товаре</span>
             </div>
 
-            <div class="tabBody">
-              <!-- DESCRIPTION -->
-              <div v-if="tab === 'desc'" class="desc">
+            <div class="tabBody productInfoBody">
+              <div class="infoBlock">
+                <div class="infoBlockTitle">Описание</div>
+
                 <div v-if="hasDescription" class="descText" :class="{ clamp: !descExpanded && descCanToggle }">
                   {{ String(product.description || "") }}
                 </div>
@@ -158,8 +146,12 @@
                 </button>
               </div>
 
-              <!-- ATTRS -->
-              <div v-else-if="tab === 'attrs'" class="spec">
+              <div class="infoBlock">
+                <div class="infoBlockTitle">
+                  Характеристики
+                  <span v-if="attrs.length" class="count">{{ attrs.length }}</span>
+                </div>
+
                 <div v-if="attrs.length" class="specTable">
                   <div v-for="(a, i) in attrs" :key="a.name + i" class="specRow">
                     <div class="sk">{{ a.name }}</div>
@@ -177,22 +169,19 @@
                 </div>
               </div>
 
-              <!-- INFO -->
-              <div v-else class="info">
-                <div class="infoTable">
-                  <div class="infoRow">
-                    <div class="ik">ID</div>
-                    <div class="iv mono">{{ product.id }}</div>
-                  </div>
+              <div class="infoBlock">
+                <div class="infoBlockTitle">Данные товара</div>
 
+                <div class="infoTable">
                   <div class="infoRow">
                     <div class="ik">Штрихкод</div>
                     <div class="iv mono">{{ product.barcode || "-" }}</div>
                   </div>
+
                   <div class="infoRow">
-  <div class="ik">Остаток</div>
-  <div class="iv">{{ qtyPretty }}</div>
-</div>
+                    <div class="ik">Остаток</div>
+                    <div class="iv">{{ qtyPretty }}</div>
+                  </div>
 
                   <div class="infoRow" v-if="product.article">
                     <div class="ik">Артикул</div>
@@ -276,7 +265,6 @@ const activeIndex = ref(0);
 const mainSwiper = ref(null);
 const thumbsSwiper = ref(null);
 
-const tab = ref("desc");
 const descExpanded = ref(false);
 
 const pkey = computed(() => String(route.params.slug || "")); // /product/:slug
@@ -568,7 +556,6 @@ async function loadOne() {
     images.value = [];
     activeIndex.value = 0;
     descExpanded.value = false;
-    tab.value = "desc";
     galleryKey.value++;
 
     const key = pkey.value;
@@ -597,7 +584,6 @@ async function loadOne() {
     images.value = imgArr;
     galleryKey.value++;
 
-    if (!hasDescription.value && attrs.value.length) tab.value = "attrs";
   } catch (e) {
     error.value = e?.message || "Ошибка загрузки";
   } finally {
@@ -1071,38 +1057,38 @@ watch(pkey, loadOne);
   padding: 16px;
 }
 
-/* tabs */
-.tabs {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.tab {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--soft);
-  background: rgba(15, 23, 42, 0.03);
-  color: rgba(15, 23, 42, 0.86);
-  font-weight: 950;
-  cursor: pointer;
+/* info section */
+.infoSectionHead {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-main);
 }
 
-.tab:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 26px rgba(2, 6, 23, 0.08);
+.productInfoBody {
+  display: grid;
+  gap: 20px;
 }
 
-.tab.on {
-  border-color: rgba(4, 0, 255, 0.24);
-  background: rgba(4, 0, 255, 0.10);
-  color: rgba(4, 0, 255, 0.95);
+.infoBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.infoBlock + .infoBlock {
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.infoBlockTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .count {
