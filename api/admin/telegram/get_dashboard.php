@@ -46,9 +46,15 @@ function tg_admin_payload_text(?string $payloadJson): string
     return empty($parts) ? '' : implode(' | ', $parts);
 }
 
-function tg_support_preview(?string $text): string
+function tg_support_preview(?string $text, string $contentType = 'text'): string
 {
     $text = trim((string)$text);
+    if ($contentType === 'photo') {
+        if ($text === '' || mb_strtolower($text, 'UTF-8') === 'фотография') {
+            return 'Фотография';
+        }
+        return 'Фотография - ' . $text;
+    }
     if ($text === '') {
         return '';
     }
@@ -67,6 +73,7 @@ try {
         throw new RuntimeException('Некорректный chat_id');
     }
 
+    $selectedSupportThreadId = (int)($_GET['support_thread_id'] ?? 0);
     $selectedSupportChatId = trim((string)($_GET['support_chat_id'] ?? ''));
     if ($selectedSupportChatId !== '' && !preg_match('~^-?\d+$~', $selectedSupportChatId)) {
         throw new RuntimeException('Некорректный support_chat_id');
@@ -130,6 +137,7 @@ try {
         }
     }
 
+    $actions = [];
     if ($selectedChatId !== '') {
         $actionsSt = $pdo->prepare(
             "SELECT id, chat_id, user_id, username, first_name, last_name, action_code, action_label, payload_json, created_at
@@ -140,26 +148,23 @@ try {
         );
         $actionsSt->execute([$selectedChatId]);
         $actions = $actionsSt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    } else {
-        $actions = $pdo->query(
-            "SELECT id, chat_id, user_id, username, first_name, last_name, action_code, action_label, payload_json, created_at
-             FROM telegram_activity_log
-             ORDER BY id DESC
-             LIMIT 200"
-        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    }
 
-    foreach ($actions as &$action) {
-        $action['details_text'] = tg_admin_payload_text($action['payload_json'] ?? null);
-        unset($action['payload_json']);
+        foreach ($actions as &$action) {
+            $action['details_text'] = tg_admin_payload_text($action['payload_json'] ?? null);
+            unset($action['payload_json']);
+        }
+        unset($action);
     }
-    unset($action);
 
     $supportStats = [
         'total_threads' => 0,
         'unread_threads' => 0,
         'unread_messages' => 0,
         'messages_total' => 0,
+        'waiting_replies' => 0,
+        'active_threads' => 0,
+        'closed_threads' => 0,
+        'archived_threads' => 0,
     ];
     $supportThreads = [];
     $selectedSupportThread = null;
@@ -168,54 +173,95 @@ try {
     if ($hasSupportLib) {
         tgs_ensure_tables($pdo);
 
-        if ($selectedSupportChatId !== '') {
-            tgs_mark_thread_as_read($pdo, $selectedSupportChatId);
+        if ($selectedSupportThreadId <= 0 && $selectedSupportChatId !== '') {
+            $selectedByChat = tgs_get_latest_conversation_by_chat_id($pdo, $selectedSupportChatId);
+            if (is_array($selectedByChat)) {
+                $selectedSupportThreadId = (int)$selectedByChat['id'];
+            }
+        }
+
+        if ($selectedSupportThreadId > 0) {
+            tgs_mark_conversation_as_read($pdo, $selectedSupportThreadId);
         }
 
         $supportStats = [
-            'total_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_threads')->fetchColumn(),
-            'unread_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_threads WHERE unread_count > 0')->fetchColumn(),
-            'unread_messages' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_messages WHERE is_read = 0')->fetchColumn(),
-            'messages_total' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_messages')->fetchColumn(),
+            'total_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL')->fetchColumn(),
+            'unread_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND unread_count > 0')->fetchColumn(),
+            'unread_messages' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_messages WHERE deleted_at IS NULL AND direction = 'incoming' AND is_read = 0")->fetchColumn(),
+            'messages_total' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_messages WHERE deleted_at IS NULL')->fetchColumn(),
+            'waiting_replies' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'active' AND last_user_message_at IS NOT NULL AND (last_admin_message_at IS NULL OR last_user_message_at > last_admin_message_at)")->fetchColumn(),
+            'active_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'active'")->fetchColumn(),
+            'closed_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'closed'")->fetchColumn(),
+            'archived_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'archived'")->fetchColumn(),
         ];
 
         $supportThreads = $pdo->query(
-            "SELECT chat_id, user_id, username, first_name, last_name, last_message_text, last_message_at, last_user_message_at, unread_count, created_at, updated_at
-             FROM telegram_support_threads
-             ORDER BY unread_count DESC, COALESCE(last_user_message_at, last_message_at, updated_at) DESC, chat_id DESC
-             LIMIT 500"
+            "SELECT id, chat_id, user_id, username, first_name, last_name, status, last_message_text, last_message_at, last_user_message_at, last_admin_message_at, unread_count, ack_sent, created_at, updated_at, closed_at, archived_at
+             FROM telegram_support_conversations
+             WHERE deleted_at IS NULL
+             ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'closed' THEN 1 ELSE 2 END, unread_count DESC, COALESCE(last_user_message_at, last_message_at, updated_at) DESC, id DESC
+             LIMIT 1000"
         )->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        $conversationIds = array_map(static fn(array $thread): int => (int)$thread['id'], $supportThreads);
+        $conversationMessageTypeMap = [];
+        if (!empty($conversationIds)) {
+            $placeholders = implode(',', array_fill(0, count($conversationIds), '?'));
+            $typeSt = $pdo->prepare(
+                "SELECT m.conversation_id, m.content_type
+                 FROM telegram_support_messages m
+                 INNER JOIN (
+                    SELECT conversation_id, MAX(id) AS max_id
+                    FROM telegram_support_messages
+                    WHERE deleted_at IS NULL AND conversation_id IN ($placeholders)
+                    GROUP BY conversation_id
+                 ) latest ON latest.max_id = m.id"
+            );
+            $typeSt->execute($conversationIds);
+            foreach ($typeSt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $conversationMessageTypeMap[(int)$row['conversation_id']] = (string)($row['content_type'] ?? 'text');
+            }
+        }
+
         foreach ($supportThreads as &$thread) {
-            $thread['last_message_preview'] = tg_support_preview($thread['last_message_text'] ?? '');
+            $thread['last_message_preview'] = tg_support_preview($thread['last_message_text'] ?? '', $conversationMessageTypeMap[(int)$thread['id']] ?? 'text');
+            $thread['needs_reply'] = tgs_conversation_needs_reply($thread);
         }
         unset($thread);
 
-        if ($selectedSupportChatId !== '') {
+        if ($selectedSupportThreadId > 0) {
             foreach ($supportThreads as $thread) {
-                if ((string)($thread['chat_id'] ?? '') === $selectedSupportChatId) {
+                if ((int)($thread['id'] ?? 0) === $selectedSupportThreadId) {
                     $selectedSupportThread = $thread;
                     break;
                 }
             }
             if ($selectedSupportThread === null) {
-                $st = $pdo->prepare('SELECT chat_id, user_id, username, first_name, last_name, last_message_text, last_message_at, last_user_message_at, unread_count, created_at, updated_at FROM telegram_support_threads WHERE chat_id = ? LIMIT 1');
-                $st->execute([$selectedSupportChatId]);
-                $selectedSupportThread = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+                $selectedSupportThread = tgs_get_conversation($pdo, $selectedSupportThreadId);
                 if (is_array($selectedSupportThread)) {
                     $selectedSupportThread['last_message_preview'] = tg_support_preview($selectedSupportThread['last_message_text'] ?? '');
+                    $selectedSupportThread['needs_reply'] = tgs_conversation_needs_reply($selectedSupportThread);
                 }
             }
 
-            $st = $pdo->prepare(
-                'SELECT id, chat_id, user_id, username, first_name, last_name, direction, message_text, is_read, created_at
-                 FROM telegram_support_messages
-                 WHERE chat_id = ?
-                 ORDER BY id DESC
-                 LIMIT 500'
-            );
-            $st->execute([$selectedSupportChatId]);
-            $supportMessages = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if ($selectedSupportThread !== null) {
+                $st = $pdo->prepare(
+                    'SELECT id, conversation_id, chat_id, user_id, username, first_name, last_name, direction, content_type, message_text, is_read, telegram_message_id, media_file_id, media_path, media_mime, edited_at, deleted_at, deleted_for_all, created_at
+                     FROM telegram_support_messages
+                     WHERE conversation_id = ?
+                     ORDER BY id ASC
+                     LIMIT 2000'
+                );
+                $st->execute([$selectedSupportThreadId]);
+                $supportMessages = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                foreach ($supportMessages as &$message) {
+                    $message['media_url'] = null;
+                    if (!empty($message['media_path']) || !empty($message['media_file_id'])) {
+                        $message['media_url'] = '/api/admin/telegram/support_media.php?message_id=' . rawurlencode((string)$message['id']);
+                    }
+                }
+                unset($message);
+            }
         }
     }
 
@@ -229,6 +275,7 @@ try {
         'support_stats' => $supportStats,
         'support_threads' => $supportThreads,
         'selected_support_chat_id' => $selectedSupportChatId,
+        'selected_support_thread_id' => $selectedSupportThreadId,
         'selected_support_thread' => $selectedSupportThread,
         'support_messages' => $supportMessages,
         'support_enabled' => $hasSupportLib,

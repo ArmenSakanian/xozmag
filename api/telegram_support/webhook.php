@@ -32,6 +32,8 @@ try {
     $chatType = (string)($chat['type'] ?? '');
     $from = is_array($message['from'] ?? null) ? $message['from'] : [];
     $text = trim((string)($message['text'] ?? ''));
+    $caption = trim((string)($message['caption'] ?? ''));
+    $hasPhoto = !empty($message['photo']) && is_array($message['photo']);
 
     if ($chatId === null) {
         tgs_json_response(['ok' => true]);
@@ -53,11 +55,11 @@ try {
         tgs_json_response(['ok' => true]);
     }
 
-    if ($text === '' || str_starts_with($text, '/')) {
+    if (($text === '' && !$hasPhoto) || ($text !== '' && str_starts_with($text, '/'))) {
         if ($isOperator) {
             tgs_send_message($chatId, 'Уведомления подключены. Новые обращения пользователей будут приходить в этот чат.');
         } else {
-            tgs_send_message($chatId, 'Напишите Ваш вопрос одним сообщением. Сотрудник магазина ознакомится с обращением как можно скорее.');
+            tgs_send_message($chatId, 'Напишите Ваш вопрос одним сообщением или отправьте фотографию с подписью. Сотрудник магазина ознакомится с обращением как можно скорее.');
         }
         tgs_json_response(['ok' => true]);
     }
@@ -67,9 +69,11 @@ try {
         tgs_json_response(['ok' => true]);
     }
 
-    tgs_store_incoming_message($pdo, $chatId, $from, mb_substr($text, 0, 4000, 'UTF-8'));
-    tgs_notify_operator_new_message($pdo, $chatId, $from);
-    tgs_send_user_ack($chatId);
+    if ($hasPhoto || $text !== '' || $caption !== '') {
+        $conversation = tgs_store_incoming_message($pdo, $chatId, $from, $message);
+        tgs_notify_operator_new_message($pdo, $conversation, $from);
+        tgs_acknowledge_conversation_if_needed($pdo, (int)$conversation['id']);
+    }
 
     tgs_json_response(['ok' => true]);
 } catch (Throwable $e) {
