@@ -450,6 +450,10 @@ const users = ref([])
 const actions = ref([])
 const supportThreads = ref([])
 const supportMessages = ref([])
+const removedSupportThreadIds = ref([])
+
+let loadDataRequestId = 0
+let loadDataController = null
 
 function formatDate(value) {
   if (!value) return '-'
@@ -587,8 +591,18 @@ function scheduleChatScroll() {
 }
 
 
+function filterVisibleSupportThreads(threads) {
+  const removedIds = new Set(removedSupportThreadIds.value.map((id) => Number(id)))
+  return (Array.isArray(threads) ? threads : []).filter((thread) => {
+    const threadId = Number(thread?.id || 0)
+    if (!threadId) return false
+    if (removedIds.has(threadId)) return false
+    return !thread?.deleted_at
+  })
+}
+
 function recomputeSupportStatsLocal() {
-  const visible = supportThreads.value.filter((thread) => !thread.deleted_at)
+  const visible = filterVisibleSupportThreads(supportThreads.value)
   supportStats.value = {
     ...supportStats.value,
     total_threads: visible.length,
@@ -618,7 +632,13 @@ function patchSupportThreadLocal(threadId, patch) {
 
 function removeSupportThreadLocal(threadId) {
   const targetId = Number(threadId)
-  supportThreads.value = supportThreads.value.filter((thread) => Number(thread.id) !== targetId)
+  if (!targetId) return
+  if (!removedSupportThreadIds.value.includes(targetId)) {
+    removedSupportThreadIds.value = [...removedSupportThreadIds.value, targetId]
+  }
+  supportThreads.value = filterVisibleSupportThreads(
+    supportThreads.value.filter((thread) => Number(thread.id) !== targetId),
+  )
   if (selectedSupportThread.value && Number(selectedSupportThread.value.id) === targetId) {
     selectedSupportThreadId.value = 0
     selectedSupportThread.value = null
@@ -666,10 +686,7 @@ const allFilteredUsersSelected = computed(() => {
 function setSupportMode(mode) {
   supportMode.value = mode === 'closed' ? 'closed' : 'active'
   if (selectedSupportThread.value && (selectedSupportThread.value.status || 'active') !== supportMode.value) {
-    selectedSupportThreadId.value = 0
-    selectedSupportThread.value = null
-    supportMessages.value = []
-    cancelEditMessage()
+    clearSupportSelection()
     syncQueryParams()
   }
 }
@@ -729,6 +746,13 @@ function setActiveTab(tab) {
 async function loadData(chatId = '', supportThreadId = 0, options = {}) {
   const silent = Boolean(options?.silent)
   const prevLastId = supportMessages.value.length ? supportMessages.value[supportMessages.value.length - 1].id : 0
+  const requestId = ++loadDataRequestId
+
+  if (loadDataController) {
+    loadDataController.abort()
+  }
+  loadDataController = new AbortController()
+
   if (!silent) loading.value = true
   if (!silent) error.value = ''
 
@@ -740,25 +764,43 @@ async function loadData(chatId = '', supportThreadId = 0, options = {}) {
     const res = await fetch(url.toString(), {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
+      signal: loadDataController.signal,
     })
     const data = await res.json().catch(() => null)
     if (!res.ok || !data?.ok) {
       throw new Error(data?.error || 'Не удалось загрузить данные Telegram-бота')
     }
 
+    if (requestId !== loadDataRequestId) {
+      return
+    }
+
+    const nextUsers = Array.isArray(data.users) ? data.users : []
+    const nextActions = Array.isArray(data.actions) ? data.actions : []
+    const nextSupportThreads = filterVisibleSupportThreads(Array.isArray(data.support_threads) ? data.support_threads : [])
+    const serverSelectedSupportThreadId = Number(data.selected_support_thread_id || 0)
+    const nextSelectedSupportThreadId = removedSupportThreadIds.value.includes(serverSelectedSupportThreadId) ? 0 : serverSelectedSupportThreadId
+    const nextSelectedSupportThread = nextSelectedSupportThreadId > 0
+      ? (data.selected_support_thread || nextSupportThreads.find((thread) => Number(thread.id) === nextSelectedSupportThreadId) || null)
+      : null
+    const nextSupportMessages = nextSelectedSupportThreadId > 0 && nextSelectedSupportThread
+      ? (Array.isArray(data.support_messages) ? data.support_messages : [])
+      : []
+
     stats.value = { ...stats.value, ...(data.stats || {}) }
     supportStats.value = { ...supportStats.value, ...(data.support_stats || {}) }
-    users.value = Array.isArray(data.users) ? data.users : []
-    actions.value = Array.isArray(data.actions) ? data.actions : []
-    supportThreads.value = Array.isArray(data.support_threads) ? data.support_threads : []
-    supportMessages.value = Array.isArray(data.support_messages) ? data.support_messages : []
+    users.value = nextUsers
+    actions.value = nextActions
+    supportThreads.value = nextSupportThreads
+    supportMessages.value = nextSupportMessages
     recomputeSupportStatsLocal()
+
     const userChatIdSet = new Set(users.value.map((user) => String(user.chat_id)))
     selectedUserChatIds.value = selectedUserChatIds.value.filter((chatId) => userChatIdSet.has(chatId))
     selectedChatId.value = data.selected_chat_id ? String(data.selected_chat_id) : ''
-    selectedSupportThreadId.value = Number(data.selected_support_thread_id || 0)
+    selectedSupportThreadId.value = nextSelectedSupportThreadId
     selectedUser.value = data.selected_user || null
-    selectedSupportThread.value = data.selected_support_thread || null
+    selectedSupportThread.value = nextSelectedSupportThread
     supportEnabled.value = Boolean(data.support_enabled)
 
     if (selectedSupportThreadId.value > 0 && !selectedSupportThread.value) {
@@ -776,9 +818,12 @@ async function loadData(chatId = '', supportThreadId = 0, options = {}) {
       scheduleChatScroll()
     }
   } catch (err) {
+    if (err?.name === 'AbortError') {
+      return
+    }
     error.value = err?.message || 'Не удалось загрузить данные'
   } finally {
-    if (!silent) loading.value = false
+    if (requestId === loadDataRequestId && !silent) loading.value = false
   }
 }
 
@@ -790,11 +835,19 @@ function selectUser(chatId) {
 function selectSupportThread(threadId) {
   activeTab.value = 'support'
   cancelEditMessage()
-  const thread = supportThreads.value.find((item) => Number(item.id) === Number(threadId))
-  if (thread?.status) {
+  const targetId = Number(threadId)
+  const thread = supportThreads.value.find((item) => Number(item.id) === targetId)
+  if (!thread) return
+
+  if (thread.status) {
     supportMode.value = thread.status === 'active' ? 'active' : 'closed'
   }
-  loadData(selectedChatId.value, Number(threadId))
+
+  selectedSupportThreadId.value = targetId
+  selectedSupportThread.value = { ...thread }
+  supportMessages.value = []
+  syncQueryParams()
+  loadData(selectedChatId.value, targetId)
 }
 
 function promptDeleteUsers() {
@@ -1090,6 +1143,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopSupportPolling()
+  if (loadDataController) {
+    loadDataController.abort()
+    loadDataController = null
+  }
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   clearSupportAttachment()
 })
