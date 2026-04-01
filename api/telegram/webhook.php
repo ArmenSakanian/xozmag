@@ -118,6 +118,42 @@ try {
             tg_json_response(['ok' => true]);
         }
 
+        if ($data === 'buy') {
+            tg_clear_user_state($pdo, $chatId, $from);
+            tg_log_action($pdo, $chatId, $from, 'open_purchase_redirect', 'Открыл переход к сотрудникам магазина для покупки или доставки');
+            if ($callbackId !== '') {
+                tg_answer_callback($callbackId);
+            }
+            tg_send_purchase_redirect($chatId);
+            tg_json_response(['ok' => true]);
+        }
+
+        if (preg_match('~^buy:(\d+)$~', $data, $m)) {
+            $product = tg_fetch_product_by_id($pdo, (int)$m[1]);
+            tg_clear_user_state($pdo, $chatId, $from);
+
+            if ($product) {
+                tg_store_pending_purchase_context($pdo, $chatId, $product);
+                tg_log_action($pdo, $chatId, $from, 'open_purchase_redirect', 'Открыл переход к сотрудникам магазина для покупки или доставки', [
+                    'product_id' => (int)($product['id'] ?? 0),
+                    'product_name' => (string)($product['name'] ?? ''),
+                    'article' => (string)($product['article'] ?? ''),
+                    'barcode' => (string)($product['barcode'] ?? ''),
+                ]);
+                if ($callbackId !== '') {
+                    tg_answer_callback($callbackId);
+                }
+                tg_send_purchase_redirect($chatId, $product);
+            } else {
+                tg_log_action($pdo, $chatId, $from, 'open_purchase_redirect', 'Открыл переход к сотрудникам магазина для покупки или доставки');
+                if ($callbackId !== '') {
+                    tg_answer_callback($callbackId);
+                }
+                tg_send_purchase_redirect($chatId);
+            }
+            tg_json_response(['ok' => true]);
+        }
+
         if (preg_match('~^product:(\d+)$~', $data, $m)) {
             $product = tg_fetch_product_by_id($pdo, (int)$m[1]);
             if ($product) {

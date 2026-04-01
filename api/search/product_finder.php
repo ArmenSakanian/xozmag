@@ -64,6 +64,50 @@ function pf_query_tokens(string $query): array
     return array_values(array_unique($out));
 }
 
+function pf_collapse_repeated_letters_token(string $token): string
+{
+    $collapsed = preg_replace('~([\p{L}])\1+~u', '$1', $token);
+    return trim((string)($collapsed ?? $token));
+}
+
+function pf_collapse_repeated_letters_query(string $query): string
+{
+    $tokens = pf_split_tokens(pf_normalize_q($query));
+    if (empty($tokens)) {
+        return '';
+    }
+
+    $out = [];
+    foreach ($tokens as $token) {
+        $out[] = pf_collapse_repeated_letters_token($token);
+    }
+
+    return trim(implode(' ', $out));
+}
+
+function pf_query_variants(string $query): array
+{
+    $query = trim($query);
+    if ($query === '') {
+        return [];
+    }
+
+    $variants = [];
+    foreach ([
+        $query,
+        pf_normalize_q($query),
+        pf_collapse_repeated_letters_query($query),
+    ] as $variant) {
+        $variant = trim((string)$variant);
+        if ($variant === '' || in_array($variant, $variants, true)) {
+            continue;
+        }
+        $variants[] = $variant;
+    }
+
+    return $variants;
+}
+
 function pf_is_code(string $s): bool
 {
     return preg_match('~^[0-9]+(\.[0-9]+)*$~', $s) === 1;
@@ -268,17 +312,27 @@ function pf_token_match_score(string $queryToken, string $nameToken): int
         return 0;
     }
 
+    $queryLen = mb_strlen($queryToken, 'UTF-8');
+    $nameLen = mb_strlen($nameToken, 'UTF-8');
+    $minLen = min($queryLen, $nameLen);
+    $lenDiff = abs($queryLen - $nameLen);
     $prefix = pf_common_prefix_len($queryToken, $nameToken);
-    $minLen = min(mb_strlen($queryToken, 'UTF-8'), mb_strlen($nameToken, 'UTF-8'));
+
+    if ($prefix === 0 || $lenDiff >= 3) {
+        return 99;
+    }
+
     if ($prefix >= 4 || ($minLen <= 5 && $prefix >= 3)) {
         return 1;
     }
 
     $dist = pf_mb_levenshtein($queryToken, $nameToken);
-    if ($dist <= 1) {
+    $lastEqual = mb_substr($queryToken, -1, 1, 'UTF-8') === mb_substr($nameToken, -1, 1, 'UTF-8');
+
+    if ($dist <= 1 && ($prefix >= 2 || $lastEqual)) {
         return 1;
     }
-    if ($dist === 2 && $minLen >= 6) {
+    if ($dist === 2 && $minLen >= 7 && $prefix >= 2 && $lastEqual) {
         return 2;
     }
 
@@ -352,6 +406,9 @@ function pf_fuzzy_search_by_name(PDO $pdo, string $query, int $limit, string $wh
         if (count($tokens) >= 2 && $bad > 1) {
             continue;
         }
+        if (count($tokens) === 1 && $score > 2) {
+            continue;
+        }
 
         $score += (int)(mb_strlen($nameNorm, 'UTF-8') / 80);
         $row['_score'] = $score;
@@ -379,7 +436,7 @@ function pf_fuzzy_search_by_name(PDO $pdo, string $query, int $limit, string $wh
     return $out;
 }
 
-function pf_search_products_general(PDO $pdo, string $qRaw, int $limit = 12, string $catRaw = ''): array
+function pf_search_products_general_once(PDO $pdo, string $qRaw, int $limit = 12, string $catRaw = '', bool $allowFuzzy = true): array
 {
     $qRaw = trim($qRaw);
     if ($qRaw === '') {
@@ -486,14 +543,43 @@ function pf_search_products_general(PDO $pdo, string $qRaw, int $limit = 12, str
         $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    if (empty($rows) && !$isDigitsInput && mb_strlen($qNorm, 'UTF-8') >= 3) {
+    if (empty($rows) && $allowFuzzy && !$isDigitsInput && mb_strlen($qNorm, 'UTF-8') >= 3) {
         $rows = pf_fuzzy_search_by_name($pdo, $qRaw, $limit, $whereCat, $paramsCat);
     }
 
     return $rows;
 }
 
-function pf_search_products_by_name(PDO $pdo, string $query, int $limit = 10): array
+function pf_search_products_general(PDO $pdo, string $qRaw, int $limit = 12, string $catRaw = ''): array
+{
+    $qRaw = trim($qRaw);
+    if ($qRaw === '') {
+        return [];
+    }
+
+    $variants = pf_query_variants($qRaw);
+    if (empty($variants)) {
+        return [];
+    }
+
+    foreach ($variants as $variant) {
+        $rows = pf_search_products_general_once($pdo, $variant, $limit, $catRaw, false);
+        if (!empty($rows)) {
+            return $rows;
+        }
+    }
+
+    foreach ($variants as $variant) {
+        $rows = pf_search_products_general_once($pdo, $variant, $limit, $catRaw, true);
+        if (!empty($rows)) {
+            return $rows;
+        }
+    }
+
+    return [];
+}
+
+function pf_search_products_by_name_once(PDO $pdo, string $query, int $limit = 10, bool $allowFuzzy = true): array
 {
     $query = trim($query);
     if ($query === '') {
@@ -530,11 +616,40 @@ function pf_search_products_by_name(PDO $pdo, string $query, int $limit = 10): a
         $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    if (empty($rows) && mb_strlen($qNorm, 'UTF-8') >= 3) {
+    if (empty($rows) && $allowFuzzy && mb_strlen($qNorm, 'UTF-8') >= 3) {
         $rows = pf_fuzzy_search_by_name($pdo, $query, $limit);
     }
 
     return $rows;
+}
+
+function pf_search_products_by_name(PDO $pdo, string $query, int $limit = 10): array
+{
+    $query = trim($query);
+    if ($query === '') {
+        return [];
+    }
+
+    $variants = pf_query_variants($query);
+    if (empty($variants)) {
+        return [];
+    }
+
+    foreach ($variants as $variant) {
+        $rows = pf_search_products_by_name_once($pdo, $variant, $limit, false);
+        if (!empty($rows)) {
+            return $rows;
+        }
+    }
+
+    foreach ($variants as $variant) {
+        $rows = pf_search_products_by_name_once($pdo, $variant, $limit, true);
+        if (!empty($rows)) {
+            return $rows;
+        }
+    }
+
+    return [];
 }
 
 function pf_find_product_by_barcode(PDO $pdo, string $barcode): ?array

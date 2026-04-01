@@ -47,32 +47,44 @@ try {
     $isOperator = tgs_is_operator($pdo, $chatId, $from);
 
     if ($text === '/start' || str_starts_with($text, '/start ')) {
-        if ($isOperator) {
-            tgs_send_operator_welcome($chatId);
-        } else {
-            tgs_send_user_welcome($chatId);
+        try {
+            if ($isOperator) {
+                tgs_send_operator_welcome($chatId);
+            } else {
+                tgs_send_user_welcome($chatId);
+            }
+        } catch (Throwable $e) {
+            error_log('Telegram support start reply failed: ' . $e->getMessage());
         }
         tgs_json_response(['ok' => true]);
     }
 
     if (($text === '' && !$hasPhoto) || ($text !== '' && str_starts_with($text, '/'))) {
-        if ($isOperator) {
-            tgs_send_message($chatId, 'Уведомления подключены. Новые обращения пользователей будут приходить в этот чат.');
-        } else {
-            tgs_send_message($chatId, 'Напишите Ваш вопрос одним сообщением или отправьте фотографию с подписью. Сотрудник магазина ознакомится с обращением как можно скорее.');
+        try {
+            if ($isOperator) {
+                tgs_send_message($chatId, 'Уведомления подключены. Новые обращения пользователей будут приходить в этот чат.');
+            } else {
+                tgs_send_message($chatId, 'Напишите Ваш вопрос одним сообщением или отправьте фотографию с подписью. Сотрудник магазина ознакомится с обращением как можно скорее.');
+            }
+        } catch (Throwable $e) {
+            error_log('Telegram support helper reply failed: ' . $e->getMessage());
         }
         tgs_json_response(['ok' => true]);
     }
 
     if ($isOperator) {
-        tgs_send_message($chatId, 'Этот бот используется для уведомлений о новых обращениях и приёма сообщений от клиентов. Историю обращений просматривайте в админ-панели сайта.');
+        try {
+            tgs_send_message($chatId, 'Этот бот используется для уведомлений о новых обращениях и приёма сообщений от клиентов. Историю обращений просматривайте в админ-панели сайта.');
+        } catch (Throwable $e) {
+            error_log('Telegram support operator helper reply failed: ' . $e->getMessage());
+        }
         tgs_json_response(['ok' => true]);
     }
 
     if ($hasPhoto || $text !== '' || $caption !== '') {
         $conversation = tgs_store_incoming_message($pdo, $chatId, $from, $message);
-        tgs_notify_operator_new_message($pdo, $conversation, $from);
         tgs_acknowledge_conversation_if_needed($pdo, (int)$conversation['id']);
+        tgs_notify_operator_new_message($pdo, $conversation, $from);
     }
 
     tgs_json_response(['ok' => true]);

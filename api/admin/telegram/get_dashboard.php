@@ -74,6 +74,47 @@ function tg_normalize_support_thread(array $thread): array
     return $thread;
 }
 
+function tg_support_topic_label(array $thread): string
+{
+    $sourceType = trim((string)($thread['source_type'] ?? ''));
+    $productName = trim((string)($thread['source_product_name'] ?? ''));
+    if ($sourceType === 'purchase') {
+        return $productName !== '' ? 'Покупка или доставка - ' . $productName : 'Покупка или доставка';
+    }
+    return $productName;
+}
+
+function tg_support_topic_details(array $thread): string
+{
+    $parts = [];
+    $article = trim((string)($thread['source_product_article'] ?? ''));
+    $barcode = trim((string)($thread['source_product_barcode'] ?? ''));
+    if ($article !== '') {
+        $parts[] = 'Артикул: ' . $article;
+    }
+    if ($barcode !== '') {
+        $parts[] = 'Штрих-код: ' . $barcode;
+    }
+    return implode(' - ', $parts);
+}
+
+function tg_support_message_media_url(array $message): ?string
+{
+    if (!empty($message['media_path']) || !empty($message['media_file_id'])) {
+        return '/api/admin/telegram/support_media.php?message_id=' . rawurlencode((string)($message['id'] ?? ''));
+    }
+    return null;
+}
+
+function tg_normalize_support_messages(array $messages): array
+{
+    foreach ($messages as &$message) {
+        $message['media_url'] = tg_support_message_media_url($message);
+    }
+    unset($message);
+    return $messages;
+}
+
 try {
     tg_ensure_tables($pdo);
 
@@ -84,6 +125,7 @@ try {
 
     $selectedSupportThreadId = (int)($_GET['support_thread_id'] ?? 0);
     $selectedSupportChatId = trim((string)($_GET['support_chat_id'] ?? ''));
+    $markSupportRead = (int)($_GET['mark_support_read'] ?? 0) === 1;
     if ($selectedSupportChatId !== '' && !preg_match('~^-?\d+$~', $selectedSupportChatId)) {
         throw new RuntimeException('Некорректный support_chat_id');
     }
@@ -178,6 +220,7 @@ try {
     $supportThreads = [];
     $selectedSupportThread = null;
     $supportMessages = [];
+    $previousSupportCycles = [];
 
     if ($hasSupportLib) {
         tgs_ensure_tables($pdo);
@@ -189,7 +232,7 @@ try {
             }
         }
 
-        if ($selectedSupportThreadId > 0) {
+        if ($selectedSupportThreadId > 0 && $markSupportRead) {
             tgs_mark_conversation_as_read($pdo, $selectedSupportThreadId);
         }
 
@@ -207,7 +250,7 @@ try {
         ];
 
         $supportThreads = $pdo->query(
-            "SELECT id, chat_id, user_id, username, first_name, last_name, status, last_message_text, last_message_at, last_user_message_at, last_admin_message_at, unread_count, ack_sent, created_at, updated_at, closed_at, archived_at
+            "SELECT id, chat_id, user_id, username, first_name, last_name, status, source_type, source_product_id, source_product_name, source_product_article, source_product_barcode, last_message_text, last_message_at, last_user_message_at, last_admin_message_at, unread_count, ack_sent, created_at, updated_at, closed_at, archived_at
              FROM telegram_support_conversations
              WHERE deleted_at IS NULL
              ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, unread_count DESC, COALESCE(last_user_message_at, last_message_at, updated_at) DESC, id DESC
@@ -238,6 +281,8 @@ try {
             $thread = tg_normalize_support_thread($thread);
             $thread['last_message_preview'] = tg_support_preview($thread['last_message_text'] ?? '', $conversationMessageTypeMap[(int)$thread['id']] ?? 'text');
             $thread['needs_reply'] = tgs_conversation_needs_reply($thread);
+            $thread['topic_label'] = tg_support_topic_label($thread);
+            $thread['topic_details'] = tg_support_topic_details($thread);
         }
         unset($thread);
 
@@ -254,6 +299,8 @@ try {
                     $selectedSupportThread = tg_normalize_support_thread($selectedSupportThread);
                     $selectedSupportThread['last_message_preview'] = tg_support_preview($selectedSupportThread['last_message_text'] ?? '');
                     $selectedSupportThread['needs_reply'] = tgs_conversation_needs_reply($selectedSupportThread);
+                    $selectedSupportThread['topic_label'] = tg_support_topic_label($selectedSupportThread);
+                    $selectedSupportThread['topic_details'] = tg_support_topic_details($selectedSupportThread);
                 }
             }
 
@@ -266,14 +313,53 @@ try {
                      LIMIT 2000'
                 );
                 $st->execute([$selectedSupportThreadId]);
-                $supportMessages = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                foreach ($supportMessages as &$message) {
-                    $message['media_url'] = null;
-                    if (!empty($message['media_path']) || !empty($message['media_file_id'])) {
-                        $message['media_url'] = '/api/admin/telegram/support_media.php?message_id=' . rawurlencode((string)$message['id']);
+                $supportMessages = tg_normalize_support_messages($st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+                $previousCyclesSt = $pdo->prepare(
+                    "SELECT id, chat_id, user_id, username, first_name, last_name, status, source_type, source_product_id, source_product_name, source_product_article, source_product_barcode, last_message_text, last_message_at, last_user_message_at, last_admin_message_at, unread_count, ack_sent, created_at, updated_at, closed_at, archived_at
+                     FROM telegram_support_conversations
+                     WHERE deleted_at IS NULL AND chat_id = ? AND id <> ? AND status = 'closed' AND id < ?
+                     ORDER BY id ASC"
+                );
+                $previousCyclesSt->execute([
+                    (string)($selectedSupportThread['chat_id'] ?? ''),
+                    $selectedSupportThreadId,
+                    $selectedSupportThreadId,
+                ]);
+                $previousSupportCycles = $previousCyclesSt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (!empty($previousSupportCycles)) {
+                    $previousConversationIds = array_map(static fn(array $thread): int => (int)$thread['id'], $previousSupportCycles);
+                    $placeholders = implode(',', array_fill(0, count($previousConversationIds), '?'));
+                    $messagesSt = $pdo->prepare(
+                        "SELECT id, conversation_id, chat_id, user_id, username, first_name, last_name, direction, content_type, message_text, is_read, telegram_message_id, media_file_id, media_path, media_mime, edited_at, deleted_at, deleted_for_all, created_at
+                         FROM telegram_support_messages
+                         WHERE conversation_id IN ($placeholders)
+                         ORDER BY conversation_id ASC, id ASC"
+                    );
+                    $messagesSt->execute($previousConversationIds);
+                    $previousMessages = $messagesSt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                    $previousMessages = tg_normalize_support_messages($previousMessages);
+
+                    $previousMessagesMap = [];
+                    foreach ($previousMessages as $message) {
+                        $conversationId = (int)($message['conversation_id'] ?? 0);
+                        if (!isset($previousMessagesMap[$conversationId])) {
+                            $previousMessagesMap[$conversationId] = [];
+                        }
+                        $previousMessagesMap[$conversationId][] = $message;
                     }
+
+                    foreach ($previousSupportCycles as &$cycle) {
+                        $cycle = tg_normalize_support_thread($cycle);
+                        $cycle['last_message_preview'] = tg_support_preview($cycle['last_message_text'] ?? '');
+                        $cycle['needs_reply'] = false;
+                        $cycle['topic_label'] = tg_support_topic_label($cycle);
+                        $cycle['topic_details'] = tg_support_topic_details($cycle);
+                        $cycle['messages'] = $previousMessagesMap[(int)$cycle['id']] ?? [];
+                    }
+                    unset($cycle);
                 }
-                unset($message);
             }
         }
     }
@@ -291,6 +377,7 @@ try {
         'selected_support_thread_id' => $selectedSupportThreadId,
         'selected_support_thread' => $selectedSupportThread,
         'support_messages' => $supportMessages,
+        'previous_support_cycles' => $previousSupportCycles,
         'support_enabled' => $hasSupportLib,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $e) {

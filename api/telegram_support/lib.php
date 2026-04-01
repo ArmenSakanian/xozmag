@@ -444,9 +444,11 @@ function tgs_migrate_legacy_support_data(PDO $pdo): void
     $legacyThreads = $pdo->query('SELECT chat_id, user_id, username, first_name, last_name, last_message_text, last_message_at, unread_count, created_at, updated_at FROM telegram_support_threads')->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     foreach ($legacyThreads as $legacy) {
-        $st = $pdo->prepare("SELECT id FROM telegram_support_conversations WHERE chat_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1");
+        $st = $pdo->prepare('SELECT id, deleted_at FROM telegram_support_conversations WHERE chat_id = ? ORDER BY id DESC LIMIT 1');
         $st->execute([(string)$legacy['chat_id']]);
-        $conversationId = (int)($st->fetchColumn() ?: 0);
+        $latestConversation = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+        $conversationId = (int)($latestConversation['id'] ?? 0);
+
         if ($conversationId <= 0) {
             $insert = $pdo->prepare(
                 'INSERT INTO telegram_support_conversations (chat_id, user_id, username, first_name, last_name, status, last_message_text, last_message_at, unread_count, ack_sent, created_at, updated_at)
@@ -469,6 +471,10 @@ function tgs_migrate_legacy_support_data(PDO $pdo): void
             $conversationId = (int)$pdo->lastInsertId();
         }
 
+        if ($conversationId > 0 && !empty($latestConversation['deleted_at'])) {
+            continue;
+        }
+
         $upd = $pdo->prepare('UPDATE telegram_support_messages SET conversation_id = ? WHERE chat_id = ? AND conversation_id IS NULL');
         $upd->execute([$conversationId, (string)$legacy['chat_id']]);
         tgs_refresh_conversation_state($pdo, $conversationId);
@@ -476,9 +482,10 @@ function tgs_migrate_legacy_support_data(PDO $pdo): void
 
     $orphans = $pdo->query('SELECT DISTINCT chat_id FROM telegram_support_messages WHERE conversation_id IS NULL ORDER BY chat_id')->fetchAll(PDO::FETCH_COLUMN) ?: [];
     foreach ($orphans as $chatId) {
-        $st = $pdo->prepare("SELECT id FROM telegram_support_conversations WHERE chat_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1");
+        $st = $pdo->prepare('SELECT id, deleted_at FROM telegram_support_conversations WHERE chat_id = ? ORDER BY id DESC LIMIT 1');
         $st->execute([(string)$chatId]);
-        $conversationId = (int)($st->fetchColumn() ?: 0);
+        $latestConversation = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+        $conversationId = (int)($latestConversation['id'] ?? 0);
         if ($conversationId <= 0) {
             $meta = $pdo->prepare('SELECT user_id, username, first_name, last_name, MIN(created_at) AS created_at, MAX(created_at) AS updated_at FROM telegram_support_messages WHERE chat_id = ?');
             $meta->execute([(string)$chatId]);
@@ -500,6 +507,9 @@ function tgs_migrate_legacy_support_data(PDO $pdo): void
                 $updatedAt,
             ]);
             $conversationId = (int)$pdo->lastInsertId();
+        }
+        if ($conversationId > 0 && !empty($latestConversation['deleted_at'])) {
+            continue;
         }
         $upd = $pdo->prepare('UPDATE telegram_support_messages SET conversation_id = ? WHERE chat_id = ? AND conversation_id IS NULL');
         $upd->execute([$conversationId, (string)$chatId]);
@@ -1121,8 +1131,28 @@ function tgs_delete_conversation(PDO $pdo, int $conversationId): array
         throw new RuntimeException('Чат не найден');
     }
 
-    $messagesSt = $pdo->prepare('SELECT id, telegram_message_id, chat_id FROM telegram_support_messages WHERE conversation_id = ? AND deleted_at IS NULL ORDER BY id ASC');
-    $messagesSt->execute([$conversationId]);
+    $conversationIds = [$conversationId];
+    if (($conversation['status'] ?? 'active') === 'active') {
+        $dupSt = $pdo->prepare(
+            "SELECT id
+             FROM telegram_support_conversations
+             WHERE chat_id = ? AND status = 'active' AND deleted_at IS NULL"
+        );
+        $dupSt->execute([(string)$conversation['chat_id']]);
+        $conversationIds = array_values(array_unique(array_map('intval', $dupSt->fetchAll(PDO::FETCH_COLUMN) ?: [$conversationId])));
+        if (empty($conversationIds)) {
+            $conversationIds = [$conversationId];
+        }
+    }
+
+    $placeholders = implode(',', array_fill(0, count($conversationIds), '?'));
+    $messagesSt = $pdo->prepare(
+        "SELECT id, telegram_message_id, chat_id
+         FROM telegram_support_messages
+         WHERE conversation_id IN ($placeholders) AND deleted_at IS NULL
+         ORDER BY id ASC"
+    );
+    $messagesSt->execute($conversationIds);
     $messages = $messagesSt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     foreach ($messages as $row) {
@@ -1138,10 +1168,23 @@ function tgs_delete_conversation(PDO $pdo, int $conversationId): array
 
     $pdo->beginTransaction();
     try {
-        $st = $pdo->prepare('UPDATE telegram_support_messages SET deleted_at = COALESCE(deleted_at, NOW()), deleted_for_all = 1, is_read = 1 WHERE conversation_id = ?');
-        $st->execute([$conversationId]);
-        $st = $pdo->prepare('UPDATE telegram_support_conversations SET deleted_at = NOW(), updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-        $st->execute([$conversationId]);
+        $st = $pdo->prepare(
+            "UPDATE telegram_support_messages
+             SET deleted_at = COALESCE(deleted_at, NOW()), deleted_for_all = 1, is_read = 1
+             WHERE conversation_id IN ($placeholders)"
+        );
+        $st->execute($conversationIds);
+
+        $st = $pdo->prepare(
+            "UPDATE telegram_support_conversations
+             SET deleted_at = NOW(), updated_at = CURRENT_TIMESTAMP
+             WHERE id IN ($placeholders)"
+        );
+        $st->execute($conversationIds);
+
+        $legacyDeleteSt = $pdo->prepare('DELETE FROM telegram_support_threads WHERE chat_id = ?');
+        $legacyDeleteSt->execute([(string)$conversation['chat_id']]);
+
         $pdo->commit();
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -1153,6 +1196,7 @@ function tgs_delete_conversation(PDO $pdo, int $conversationId): array
     return [
         'conversation_id' => $conversationId,
         'chat_id' => (string)$conversation['chat_id'],
+        'deleted_conversation_ids' => $conversationIds,
     ];
 }
 

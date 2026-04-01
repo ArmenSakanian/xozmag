@@ -106,14 +106,15 @@ function tg_support_bot_username(): string
     return ltrim(trim((string)(tg_support_config()['bot_username'] ?? '')), '@');
 }
 
-function tg_support_bot_url(): string
+function tg_support_bot_url(string $startPayload = 'support'): string
 {
     $username = tg_support_bot_username();
     if ($username === '') {
         return '';
     }
 
-    return 'https://t.me/' . $username . '?start=support';
+    $payload = trim($startPayload) !== '' ? trim($startPayload) : 'support';
+    return 'https://t.me/' . $username . '?start=' . rawurlencode($payload);
 }
 
 function tg_support_is_available(): bool
@@ -121,9 +122,9 @@ function tg_support_is_available(): bool
     return tg_support_bot_username() !== '';
 }
 
-function tg_support_open_keyboard(): array
+function tg_support_open_keyboard(string $openButtonText = '💬 Открыть бот техподдержки', string $startPayload = 'support'): array
 {
-    $url = tg_support_bot_url();
+    $url = tg_support_bot_url($startPayload);
     if ($url === '') {
         return [
             'inline_keyboard' => [
@@ -138,7 +139,7 @@ function tg_support_open_keyboard(): array
     return [
         'inline_keyboard' => [
             [[
-                'text' => '💬 Открыть бот техподдержки',
+                'text' => $openButtonText,
                 'url' => $url,
             ]],
             [[
@@ -160,6 +161,29 @@ function tg_send_support_redirect(int|string $chatId): void
 
     tg_send_message($chatId, 'Для обращения в техподдержку откройте отдельный бот и нажмите «Старт». После этого Вы сможете отправить Ваш вопрос сотрудникам магазина.', [
         'reply_markup' => tg_support_open_keyboard(),
+        'disable_web_page_preview' => true,
+    ]);
+}
+
+function tg_send_purchase_redirect(int|string $chatId, ?array $product = null): void
+{
+    if (!tg_support_is_available()) {
+        tg_send_message($chatId, 'Раздел для связи с сотрудниками магазина временно недоступен. Попробуйте обратиться позже или воспользуйтесь контактами магазина.', [
+            'reply_markup' => tg_reply_main_keyboard(),
+        ]);
+        return;
+    }
+
+    $text = 'Для покупки или доставки откройте отдельный бот и нажмите «Старт». После этого Вы сможете написать сотрудникам магазина.';
+    if (is_array($product) && !empty($product)) {
+        $brief = tg_product_context_brief($product);
+        if ($brief !== '') {
+            $text = $brief . "\n\n" . $text;
+        }
+    }
+
+    tg_send_message($chatId, $text, [
+        'reply_markup' => tg_support_open_keyboard('🛒 Написать сотрудникам магазина', 'support'),
         'disable_web_page_preview' => true,
     ]);
 }
@@ -471,6 +495,22 @@ function tg_ensure_tables(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS telegram_support_pending_contexts (
+            chat_id BIGINT NOT NULL,
+            context_type VARCHAR(32) NOT NULL DEFAULT 'purchase',
+            product_id BIGINT NULL,
+            product_name VARCHAR(255) NULL,
+            product_article VARCHAR(191) NULL,
+            product_barcode VARCHAR(191) NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (chat_id),
+            KEY idx_context_type (context_type),
+            KEY idx_updated_at (updated_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
     $done = true;
 }
 
@@ -618,6 +658,50 @@ function tg_log_action(PDO $pdo, int|string $chatId, array $from, string $action
          WHERE chat_id = ?'
     );
     $update->execute([$actionCode, $actionLabel, $payloadJson, (string)$chatId]);
+}
+
+function tg_store_pending_purchase_context(PDO $pdo, int|string $chatId, array $product): void
+{
+    tg_ensure_tables($pdo);
+
+    $st = $pdo->prepare(
+        'INSERT INTO telegram_support_pending_contexts (chat_id, context_type, product_id, product_name, product_article, product_barcode)
+         VALUES (:chat_id, :context_type, :product_id, :product_name, :product_article, :product_barcode)
+         ON DUPLICATE KEY UPDATE
+            context_type = VALUES(context_type),
+            product_id = VALUES(product_id),
+            product_name = VALUES(product_name),
+            product_article = VALUES(product_article),
+            product_barcode = VALUES(product_barcode),
+            updated_at = CURRENT_TIMESTAMP'
+    );
+    $st->execute([
+        ':chat_id' => (string)$chatId,
+        ':context_type' => 'purchase',
+        ':product_id' => isset($product['id']) ? (int)$product['id'] : null,
+        ':product_name' => trim((string)($product['name'] ?? '')) ?: null,
+        ':product_article' => trim((string)($product['article'] ?? '')) ?: null,
+        ':product_barcode' => trim((string)($product['barcode'] ?? '')) ?: null,
+    ]);
+}
+
+function tg_product_context_brief(array $product): string
+{
+    $parts = [];
+    $name = trim((string)($product['name'] ?? ''));
+    if ($name !== '') {
+        $parts[] = 'Товар: <b>' . tg_escape_html($name) . '</b>';
+    }
+    $article = trim((string)($product['article'] ?? ''));
+    if ($article !== '') {
+        $parts[] = 'Артикул: <code>' . tg_escape_html($article) . '</code>';
+    }
+    $barcode = trim((string)($product['barcode'] ?? ''));
+    if ($barcode !== '') {
+        $parts[] = 'Штрих-код: <code>' . tg_escape_html($barcode) . '</code>';
+    }
+    return implode("
+", $parts);
 }
 
 function tg_escape_html(string $value): string
@@ -850,6 +934,10 @@ function tg_product_open_button(array $product): array
 {
     return [
         'inline_keyboard' => [
+            [[
+                'text' => '🛒 Купить',
+                'callback_data' => 'buy:' . (int)($product['id'] ?? 0),
+            ]],
             [[
                 'text' => '🔗 Открыть товар на сайте',
                 'url' => tg_product_url($product),
