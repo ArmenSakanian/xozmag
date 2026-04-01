@@ -35,11 +35,11 @@
       </button>
       <button type="button" class="tabBtn" :class="{ active: activeTab === 'users' }" @click="setActiveTab('users')">
         Пользователи
-        <span class="tabBadge">{{ stats.total_users }}</span>
+        <span class="tabBadge dark">{{ stats.total_users }}</span>
       </button>
       <button type="button" class="tabBtn" :class="{ active: activeTab === 'support' }" @click="setActiveTab('support')">
         Техподдержка
-        <span class="tabBadge warn">{{ supportStats.unread_messages }}</span>
+        <span class="tabBadge dark">{{ supportStats.unread_messages }}</span>
       </button>
     </nav>
 
@@ -75,11 +75,6 @@
           <div class="summaryText">Закрытые обращения, которые можно открыть снова</div>
         </article>
 
-        <article class="summaryCard">
-          <div class="summaryTitle">Архив</div>
-          <div class="summaryValue">{{ supportStats.archived_threads }}</div>
-          <div class="summaryText">Архивные диалоги магазина</div>
-        </article>
       </div>
     </section>
 
@@ -92,27 +87,54 @@
               <p class="panelSub">Выберите пользователя, чтобы посмотреть его историю</p>
             </div>
             <input v-model.trim="filterText" class="searchInput" type="text" placeholder="Поиск по username, имени, chat_id" />
+            <div class="sidebarToolbar">
+              <label class="selectAllLine">
+                <input
+                  type="checkbox"
+                  :checked="allFilteredUsersSelected"
+                  :indeterminate.prop="selectedUserChatIds.length > 0 && !allFilteredUsersSelected"
+                  @change="toggleSelectAllUsers($event.target.checked)"
+                />
+                <span>Выбрать все</span>
+              </label>
+              <button
+                type="button"
+                class="summaryAction danger"
+                :disabled="!selectedUserChatIds.length"
+                @click="promptDeleteUsers"
+              >
+                Удалить выбранные
+              </button>
+            </div>
           </div>
 
           <div v-if="loading && !users.length" class="emptyBox sidebarEmpty">Загрузка данных...</div>
           <div v-else-if="!filteredUsers.length" class="emptyBox sidebarEmpty">Пользователи пока не найдены.</div>
           <div v-else class="sidebarList">
-            <button
+            <article
               v-for="user in filteredUsers"
               :key="`user-${user.chat_id}`"
-              type="button"
-              class="listCard"
-              :class="{ active: String(user.chat_id) === selectedChatId }"
+              class="listCard selectableCard"
+              :class="{ active: String(user.chat_id) === selectedChatId, checked: isUserSelected(user.chat_id) }"
               @click="selectUser(user.chat_id)"
             >
               <div class="listCardTop">
-                <div>
-                  <div class="itemMain">{{ formatUserName(user) }}</div>
-                  <div v-if="user.username" class="itemSub">@{{ user.username }}</div>
+                <label class="cardCheck" @click.stop>
+                  <input
+                    type="checkbox"
+                    :checked="isUserSelected(user.chat_id)"
+                    @change="toggleUserSelection(user.chat_id)"
+                  />
+                </label>
+                <div class="cardMain">
+                  <div>
+                    <div class="itemMain">{{ formatUserName(user) }}</div>
+                    <div v-if="user.username" class="itemSub">@{{ user.username }}</div>
+                  </div>
+                  <span class="badge" :class="user.consent_accepted ? 'ok' : 'warn'">
+                    {{ user.consent_accepted ? 'Принято' : 'Не принято' }}
+                  </span>
                 </div>
-                <span class="badge" :class="user.consent_accepted ? 'ok' : 'warn'">
-                  {{ user.consent_accepted ? 'Принято' : 'Не принято' }}
-                </span>
               </div>
 
               <div class="itemSub mono">{{ user.chat_id }}</div>
@@ -121,7 +143,7 @@
                 <span class="metaValue">{{ user.last_action_label || 'Нет действий' }}</span>
               </div>
               <div v-if="user.details_text" class="previewText">{{ user.details_text }}</div>
-            </button>
+            </article>
           </div>
         </aside>
 
@@ -182,23 +204,19 @@
           <div class="sidebarHead">
             <div>
               <h2 class="panelTitle">Техподдержка</h2>
-              <p class="panelSub">Активные, закрытые и архивные диалоги</p>
+              <p class="panelSub">Активные и закрытые диалоги</p>
             </div>
             <input v-model.trim="supportFilterText" class="searchInput" type="text" placeholder="Поиск по username, имени, chat_id" />
           </div>
 
-          <div class="supportModeTabs">
-            <button type="button" class="modeBtn" :class="{ active: supportMode === 'active' }" @click="supportMode = 'active'">
+          <div class="supportModeTabs twoCols">
+            <button type="button" class="modeBtn" :class="{ active: supportMode === 'active' }" @click="setSupportMode('active')">
               Активные
-              <span class="tabBadge">{{ supportStats.active_threads }}</span>
+              <span class="tabBadge dark">{{ supportStats.active_threads }}</span>
             </button>
-            <button type="button" class="modeBtn" :class="{ active: supportMode === 'closed' }" @click="supportMode = 'closed'">
+            <button type="button" class="modeBtn" :class="{ active: supportMode === 'closed' }" @click="setSupportMode('closed')">
               Закрытые
-              <span class="tabBadge">{{ supportStats.closed_threads }}</span>
-            </button>
-            <button type="button" class="modeBtn" :class="{ active: supportMode === 'archived' }" @click="supportMode = 'archived'">
-              Архив
-              <span class="tabBadge">{{ supportStats.archived_threads }}</span>
+              <span class="tabBadge dark">{{ supportStats.closed_threads }}</span>
             </button>
           </div>
 
@@ -252,9 +270,6 @@
             <div class="chatHeaderActions">
               <button v-if="selectedSupportThread.status === 'active'" type="button" class="summaryAction" @click="updateSupportThread('close')">
                 Закрыть чат
-              </button>
-              <button v-if="selectedSupportThread.status !== 'archived'" type="button" class="summaryAction" @click="updateSupportThread('archive')">
-                В архив
               </button>
               <button v-if="selectedSupportThread.status !== 'active'" type="button" class="summaryAction" @click="updateSupportThread('reopen')">
                 Открыть снова
@@ -360,6 +375,25 @@
         </div>
       </div>
     </section>
+      <div v-if="confirmDialog.open" class="modalOverlay" @click.self="closeConfirmDialog">
+      <div class="modalCard">
+        <h3 class="modalTitle">{{ confirmDialog.title }}</h3>
+        <p class="modalText">{{ confirmDialog.text }}</p>
+        <div class="modalActions">
+          <button type="button" class="summaryAction" @click="closeConfirmDialog">Отмена</button>
+          <button
+            type="button"
+            class="summaryAction"
+            :class="confirmDialog.danger ? 'danger solidDanger' : 'primary'"
+            :disabled="confirmLoading"
+            @click="runConfirmDialog"
+          >
+            {{ confirmLoading ? 'Подождите...' : confirmDialog.confirmText }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -380,6 +414,9 @@ const supportFilterText = ref('')
 const supportMode = ref('active')
 const supportReplyText = ref('')
 const supportPhotoFile = ref(null)
+const selectedUserChatIds = ref([])
+const confirmLoading = ref(false)
+const confirmDialog = ref({ open: false, title: '', text: '', confirmText: 'Подтвердить', danger: true, action: null })
 const supportPhotoPreview = ref('')
 const editingMessageId = ref(0)
 const chatMessagesRef = ref(null)
@@ -447,14 +484,67 @@ function formatUserName(row) {
   return 'Без имени'
 }
 
+function isUserSelected(chatId) {
+  return selectedUserChatIds.value.includes(String(chatId))
+}
+
+function toggleUserSelection(chatId) {
+  const key = String(chatId)
+  if (selectedUserChatIds.value.includes(key)) {
+    selectedUserChatIds.value = selectedUserChatIds.value.filter((item) => item !== key)
+  } else {
+    selectedUserChatIds.value = [...selectedUserChatIds.value, key]
+  }
+}
+
+function toggleSelectAllUsers(checked) {
+  if (checked) {
+    const merged = new Set(selectedUserChatIds.value)
+    filteredUsers.value.forEach((user) => merged.add(String(user.chat_id)))
+    selectedUserChatIds.value = Array.from(merged)
+    return
+  }
+  const remove = new Set(filteredUsers.value.map((user) => String(user.chat_id)))
+  selectedUserChatIds.value = selectedUserChatIds.value.filter((chatId) => !remove.has(chatId))
+}
+
+function openConfirmDialog(options) {
+  confirmDialog.value = {
+    open: true,
+    title: options.title || 'Подтверждение',
+    text: options.text || '',
+    confirmText: options.confirmText || 'Подтвердить',
+    danger: options.danger !== false,
+    action: typeof options.action === 'function' ? options.action : null,
+  }
+}
+
+function closeConfirmDialog(force = false) {
+  if (confirmLoading.value && !force) return
+  confirmDialog.value = { open: false, title: '', text: '', confirmText: 'Подтвердить', danger: true, action: null }
+}
+
+async function runConfirmDialog() {
+  if (typeof confirmDialog.value.action !== 'function') {
+    closeConfirmDialog()
+    return
+  }
+  confirmLoading.value = true
+  try {
+    await confirmDialog.value.action()
+    confirmLoading.value = false
+    closeConfirmDialog(true)
+  } finally {
+    confirmLoading.value = false
+  }
+}
+
 function threadStatusLabel(thread) {
-  if (thread?.status === 'archived') return 'В архиве'
   if (thread?.status === 'closed') return 'Закрыт'
   return thread?.needs_reply ? 'Ждёт ответа' : 'Активен'
 }
 
 function threadStatusClass(thread) {
-  if (thread?.status === 'archived') return 'neutral'
   if (thread?.status === 'closed') return 'warn'
   return thread?.needs_reply ? 'warn' : 'ok'
 }
@@ -496,6 +586,55 @@ function scheduleChatScroll() {
   })
 }
 
+
+function recomputeSupportStatsLocal() {
+  const visible = supportThreads.value.filter((thread) => !thread.deleted_at)
+  supportStats.value = {
+    ...supportStats.value,
+    total_threads: visible.length,
+    active_threads: visible.filter((thread) => (thread.status || 'active') === 'active').length,
+    closed_threads: visible.filter((thread) => (thread.status || 'active') === 'closed').length,
+    archived_threads: 0,
+    unread_threads: visible.filter((thread) => Number(thread.unread_count || 0) > 0).length,
+    unread_messages: visible.reduce((sum, thread) => sum + Number(thread.unread_count || 0), 0),
+    waiting_replies: visible.filter((thread) => Boolean(thread.needs_reply) && (thread.status || 'active') === 'active').length,
+  }
+}
+
+function patchSupportThreadLocal(threadId, patch) {
+  const targetId = Number(threadId)
+  supportThreads.value = supportThreads.value.map((thread) => {
+    if (Number(thread.id) !== targetId) return thread
+    const nextThread = { ...thread, ...patch }
+    nextThread.needs_reply = nextThread.status === 'active' && (nextThread.needs_reply ?? false)
+    return nextThread
+  })
+  if (selectedSupportThread.value && Number(selectedSupportThread.value.id) === targetId) {
+    selectedSupportThread.value = { ...selectedSupportThread.value, ...patch }
+    selectedSupportThread.value.needs_reply = selectedSupportThread.value.status === 'active' && (selectedSupportThread.value.needs_reply ?? false)
+  }
+  recomputeSupportStatsLocal()
+}
+
+function removeSupportThreadLocal(threadId) {
+  const targetId = Number(threadId)
+  supportThreads.value = supportThreads.value.filter((thread) => Number(thread.id) !== targetId)
+  if (selectedSupportThread.value && Number(selectedSupportThread.value.id) === targetId) {
+    selectedSupportThreadId.value = 0
+    selectedSupportThread.value = null
+    supportMessages.value = []
+    cancelEditMessage()
+  }
+  recomputeSupportStatsLocal()
+}
+
+function clearSupportSelection() {
+  selectedSupportThreadId.value = 0
+  selectedSupportThread.value = null
+  supportMessages.value = []
+  cancelEditMessage()
+}
+
 const filteredUsers = computed(() => {
   const q = filterText.value.trim().toLowerCase()
   if (!q) return users.value
@@ -518,6 +657,22 @@ const filteredUsers = computed(() => {
     return haystack.includes(q)
   })
 })
+
+const allFilteredUsersSelected = computed(() => {
+  if (!filteredUsers.value.length) return false
+  return filteredUsers.value.every((user) => selectedUserChatIds.value.includes(String(user.chat_id)))
+})
+
+function setSupportMode(mode) {
+  supportMode.value = mode === 'closed' ? 'closed' : 'active'
+  if (selectedSupportThread.value && (selectedSupportThread.value.status || 'active') !== supportMode.value) {
+    selectedSupportThreadId.value = 0
+    selectedSupportThread.value = null
+    supportMessages.value = []
+    cancelEditMessage()
+    syncQueryParams()
+  }
+}
 
 const filteredSupportThreads = computed(() => {
   const q = supportFilterText.value.trim().toLowerCase()
@@ -597,18 +752,21 @@ async function loadData(chatId = '', supportThreadId = 0, options = {}) {
     actions.value = Array.isArray(data.actions) ? data.actions : []
     supportThreads.value = Array.isArray(data.support_threads) ? data.support_threads : []
     supportMessages.value = Array.isArray(data.support_messages) ? data.support_messages : []
+    recomputeSupportStatsLocal()
+    const userChatIdSet = new Set(users.value.map((user) => String(user.chat_id)))
+    selectedUserChatIds.value = selectedUserChatIds.value.filter((chatId) => userChatIdSet.has(chatId))
     selectedChatId.value = data.selected_chat_id ? String(data.selected_chat_id) : ''
     selectedSupportThreadId.value = Number(data.selected_support_thread_id || 0)
     selectedUser.value = data.selected_user || null
     selectedSupportThread.value = data.selected_support_thread || null
     supportEnabled.value = Boolean(data.support_enabled)
 
-    if (activeTab.value === 'support' && !supportEnabled.value) {
-      activeTab.value = 'users'
+    if (selectedSupportThreadId.value > 0 && !selectedSupportThread.value) {
+      clearSupportSelection()
     }
 
-    if (selectedSupportThread.value?.status && supportMode.value !== selectedSupportThread.value.status) {
-      supportMode.value = selectedSupportThread.value.status
+    if (activeTab.value === 'support' && !supportEnabled.value) {
+      activeTab.value = 'users'
     }
 
     syncQueryParams()
@@ -632,7 +790,49 @@ function selectUser(chatId) {
 function selectSupportThread(threadId) {
   activeTab.value = 'support'
   cancelEditMessage()
+  const thread = supportThreads.value.find((item) => Number(item.id) === Number(threadId))
+  if (thread?.status) {
+    supportMode.value = thread.status === 'active' ? 'active' : 'closed'
+  }
   loadData(selectedChatId.value, Number(threadId))
+}
+
+function promptDeleteUsers() {
+  if (!selectedUserChatIds.value.length) return
+  const count = selectedUserChatIds.value.length
+  openConfirmDialog({
+    title: 'Удалить пользователей из статистики?',
+    text: `Будут удалены ${count} ${count === 1 ? 'пользователь' : count < 5 ? 'пользователя' : 'пользователей'} из статистики первого бота и их журнал действий.`,
+    confirmText: 'Удалить',
+    danger: true,
+    action: deleteSelectedUsers,
+  })
+}
+
+async function deleteSelectedUsers() {
+  error.value = ''
+  const selectedSet = new Set(selectedUserChatIds.value)
+  const res = await fetch('/api/admin/telegram/delete_users.php', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ chat_ids: selectedUserChatIds.value }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) {
+    throw new Error(data?.error || 'Не удалось удалить пользователей')
+  }
+
+  if (selectedChatId.value && selectedSet.has(String(selectedChatId.value))) {
+    selectedChatId.value = ''
+    selectedUser.value = null
+    actions.value = []
+  }
+  selectedUserChatIds.value = []
+  await loadData('', selectedSupportThreadId.value)
 }
 
 async function sendSupportReply() {
@@ -724,75 +924,124 @@ function cancelEditMessage() {
 
 async function deleteSupportMessage(message) {
   if (!message?.id) return
-  if (!window.confirm('Удалить сообщение у всех?')) return
 
-  error.value = ''
-  try {
-    const res = await fetch('/api/admin/telegram/delete_support_message.php', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ message_id: Number(message.id) }),
-    })
-    const data = await res.json().catch(() => null)
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || 'Не удалось удалить сообщение')
-    }
-    if (editingMessageId.value === Number(message.id)) {
-      cancelEditMessage()
-    }
-    await loadData(selectedChatId.value, selectedSupportThreadId.value)
-  } catch (err) {
-    error.value = err?.message || 'Не удалось удалить сообщение'
-  }
+  openConfirmDialog({
+    title: 'Удалить сообщение?',
+    text: 'Сообщение будет удалено в админке и будет предпринята попытка удалить его у пользователя там, где это разрешает Telegram.',
+    confirmText: 'Удалить сообщение',
+    danger: true,
+    action: async () => {
+      error.value = ''
+      try {
+        const res = await fetch('/api/admin/telegram/delete_support_message.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ message_id: Number(message.id) }),
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || 'Не удалось удалить сообщение')
+        }
+        if (editingMessageId.value === Number(message.id)) {
+          cancelEditMessage()
+        }
+        await loadData(selectedChatId.value, selectedSupportThreadId.value)
+      } catch (err) {
+        error.value = err?.message || 'Не удалось удалить сообщение'
+        throw err
+      }
+    },
+  })
 }
 
 async function updateSupportThread(action) {
   if (!selectedSupportThread.value) return
 
   const labels = {
-    close: 'Закрыть чат? Следующее сообщение пользователя откроет новый диалог.',
-    archive: 'Переместить чат в архив?',
-    reopen: 'Открыть чат снова?',
-    delete: 'Удалить весь чат? Это скроет его из админки и попытается удалить сообщения у пользователя там, где Telegram это позволяет.',
+    close: {
+      title: 'Закрыть чат?',
+      text: 'Чат перейдёт в раздел закрытых. Следующее новое сообщение пользователя откроет уже новый диалог.',
+      confirmText: 'Закрыть чат',
+      danger: false,
+    },
+    reopen: {
+      title: 'Открыть чат снова?',
+      text: 'Чат снова станет активным, и в него можно будет отвечать.',
+      confirmText: 'Открыть чат',
+      danger: false,
+    },
+    delete: {
+      title: 'Удалить чат?',
+      text: 'Чат исчезнет из админки. Также будет предпринята попытка удалить сообщения у пользователя там, где это позволяет Telegram.',
+      confirmText: 'Удалить чат',
+      danger: true,
+    },
   }
-  if (labels[action] && !window.confirm(labels[action])) return
 
-  error.value = ''
-  try {
-    const res = await fetch('/api/admin/telegram/update_support_thread.php', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        conversation_id: Number(selectedSupportThread.value.id),
-        action,
-      }),
-    })
-    const data = await res.json().catch(() => null)
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || 'Не удалось обновить чат')
-    }
+  const config = labels[action]
+  if (!config) return
+  const conversationId = Number(selectedSupportThread.value.id)
 
-    if (action === 'delete') {
-      selectedSupportThreadId.value = 0
-      selectedSupportThread.value = null
-      supportMessages.value = []
-      cancelEditMessage()
-      await loadData(selectedChatId.value, 0)
-      return
-    }
+  openConfirmDialog({
+    ...config,
+    action: async () => {
+      error.value = ''
+      const res = await fetch('/api/admin/telegram/update_support_thread.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          action,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || 'Не удалось обновить чат')
+      }
 
-    await loadData(selectedChatId.value, selectedSupportThreadId.value)
-  } catch (err) {
-    error.value = err?.message || 'Не удалось обновить чат'
-  }
+      if (action === 'delete') {
+        removeSupportThreadLocal(conversationId)
+        syncQueryParams()
+        try {
+          await loadData(selectedChatId.value, 0, { silent: true })
+        } catch (err) {
+          console.error(err)
+        }
+        return
+      }
+
+      if (action === 'close') {
+        patchSupportThreadLocal(conversationId, {
+          status: 'closed',
+          needs_reply: false,
+          unread_count: 0,
+          closed_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        })
+        supportMode.value = 'closed'
+      } else if (action === 'reopen') {
+        patchSupportThreadLocal(conversationId, {
+          status: 'active',
+          closed_at: null,
+        })
+        supportMode.value = 'active'
+      }
+
+      syncQueryParams()
+      try {
+        await loadData(selectedChatId.value, conversationId, { silent: true })
+      } catch (err) {
+        console.error(err)
+      }
+    },
+  })
 }
 
 let supportPollTimer = null
@@ -930,6 +1179,13 @@ onBeforeUnmount(() => {
 .summaryAction.danger {
   border-color: rgba(185, 38, 38, 0.35);
   color: #b92626;
+  background: #fff7f7;
+}
+
+.summaryAction.solidDanger {
+  background: #b92626;
+  border-color: #b92626;
+  color: #fff;
 }
 
 .statusStrip {
@@ -964,13 +1220,34 @@ onBeforeUnmount(() => {
 }
 
 .statusPill.warn strong,
-.tabBadge.warn,
-.counterBadge,
 .badge.warn,
 .summaryValue.warn,
 .bubbleStatus.statusUnread,
 .badge.neutral {
   color: #ad6a00;
+}
+
+.tabBadge,
+.counterBadge {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.counterBadge {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.18);
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.tabBadge.dark {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
 }
 
 .sectionTabs {
@@ -1097,6 +1374,43 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--border-soft);
 }
 
+.sidebarToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.selectAllLine,
+.cardCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selectAllLine input,
+.cardCheck input {
+  width: 16px;
+  height: 16px;
+}
+
+.cardMain {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.selectableCard {
+  cursor: pointer;
+}
+
+.selectableCard.checked {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-soft));
+}
+
 .searchInput {
   width: 100%;
   min-height: 42px;
@@ -1112,6 +1426,10 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 12px 14px 0;
+}
+
+.supportModeTabs.twoCols {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sidebarList {
@@ -1153,6 +1471,12 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.threadBadges {
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
 }
 
 .itemMain,
@@ -1347,6 +1671,51 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(185, 38, 38, 0.25);
   background: rgba(185, 38, 38, 0.08);
   color: #8d1e1e;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(15, 23, 42, 0.46);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.modalCard {
+  width: min(100%, 460px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 20px;
+}
+
+.modalText {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.solidDanger {
+  background: #b92626;
+  border-color: #b92626;
+  color: #fff;
 }
 
 @media (max-width: 1024px) {

@@ -26,6 +26,10 @@ try {
         throw new RuntimeException('Некорректный conversation_id');
     }
 
+    if ($action === 'archive') {
+        $action = 'close';
+    }
+
     if ($action === 'delete') {
         $result = tgs_delete_conversation($pdo, $conversationId);
     } elseif ($action === 'close') {

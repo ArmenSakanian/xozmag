@@ -65,6 +65,15 @@ function tg_support_preview(?string $text, string $contentType = 'text'): string
     return $text;
 }
 
+
+function tg_normalize_support_thread(array $thread): array
+{
+    if (($thread['status'] ?? '') === 'archived') {
+        $thread['status'] = 'closed';
+    }
+    return $thread;
+}
+
 try {
     tg_ensure_tables($pdo);
 
@@ -184,6 +193,8 @@ try {
             tgs_mark_conversation_as_read($pdo, $selectedSupportThreadId);
         }
 
+        $pdo->exec("UPDATE telegram_support_conversations SET status = 'closed', archived_at = NULL, closed_at = COALESCE(closed_at, NOW()), updated_at = CURRENT_TIMESTAMP WHERE deleted_at IS NULL AND status = 'archived'");
+
         $supportStats = [
             'total_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL')->fetchColumn(),
             'unread_threads' => (int)$pdo->query('SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND unread_count > 0')->fetchColumn(),
@@ -192,14 +203,14 @@ try {
             'waiting_replies' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'active' AND last_user_message_at IS NOT NULL AND (last_admin_message_at IS NULL OR last_user_message_at > last_admin_message_at)")->fetchColumn(),
             'active_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'active'")->fetchColumn(),
             'closed_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'closed'")->fetchColumn(),
-            'archived_threads' => (int)$pdo->query("SELECT COUNT(*) FROM telegram_support_conversations WHERE deleted_at IS NULL AND status = 'archived'")->fetchColumn(),
+            'archived_threads' => 0,
         ];
 
         $supportThreads = $pdo->query(
             "SELECT id, chat_id, user_id, username, first_name, last_name, status, last_message_text, last_message_at, last_user_message_at, last_admin_message_at, unread_count, ack_sent, created_at, updated_at, closed_at, archived_at
              FROM telegram_support_conversations
              WHERE deleted_at IS NULL
-             ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'closed' THEN 1 ELSE 2 END, unread_count DESC, COALESCE(last_user_message_at, last_message_at, updated_at) DESC, id DESC
+             ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, unread_count DESC, COALESCE(last_user_message_at, last_message_at, updated_at) DESC, id DESC
              LIMIT 1000"
         )->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -224,6 +235,7 @@ try {
         }
 
         foreach ($supportThreads as &$thread) {
+            $thread = tg_normalize_support_thread($thread);
             $thread['last_message_preview'] = tg_support_preview($thread['last_message_text'] ?? '', $conversationMessageTypeMap[(int)$thread['id']] ?? 'text');
             $thread['needs_reply'] = tgs_conversation_needs_reply($thread);
         }
@@ -239,6 +251,7 @@ try {
             if ($selectedSupportThread === null) {
                 $selectedSupportThread = tgs_get_conversation($pdo, $selectedSupportThreadId);
                 if (is_array($selectedSupportThread)) {
+                    $selectedSupportThread = tg_normalize_support_thread($selectedSupportThread);
                     $selectedSupportThread['last_message_preview'] = tg_support_preview($selectedSupportThread['last_message_text'] ?? '');
                     $selectedSupportThread['needs_reply'] = tgs_conversation_needs_reply($selectedSupportThread);
                 }
