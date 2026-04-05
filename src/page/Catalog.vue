@@ -369,9 +369,16 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                 </div>
 
                 <div class="product-meta">
-                  <span v-if="p.barcode" class="product-chip product-barcode">
-                    {{ p.barcode }}
-                  </span>
+<button
+  v-if="p.barcode"
+  type="button"
+  class="product-chip product-barcode product-chip-copy"
+  :class="{ copied: copiedBarcodeId === p.id }"
+  :title="copiedBarcodeId === p.id ? 'Скопировано' : 'Нажмите, чтобы скопировать штрихкод'"
+  @click.stop="copyBarcode(p.barcode, p.id)"
+>
+  {{ p.barcode }}
+</button>
                   <span v-if="p.article" class="product-chip product-article">
                     Арт: {{ p.article }}
                   </span>
@@ -731,7 +738,8 @@ const inTree = (cc, code) => {
   code = String(code || "");
   return cc === code || cc.startsWith(code + ".");
 };
-
+const copiedBarcodeId = ref(null);
+let copiedBarcodeTimer = null;
 /* ================= STATE ================= */
 const products = ref([]);
 const categories = ref([]);
@@ -784,6 +792,38 @@ const KB_EN2RU = {
 const KB_RU2EN = Object.fromEntries(
   Object.entries(KB_EN2RU).map(([k, v]) => [v, k])
 );
+
+async function copyBarcode(barcode, productId) {
+  const text = String(barcode || "").trim();
+  if (!text) return;
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+
+    copiedBarcodeId.value = productId;
+
+    if (copiedBarcodeTimer) clearTimeout(copiedBarcodeTimer);
+    copiedBarcodeTimer = setTimeout(() => {
+      copiedBarcodeId.value = null;
+    }, 1200);
+  } catch (e) {
+    console.error("Не удалось скопировать штрихкод", e);
+  }
+}
 
 function mapChars(str, map) {
   return String(str || "")
@@ -1386,6 +1426,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize);
   if (searchHitsAbort) searchHitsAbort.abort();
+  if (copiedBarcodeTimer) clearTimeout(copiedBarcodeTimer);
   unlockBody();
 });
 
@@ -1882,6 +1923,28 @@ watch(showMobileFilters, (open) => {
 </script>
 
 <style scoped>
+.product-chip-copy {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.product-chip-copy:hover {
+  background: #e9eefc;
+  border-color: rgba(4, 0, 255, 0.22);
+}
+
+.product-chip-copy:active {
+  transform: scale(0.98);
+}
+
+.product-chip-copy.copied {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+}
 /* ====== shared small ui ====== */
 .color-dot {
   width: 12px;
