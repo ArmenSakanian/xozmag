@@ -65,6 +65,8 @@
             товар на сайте - это не значит, что его нет у нас в магазине.
           </p>
         </div>
+
+        <HomeShowcaseSlider />
       </div>
     </div>
   </section>
@@ -75,6 +77,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Autoplay, EffectFade } from "swiper/modules";
 import HomeSearch from "@/components/HomeSearch.vue";
+import HomeShowcaseSlider from "@/components/HomeShowcaseSlider.vue";
 
 const sliderEl = ref(null);
 
@@ -264,7 +267,7 @@ function onUiLock(v) {
 }
 
 .hero-overlay {
-  width: min(760px, 94vw);
+  width: min(1120px, 96vw);
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -45,7 +45,7 @@
       </a>
 
       <a href="/admin/category-photos" class="tile">
-        <span class="ico"><Fa :icon="['far','image']" /></span>
+        <span class="ico"><Fa :icon="['fas','image']" /></span>
         <span class="t">
           <span class="t-title">Фото категорий</span>
           <span class="t-desc">Фото только для категорий первого уровня</span>
@@ -81,10 +81,19 @@
       </a>
 
       <a href="/admin/photogallery" class="tile">
-        <span class="ico"><Fa :icon="['fa','image']" /></span>
+        <span class="ico"><Fa :icon="['fas','image']" /></span>
         <span class="t">
           <span class="t-title">Слайдер</span>
           <span class="t-desc">Добавить и удалить изображения слайдера</span>
+        </span>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
+      </a>
+
+      <a href="/admin/home-showcase" class="tile">
+        <span class="ico"><Fa :icon="['far','rectangle-list']" /></span>
+        <span class="t">
+          <span class="t-title">Карточки витрины</span>
+          <span class="t-desc">Заголовок и карточки под главным слайдером</span>
         </span>
         <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>

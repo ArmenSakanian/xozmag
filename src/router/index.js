@@ -24,6 +24,7 @@ const AdminFunctions = () => import("@/admin/AdminFunctions.vue");
 const AdminOrder = () => import("@/admin/AdminOrder.vue");
 const AdminPhotoGallery = () => import("@/admin/AdminPhotoGallery.vue");
 const AdminCategoryPhotosPage = () => import("@/admin/AdminCategoryPhotosPage.vue");
+const AdminHomeShowcasePage = () => import("@/admin/AdminHomeShowcasePage.vue");
 const AdminTelegramUsersPage = () => import("@/admin/AdminTelegramUsersPage.vue");
 const NotFoundPage = () => import("../page/NotFoundPage.vue");
 const PrivacyPolicyPage = () => import("../page/PrivacyPolicyPage.vue");
@@ -66,6 +67,7 @@ const routes = [
   { path: "/admin/order", component: AdminOrder, meta: { noindex: true } },
   { path: "/admin/photogallery", component: AdminPhotoGallery, meta: { noindex: true } },
   { path: "/admin/category-photos", component: AdminCategoryPhotosPage, meta: { noindex: true } },
+  { path: "/admin/home-showcase", component: AdminHomeShowcasePage, meta: { noindex: true } },
   { path: "/admin/telegram", component: AdminTelegramUsersPage, meta: { noindex: true } },
   { path: "/privacy", name: "privacy", component: PrivacyPolicyPage },
   { path: "/telegram-bot-privacy", name: "telegram-bot-privacy", component: TelegramBotPrivacyPage, meta: { noindex: true } },
