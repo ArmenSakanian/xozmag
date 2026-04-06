@@ -44,6 +44,15 @@
         <Fa class="arrow" :icon="['fas','chevron-right']" />
       </a>
 
+      <a href="/admin/category-photos" class="tile">
+        <span class="ico"><Fa :icon="['far','image']" /></span>
+        <span class="t">
+          <span class="t-title">Фото категорий</span>
+          <span class="t-desc">Фото только для категорий первого уровня</span>
+        </span>
+        <Fa class="arrow" :icon="['fas','chevron-right']" />
+      </a>
+
       <a href="/admin/attributes" class="tile">
         <span class="ico"><Fa :icon="['fas','sliders']" /></span>
         <span class="t">

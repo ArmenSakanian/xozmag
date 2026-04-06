@@ -39,21 +39,32 @@
     </div>
 
     <div class="search-layer" aria-label="Поиск по каталогу">
-      <div
-        class="search-shell"
-        @pointerdown.stop
-        @pointermove.stop
-        @touchstart.stop
-        @touchmove.stop
-        @wheel.stop
-      >
-        <HomeSearch
-          class="gallery-search"
-          :show-category="false"
-          :sync-route="false"
-          catalog-path="/catalog"
-          @ui-lock="onUiLock"
-        />
+      <div class="hero-overlay">
+        <div
+          class="search-shell"
+          @pointerdown.stop
+          @pointermove.stop
+          @touchstart.stop
+          @touchmove.stop
+          @wheel.stop
+        >
+          <HomeSearch
+            class="gallery-search"
+            :show-category="false"
+            :sync-route="false"
+            catalog-path="/catalog"
+            @ui-lock="onUiLock"
+          />
+        </div>
+
+        <div class="hero-note" aria-label="Информация о витрине">
+          <div class="hero-note-title">Онлайн-витрина магазина</div>
+          <p class="hero-note-text">
+            На сайте пока представлена не вся витрина магазина. Вы можете
+            посмотреть товары, уточнить цену и наличие. Если не нашли нужный
+            товар на сайте - это не значит, что его нет у нас в магазине.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -252,9 +263,47 @@ function onUiLock(v) {
   padding-top: clamp(10px, 4.2vh, 46px);
 }
 
+.hero-overlay {
+  width: min(760px, 94vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
 .search-shell {
   width: min(520px, 92vw);
   pointer-events: auto;
+}
+
+.hero-note {
+  width: min(760px, 94vw);
+  padding: 18px 20px;
+  border-radius: 22px;
+  pointer-events: none;
+
+  background: rgba(15, 23, 42, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.hero-note-title {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.hero-note-text {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(14px, 1.35vw, 16px);
+  line-height: 1.55;
+  font-weight: 700;
+  text-wrap: balance;
 }
 
 /* ========= GLASS OVERRIDES (HomeSearch) ========= */
@@ -369,8 +418,29 @@ function onUiLock(v) {
     padding-top: clamp(8px, 3.2vh, 28px);
   }
 
+  .hero-overlay {
+    width: 100%;
+    gap: 12px;
+  }
+
   .search-shell {
     width: min(420px, 94vw);
+  }
+
+  .hero-note {
+    width: min(100%, 94vw);
+    padding: 14px 14px 15px;
+    border-radius: 18px;
+  }
+
+  .hero-note-title {
+    font-size: 16px;
+  }
+
+  .hero-note-text {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.45;
   }
 
   .gallery-search:deep(.search-box) {

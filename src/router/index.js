@@ -7,8 +7,8 @@ import HomePage from "../page/HomePage.vue";
 const LoginPage = () => import("../page/LoginPage.vue");
 const BarcodePage = () => import("../page/BarcodePage.vue");
 
-const CatalogPage = () => import("../page/catalog.vue");
-const AboutusPage = () => import("../page/aboutus.vue");
+const CatalogPage = () => import("../page/Catalog.vue");
+const AboutusPage = () => import("../page/Aboutus.vue");
 const ContactPage = () => import("../page/contact.vue");
 
 /* ✅ SEO карточка товара (то, что в sitemap: /product/:slug) */
@@ -23,6 +23,7 @@ const AdminAttributes = () => import("@/admin/AdminAttributes.vue");
 const AdminFunctions = () => import("@/admin/AdminFunctions.vue");
 const AdminOrder = () => import("@/admin/AdminOrder.vue");
 const AdminPhotoGallery = () => import("@/admin/AdminPhotoGallery.vue");
+const AdminCategoryPhotosPage = () => import("@/admin/AdminCategoryPhotosPage.vue");
 const AdminTelegramUsersPage = () => import("@/admin/AdminTelegramUsersPage.vue");
 const NotFoundPage = () => import("../page/NotFoundPage.vue");
 const PrivacyPolicyPage = () => import("../page/PrivacyPolicyPage.vue");
@@ -64,6 +65,7 @@ const routes = [
   { path: "/admin/functions", component: AdminFunctions, meta: { noindex: true } },
   { path: "/admin/order", component: AdminOrder, meta: { noindex: true } },
   { path: "/admin/photogallery", component: AdminPhotoGallery, meta: { noindex: true } },
+  { path: "/admin/category-photos", component: AdminCategoryPhotosPage, meta: { noindex: true } },
   { path: "/admin/telegram", component: AdminTelegramUsersPage, meta: { noindex: true } },
   { path: "/privacy", name: "privacy", component: PrivacyPolicyPage },
   { path: "/telegram-bot-privacy", name: "telegram-bot-privacy", component: TelegramBotPrivacyPage, meta: { noindex: true } },
