@@ -14,30 +14,54 @@
   </span>
 </div>
     <div class="cats-grid" v-if="topCats.length">
-      <button
-        v-for="c in topCats"
-        :key="c.id"
-        class="cat-card"
-        @click="goCategory(c)"
-        :title="c.name"
-        type="button"
-      >
-        <div class="cat-photo">
-          <img
-            v-if="c.photo && !catImgErr[c.id]"
-            :src="c.photo"
-            :alt="c.name"
-            loading="lazy"
-            decoding="async"
-            @error="catImgErr[c.id] = true"
-          />
-          <div v-else class="cat-photo-ph" aria-hidden="true">
-            <Fa :icon="['far', 'image']" />
+      <template v-for="c in topCats" :key="c.id">
+        <RouterLink
+          v-if="props.navigateOnPick"
+          class="cat-card cat-card-link"
+          :to="categoryTo(c)"
+          :title="c.name"
+        >
+          <div class="cat-photo">
+            <img
+              v-if="c.photo && !catImgErr[c.id]"
+              :src="c.photo"
+              :alt="c.name"
+              loading="lazy"
+              decoding="async"
+              @error="catImgErr[c.id] = true"
+            />
+            <div v-else class="cat-photo-ph" aria-hidden="true">
+              <Fa :icon="['far', 'image']" />
+            </div>
           </div>
-        </div>
 
-        <div class="cat-text">{{ c.name }}</div>
-      </button>
+          <div class="cat-text">{{ c.name }}</div>
+        </RouterLink>
+
+        <button
+          v-else
+          class="cat-card"
+          @click="goCategory(c)"
+          :title="c.name"
+          type="button"
+        >
+          <div class="cat-photo">
+            <img
+              v-if="c.photo && !catImgErr[c.id]"
+              :src="c.photo"
+              :alt="c.name"
+              loading="lazy"
+              decoding="async"
+              @error="catImgErr[c.id] = true"
+            />
+            <div v-else class="cat-photo-ph" aria-hidden="true">
+              <Fa :icon="['far', 'image']" />
+            </div>
+          </div>
+
+          <div class="cat-text">{{ c.name }}</div>
+        </button>
+      </template>
     </div>
 
     <div v-else class="cats-empty">
@@ -48,7 +72,6 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 
 const props = defineProps({
   showHead: { type: Boolean, default: true },
@@ -57,7 +80,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["select-category"]);
-const router = useRouter();
 
 const catImgErr = ref({});
 
@@ -69,12 +91,12 @@ const topCats = computed(() =>
     )
 );
 
+function categoryTo(cat) {
+  return { path: "/catalog", query: { cat: cat.slug || cat.code } };
+}
+
 function goCategory(cat) {
   emit("select-category", cat);
-
-  if (props.navigateOnPick) {
-router.push({ path: "/catalog", query: { cat: cat.slug || cat.code } });
-  }
 }
 
 watch(

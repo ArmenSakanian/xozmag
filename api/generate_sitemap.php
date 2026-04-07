@@ -85,70 +85,126 @@ function findBestTables(PDO $pdo): array {
   return [$bestProduct["name"], $bestCat["name"]];
 }
 
-function fetchIds(PDO $pdo, string $table, string $idCol = "id"): array {
-  $sql = "SELECT `$idCol` AS id FROM `" . str_replace("`", "``", $table) . "` WHERE `$idCol` IS NOT NULL";
-  $stmt = $pdo->query($sql);
+function findFirstColumn(array $cols, array $candidates): ?string {
+  foreach ($candidates as $candidate) {
+    foreach ($cols as $col) {
+      if (strtolower($col) === strtolower($candidate)) return $col;
+    }
+  }
+  return null;
+}
 
-  $ids = [];
+function normalizeUrlPath(string $path, string $prefix = ''): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^https?://~i', $path)) return $path;
+
+  $parsed = parse_url($path, PHP_URL_PATH);
+  $path = is_string($parsed) && $parsed !== '' ? $parsed : $path;
+  $path = '/' . ltrim($path, '/');
+
+  if ($prefix !== '' && strpos($path, '/' . trim($prefix, '/')) !== 0) {
+    $path = '/' . trim($prefix, '/') . '/' . ltrim($path, '/');
+  }
+
+  return $path;
+}
+
+function photoJsonToImages($raw, string $prefix = ''): array {
+  $value = trim((string)$raw);
+  if ($value === '' || $value === '[]') return [];
+
+  $decoded = json_decode($value, true);
+  $source = is_array($decoded) ? $decoded : [$value];
+
+  $out = [];
+  foreach ($source as $item) {
+    $img = normalizeUrlPath((string)$item, $prefix);
+    if ($img !== '') $out[] = $img;
+  }
+
+  return array_values(array_unique($out));
+}
+
+function bestLastmodValue(array $row, bool $hasUpdated, string $fallback = ''): string {
+  if (!$hasUpdated) return $fallback;
+  $raw = trim((string)($row['updated_at'] ?? ''));
+  if ($raw === '') return $fallback;
+
+  $ts = strtotime($raw);
+  if ($ts === false) return $fallback;
+  return gmdate('Y-m-d', $ts);
+}
+
+function fetchCategoryEntries(PDO $pdo, string $table, string $base, string $fallbackLastmod): array {
+  $cols = tableColumns($pdo, $table);
+  $updatedCol = findFirstColumn($cols, ['updated_at', 'modified_at', 'last_update', 'updated', 'created_at']);
+  $slugCol = in_array('slug', $cols, true) ? 'slug' : null;
+  $codeCol = in_array('code', $cols, true) ? 'code' : null;
+  $photoCol = findFirstColumn($cols, ['photo_categories', 'photo']);
+
+  $select = ['`id` AS id'];
+  if ($slugCol) $select[] = "`$slugCol` AS slug";
+  if ($codeCol) $select[] = "`$codeCol` AS code";
+  if ($updatedCol) $select[] = "`$updatedCol` AS updated_at";
+  if ($photoCol) $select[] = "`$photoCol` AS photo_raw";
+
+  $stmt = $pdo->query('SELECT ' . implode(', ', $select) . ' FROM `' . str_replace('`', '``', $table) . '` ORDER BY id ASC');
+  $out = [];
+
   while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $id = (string)$row["id"];
-    if ($id !== "" && ctype_digit($id)) $ids[] = $id;
+    $slug = trim((string)($row['slug'] ?? ''));
+    $code = trim((string)($row['code'] ?? ''));
+    $id = trim((string)($row['id'] ?? ''));
+    $key = $slug !== '' ? $slug : ($code !== '' ? $code : $id);
+    if ($key === '') continue;
+
+    $images = [];
+    if ($photoCol) {
+      $prefix = strtolower($photoCol) === 'photo_categories' ? 'photo_categories_vitrina' : 'photo_product_vitrina';
+      $images = photoJsonToImages($row['photo_raw'] ?? '', $prefix);
+    }
+
+    $out[] = [
+      'loc' => $base . '/catalog?cat=' . rawurlencode($key),
+      'lastmod' => bestLastmodValue($row, (bool)$updatedCol, $fallbackLastmod),
+      'images' => array_map(fn($img) => preg_match('~^https?://~i', $img) ? $img : $base . $img, $images),
+    ];
   }
-  return $ids;
+
+  return $out;
 }
 
-/**
- * Категории: берём slug, если нет - code, если нет - id.
- * URL: /catalog?cat=KEY
- */
-function fetchCategoryKeys(PDO $pdo, string $table): array {
+function fetchProductEntries(PDO $pdo, string $table, string $base, string $fallbackLastmod): array {
   $cols = tableColumns($pdo, $table);
+  $updatedCol = findFirstColumn($cols, ['updated_at', 'modified_at', 'last_update', 'updated', 'created_at']);
+  $slugCol = in_array('slug', $cols, true) ? 'slug' : null;
+  $photoCol = findFirstColumn($cols, ['photo']);
 
-  if (in_array("slug", $cols, true) && in_array("code", $cols, true)) {
-    $stmt = $pdo->query("SELECT slug, code FROM `" . str_replace("`","``",$table) . "` ORDER BY code ASC");
-    $out = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-      $slug = trim((string)($row["slug"] ?? ""));
-      $code = trim((string)($row["code"] ?? ""));
-      $key  = ($slug !== "") ? $slug : $code;
-      if ($key !== "") $out[] = $key;
-    }
-    return array_values(array_unique($out));
+  $select = ['`id` AS id'];
+  if ($slugCol) $select[] = "`$slugCol` AS slug";
+  if ($updatedCol) $select[] = "`$updatedCol` AS updated_at";
+  if ($photoCol) $select[] = "`$photoCol` AS photo_raw";
+
+  $stmt = $pdo->query('SELECT ' . implode(', ', $select) . ' FROM `' . str_replace('`', '``', $table) . '` WHERE `id` IS NOT NULL');
+  $out = [];
+
+  while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $id = trim((string)($row['id'] ?? ''));
+    $slug = trim((string)($row['slug'] ?? ''));
+    $key = $slug !== '' ? $slug : $id;
+    if ($key === '') continue;
+
+    $images = $photoCol ? photoJsonToImages($row['photo_raw'] ?? '', 'photo_product_vitrina') : [];
+
+    $out[] = [
+      'loc' => $base . '/product/' . rawurlencode($key),
+      'lastmod' => bestLastmodValue($row, (bool)$updatedCol, $fallbackLastmod),
+      'images' => array_map(fn($img) => preg_match('~^https?://~i', $img) ? $img : $base . $img, $images),
+    ];
   }
 
-  if (in_array("code", $cols, true)) {
-    $stmt = $pdo->query("SELECT code FROM `" . str_replace("`","``",$table) . "` ORDER BY code ASC");
-    $out = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-      $code = trim((string)($row["code"] ?? ""));
-      if ($code !== "") $out[] = $code;
-    }
-    return array_values(array_unique($out));
-  }
-
-  return fetchIds($pdo, $table, "id");
-}
-
-/**
- * Товары: берём slug, если пусто - id.
- * URL: /product/KEY
- */
-function fetchProductKeys(PDO $pdo, string $table): array {
-  $cols = tableColumns($pdo, $table);
-
-  if (in_array("slug", $cols, true)) {
-    $stmt = $pdo->query("SELECT id, slug FROM `" . str_replace("`","``",$table) . "` WHERE id IS NOT NULL");
-    $out = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-      $id   = trim((string)($row["id"] ?? ""));
-      $slug = trim((string)($row["slug"] ?? ""));
-      $key  = ($slug !== "") ? $slug : $id;
-      if ($key !== "") $out[] = $key;
-    }
-    return array_values(array_unique($out));
-  }
-
-  return fetchIds($pdo, $table, "id");
+  return $out;
 }
 
 /* ================= main ================= */
@@ -161,42 +217,59 @@ if (!$catTable) { echo "ERROR: не нашёл таблицу категорий
 echo "Product table: {$productTable}\n";
 echo "Category table: {$catTable}\n";
 
-$productKeys = fetchProductKeys($pdo, $productTable);
-$catKeys     = fetchCategoryKeys($pdo, $catTable);
-
-echo "Products: " . count($productKeys) . "\n";
-echo "Categories: " . count($catKeys) . "\n";
-
-$urls = [];
-$urls[] = $BASE . "/";
-$urls[] = $BASE . "/catalog";
-
-foreach ($catKeys as $key) {
-  $urls[] = $BASE . "/catalog?cat=" . rawurlencode($key);
-}
-
-foreach ($productKeys as $key) {
-  $urls[] = $BASE . "/product/" . rawurlencode($key);
-}
-
-$urls = array_values(array_unique($urls));
-
 $today = gmdate("Y-m-d");
+$productEntries = fetchProductEntries($pdo, $productTable, $BASE, $today);
+$catEntries     = fetchCategoryEntries($pdo, $catTable, $BASE, $today);
 
-// data sitemap
+echo "Products: " . count($productEntries) . "
+";
+echo "Categories: " . count($catEntries) . "
+";
+
+$entries = [
+  ["loc" => $BASE . "/", "lastmod" => $today, "images" => []],
+  ["loc" => $BASE . "/catalog", "lastmod" => $today, "images" => []],
+  ...$catEntries,
+  ...$productEntries,
+];
+
+$seen = [];
+$hasImages = false;
+foreach ($entries as $entry) {
+  if (!empty($entry["images"])) {
+    $hasImages = true;
+    break;
+  }
+}
+
 $xml = [];
 $xml[] = '<?xml version="1.0" encoding="UTF-8"?>';
-$xml[] = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+$xml[] = $hasImages
+  ? '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">'
+  : '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-foreach ($urls as $u) {
+foreach ($entries as $entry) {
+  $loc = (string)($entry["loc"] ?? "");
+  if ($loc === "" || isset($seen[$loc])) continue;
+  $seen[$loc] = true;
+
   $xml[] = "  <url>";
-  $xml[] = "    <loc>" . xmlEscape($u) . "</loc>";
-  $xml[] = "    <lastmod>{$today}</lastmod>";
+  $xml[] = "    <loc>" . xmlEscape($loc) . "</loc>";
+  $xml[] = "    <lastmod>" . xmlEscape((string)($entry["lastmod"] ?? $today)) . "</lastmod>";
+
+  foreach ((array)($entry["images"] ?? []) as $img) {
+    $xml[] = "    <image:image>";
+    $xml[] = "      <image:loc>" . xmlEscape((string)$img) . "</image:loc>";
+    $xml[] = "    </image:image>";
+  }
+
   $xml[] = "  </url>";
 }
 
 $xml[] = "</urlset>";
-$xmlStr = implode("\n", $xml) . "\n";
+$xmlStr = implode("
+", $xml) . "
+";
 
 atomicWrite($outDataPath, $xmlStr);
 atomicWrite($outDataGzPath, gzencode($xmlStr, 9));

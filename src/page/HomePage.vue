@@ -37,27 +37,22 @@ onMounted(async () => {
 
 /* ================= SEO CONFIG ================= */
 const SITE_NAME = "XOZMAG.RU";
+const STORE_NAME = "Всё для дома";
 const HOME_URL = "https://xozmag.ru/";
 const OG_IMAGE = "https://xozmag.ru/android-chrome-512x512.png";
+const STORE_ADDRESS = "Улица Героев Панфиловцев, дом 3";
+const STORE_CITY = "Москва";
+const STORE_PHONE = "+7 (925) 869-34-16";
+const STORE_PHONE_RAW = "+79258693416";
+const MAP_URL = "https://yandex.ru/maps/-/CLgkAIiy";
+const TELEGRAM_URL = "https://t.me/magazin_xozmag_bot";
 
-const title = computed(() => `Все для дома - Сходненская и Планерная | ${SITE_NAME}`);
+const title = computed(() => `Хозтовары и товары для дома у метро Сходненская и Планерная | ${SITE_NAME}`);
 
 const description = computed(
   () =>
-    "Хозтовары, сантехника, электрика, стройматериалы, крепеж и замки - большой выбор товаров для дома и ремонта. Магазин рядом с метро Сходненская и Планерная."
+    "Магазин «Всё для дома» в Москве рядом с метро Сходненская и Планерная: хозтовары, сантехника, электрика, стройматериалы, крепеж, замки. Смотрите товары, уточняйте цену и наличие."
 );
-
-// ✅ заполнишь - будет круто; не заполнишь - поля удалятся автоматически
-const STORE_ADDRESS = "__АДРЕС_УЛИЦА_ДОМ__"; // например: "ул. Свободы, 1к2"
-const STORE_CITY = "__ГОРОД__"; // например: "Москва"
-const STORE_PHONE = "__ТЕЛЕФОН__"; // например: "+7 999 123-45-67" или оставь как есть
-const STORE_HOURS = "__ЧАСЫ_SCHEMA__"; // например: "Mo-Su 10:00-21:00"
-const MAP_URL = "__ССЫЛКА_НА_КАРТЫ__"; // например: ссылка на Яндекс/Google карты (если нет - оставь)
-
-function isPlaceholder(v: unknown) {
-  const s = String(v ?? "").trim();
-  return !s || s.startsWith("__") && s.endsWith("__");
-}
 
 /* JSON-LD: WebSite (поиск по сайту) */
 const ldWebSite = computed(() => ({
@@ -73,44 +68,48 @@ const ldWebSite = computed(() => ({
 }));
 
 /* JSON-LD: LocalBusiness / Store */
-const ldStore = computed(() => {
-  const data: any = {
-    "@context": "https://schema.org",
-    "@type": "Store",
-    name: "Все для дома - XOZMAG",
-    url: HOME_URL,
-    image: OG_IMAGE,
-    description: description.value,
-    areaServed: { "@type": "City", name: "Москва" }, // если у тебя не Москва - поменяй
-  };
-
-  // address
-  if (!isPlaceholder(STORE_ADDRESS) && !isPlaceholder(STORE_CITY)) {
-    data.address = {
-      "@type": "PostalAddress",
-      streetAddress: String(STORE_ADDRESS).trim(),
-      addressLocality: String(STORE_CITY).trim(),
-      addressCountry: "RU",
-    };
-  }
-
-  // phone
-  if (!isPlaceholder(STORE_PHONE)) {
-    data.telephone = String(STORE_PHONE).trim();
-  }
-
-  // opening hours
-  if (!isPlaceholder(STORE_HOURS)) {
-    data.openingHours = [String(STORE_HOURS).trim()];
-  }
-
-  // maps / socials (sameAs)
-  if (!isPlaceholder(MAP_URL)) {
-    data.sameAs = [String(MAP_URL).trim()];
-  }
-
-  return data;
-});
+const ldStore = computed(() => ({
+  "@context": "https://schema.org",
+  "@type": "Store",
+  name: STORE_NAME,
+  url: HOME_URL,
+  image: OG_IMAGE,
+  description: description.value,
+  telephone: STORE_PHONE_RAW,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: STORE_ADDRESS,
+    addressLocality: STORE_CITY,
+    addressCountry: "RU",
+  },
+  areaServed: [
+    { "@type": "City", name: "Москва" },
+    { "@type": "Place", name: "Северное Тушино" },
+    { "@type": "Place", name: "Сходненская" },
+    { "@type": "Place", name: "Планерная" },
+  ],
+  hasMap: MAP_URL,
+  sameAs: [MAP_URL, TELEGRAM_URL],
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 55.854563,
+    longitude: 37.437056,
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "20:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Saturday", "Sunday"],
+      opens: "10:00",
+      closes: "19:00",
+    },
+  ],
+}));
 
 useHead(() => ({
   title: title.value,
