@@ -1,41 +1,23 @@
 <?php
-header("Content-Type: application/json; charset=utf-8");
-require_once $_SERVER['DOCUMENT_ROOT'] . "/api/auth/require_admin.php";
-require_once __DIR__ . "/_common.php";
+require_once $_SERVER['DOCUMENT_ROOT'] . '/api/auth/require_admin.php';
+require_once __DIR__ . '/_common.php';
 
-$imageUrl = null;
+hs_ensure_schema($pdo);
+$title = hs_clean_text($_POST['title'] ?? '', 255);
+if ($title === null) hs_fail('Заполни название');
 
-try {
-    hs_ensure_schema($pdo);
-    $payload = hs_validate_item_payload($_POST);
-    $imageUrl = hs_move_uploaded_image("image");
+$description = hs_clean_text($_POST['description'] ?? '');
+$price = hs_clean_price($_POST['price'] ?? '');
+$buttonText = hs_clean_text($_POST['button_text'] ?? '', 255);
+$buttonUrl = hs_normalize_url($_POST['button_url'] ?? '');
+$imageUrl = hs_handle_upload('image');
+$sortOrder = hs_next_sort_order($pdo);
 
-    $sortStmt = $pdo->query("SELECT COALESCE(MAX(sort_order), 0) AS max_sort FROM home_showcase_items");
-    $sortOrder = (int)($sortStmt->fetch(PDO::FETCH_ASSOC)["max_sort"] ?? 0) + 1;
+$stmt = $pdo->prepare('INSERT INTO home_showcase_items (title, description, price, image_url, button_text, button_url, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?, 1, ?)');
+$stmt->execute([$title, $description, $price, $imageUrl, $buttonText, $buttonUrl, $sortOrder]);
+$id = (int)$pdo->lastInsertId();
 
-    $stmt = $pdo->prepare("INSERT INTO home_showcase_items
-        (title, description, price, image_url, button_text, button_url, is_active, sort_order)
-        VALUES (:title, :description, :price, :image_url, :button_text, :button_url, 1, :sort_order)");
-    $stmt->execute([
-        ":title" => $payload["title"],
-        ":description" => ($payload["description"] !== "" ? $payload["description"] : null),
-        ":price" => $payload["price"],
-        ":image_url" => $imageUrl,
-        ":button_text" => $payload["button_text"],
-        ":button_url" => $payload["button_url"],
-        ":sort_order" => $sortOrder,
-    ]);
-
-    $id = (int)$pdo->lastInsertId();
-    $itemStmt = $pdo->prepare("SELECT id, title, description, price, image_url, button_text, button_url, is_active, sort_order, created_at, updated_at
-        FROM home_showcase_items WHERE id = :id LIMIT 1");
-    $itemStmt->execute([":id" => $id]);
-
-    echo json_encode([
-        "ok" => true,
-        "item" => $itemStmt->fetch(PDO::FETCH_ASSOC),
-    ], JSON_UNESCAPED_UNICODE);
-} catch (Throwable $e) {
-    if (!empty($imageUrl)) hs_delete_image_by_url($imageUrl);
-    hs_json_fail("DB_ERROR", 500);
-}
+hs_json([
+    'ok' => true,
+    'item' => hs_fetch_item($pdo, $id),
+]);
