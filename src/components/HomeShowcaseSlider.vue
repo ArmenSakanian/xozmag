@@ -166,6 +166,10 @@ onMounted(loadData);
   color: #fff;
   cursor: pointer;
   transition: 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .nav-btn:hover {
@@ -241,6 +245,7 @@ onMounted(loadData);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 .showcase-price {
