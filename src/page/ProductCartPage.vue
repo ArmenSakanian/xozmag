@@ -312,8 +312,10 @@ const qtyPretty = computed(() => {
 
 /* ===== SEO HEAD ===== */
 const SITE = "XOZMAG.RU";
+const STORE_NAME = "Всё для дома";
 const GEO_SHORT = "Сходненская и Планерная";
 const GEO_TEXT = "у метро Сходненская и Планерная";
+const STORE_PHONE = "+79258693416";
 
 function clip(s, n = 160) {
   const t = String(s || "").replace(/\s+/g, " ").trim();
@@ -350,6 +352,12 @@ const headTitle = computed(() => {
 
   // GEO аккуратно (не спамим)
   return `${p.name}${pricePart} - магазин ${GEO_SHORT} | ${SITE}`;
+});
+
+const robotsContent = computed(() => {
+  if (loading.value) return "noindex,follow";
+  if (error.value || !product.value?.name) return "noindex,follow";
+  return "index,follow";
 });
 
 const headDesc = computed(() => {
@@ -400,6 +408,10 @@ const productLd = computed(() => {
     data.brand = { "@type": "Brand", name: String(p.brand) };
   }
 
+  if (p.category_path && p.category_path !== "-") {
+    data.category = String(p.category_path);
+  }
+
   // GTIN из штрихкода (если цифры есть)
   const bc = String(p.barcode || "").replace(/\D/g, "");
   if (bc) {
@@ -413,6 +425,17 @@ const productLd = computed(() => {
     url: canonicalUrl.value,
     priceCurrency: "RUB",
     itemCondition: "https://schema.org/NewCondition",
+    seller: {
+      "@type": "Store",
+      name: STORE_NAME,
+      telephone: STORE_PHONE,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Улица Героев Панфиловцев, дом 3",
+        addressLocality: "Москва",
+        addressCountry: "RU",
+      },
+    },
   };
 
   if (price) offers.price = price;
@@ -428,14 +451,56 @@ const productLd = computed(() => {
   return data;
 });
 
+const breadcrumbLd = computed(() => {
+  if (!product.value?.name) return null;
+
+  const items = [
+    { "@type": "ListItem", position: 1, name: "Главная", item: "https://xozmag.ru/" },
+    { "@type": "ListItem", position: 2, name: "Каталог", item: "https://xozmag.ru/catalog" },
+  ];
+
+  if (product.value?.category_code && product.value?.category_path && product.value.category_path !== "-") {
+    const names = String(product.value.category_path).split('/').map((s) => s.trim()).filter(Boolean);
+    items.push({
+      "@type": "ListItem",
+      position: 3,
+      name: names[names.length - 1] || String(product.value.category_path),
+      item: `https://xozmag.ru/catalog?cat=${encodeURIComponent(String(product.value.category_code))}` ,
+    });
+  }
+
+  items.push({
+    "@type": "ListItem",
+    position: items.length + 1,
+    name: String(product.value.name),
+    item: canonicalUrl.value,
+  });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items,
+  };
+});
+
 const headScripts = computed(() => {
-  if (!productLd.value) return [];
-  return [
-    {
+  const scripts = [];
+
+  if (productLd.value) {
+    scripts.push({
       type: "application/ld+json",
       children: JSON.stringify(productLd.value),
-    },
-  ];
+    });
+  }
+
+  if (breadcrumbLd.value) {
+    scripts.push({
+      type: "application/ld+json",
+      children: JSON.stringify(breadcrumbLd.value),
+    });
+  }
+
+  return scripts;
 });
 
 useHead(() => ({
@@ -443,7 +508,7 @@ useHead(() => ({
   link: [{ rel: "canonical", href: canonicalUrl.value }],
   meta: [
     { name: "description", content: headDesc.value },
-    { name: "robots", content: "index,follow" },
+    { name: "robots", content: robotsContent.value },
 
     { property: "og:title", content: headTitle.value },
     { property: "og:description", content: headDesc.value },

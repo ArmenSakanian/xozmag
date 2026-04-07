@@ -354,7 +354,7 @@ v-if="isRootCategorySelected === true && typeOptions.length"
               </div>
 
               <div class="product-info">
-                <div class="product-name">{{ p.name }}</div>
+                <RouterLink class="product-name product-name-link" :to="productTo(p)">{{ p.name }}</RouterLink>
 
                 <div class="product-row">
                   <div class="product-price">{{ p.price }} ₽</div>
@@ -385,13 +385,9 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                 </div>
 
                 <div class="product-actions">
-                  <button
-                    class="product-open"
-                    type="button"
-                    @click.stop="openProduct(p)"
-                  >
+                  <RouterLink class="product-open" :to="productTo(p)">
                     Открыть
-                  </button>
+                  </RouterLink>
                 </div>
               </div>
             </article>
@@ -1085,6 +1081,99 @@ const robotsCatalog = computed(() => {
 
   return "noindex,follow";
 });
+const seoBreadcrumbsLd = computed(() => {
+  const items = [
+    { "@type": "ListItem", position: 1, name: "Главная", item: "https://xozmag.ru/" },
+    { "@type": "ListItem", position: 2, name: "Каталог", item: "https://xozmag.ru/catalog" },
+  ];
+
+  if (hasActiveCategory.value && currentCategoryName.value) {
+    items.push({
+      "@type": "ListItem",
+      position: 3,
+      name: currentCategoryName.value,
+      item: canonicalCatalogUrl.value,
+    });
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items,
+  };
+});
+
+const seoCollectionLd = computed(() => {
+  if (robotsCatalog.value !== "index,follow") return null;
+
+  const seoItems = visibleProducts.value
+    .filter((p) => p?.id != null && p?.name)
+    .slice(0, 12)
+    .map((p, idx) => {
+      const url = `https://xozmag.ru/product/${encodeURIComponent(p.slug || String(p.id))}`;
+      const image = Array.isArray(p.images) && p.images.length
+        ? String(p.images[0]).startsWith("http")
+          ? p.images[0]
+          : `https://xozmag.ru${String(p.images[0]).startsWith("/") ? p.images[0] : "/" + p.images[0]}`
+        : "https://xozmag.ru/img/no-photo.png";
+
+      const product = {
+        "@type": "Product",
+        name: String(p.name),
+        url,
+        image: [image],
+      };
+
+      const price = Number(p.price);
+      if (Number.isFinite(price) && price > 0) {
+        product.offers = {
+          "@type": "Offer",
+          priceCurrency: "RUB",
+          price: String(Math.round(price)),
+          url,
+          availability: Number(p.quantity_value ?? p.quantity) > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        };
+      }
+
+      if (p.brand) {
+        product.brand = { "@type": "Brand", name: String(p.brand) };
+      }
+
+      return {
+        "@type": "ListItem",
+        position: idx + 1,
+        url,
+        item: product,
+      };
+    });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: headTitle.value,
+    url: canonicalCatalogUrl.value,
+    description: headDesc.value,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: seoItems,
+    },
+  };
+});
+
+const seoHeadScripts = computed(() => {
+  const scripts = [
+    { type: "application/ld+json", children: JSON.stringify(seoBreadcrumbsLd.value) },
+  ];
+
+  if (seoCollectionLd.value) {
+    scripts.push({ type: "application/ld+json", children: JSON.stringify(seoCollectionLd.value) });
+  }
+
+  return scripts;
+});
+
 useHead(() => ({
   title: headTitle.value,
   link: [{ rel: "canonical", href: canonicalCatalogUrl.value }],
@@ -1097,6 +1186,7 @@ useHead(() => ({
     { property: "og:type", content: "website" },
     { property: "og:url", content: canonicalCatalogUrl.value },
   ],
+  script: seoHeadScripts.value,
 }));
 
 const seoIntroText = computed(() => {
@@ -1886,10 +1976,8 @@ function resetAllFilters() {
 }
 
 /* ================= navigation ================= */
-function openProduct(p) {
-  const slug = p.slug || String(p.id);
-  const href = router.resolve({ name: "product", params: { slug } }).href;
-  window.location.href = href;
+function productTo(p) {
+  return { name: "product", params: { slug: p.slug || String(p.id) } };
 }
 
 /* ================= BODY LOCK (only filters modal) ================= */
@@ -2473,6 +2561,15 @@ watch(showMobileFilters, (open) => {
   gap: 10px;
   cursor: default;
   flex: 1;
+}
+
+.product-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-name-link:hover {
+  color: var(--accent);
 }
 
 .product-name {
