@@ -1243,7 +1243,7 @@ const productsLoading = ref(false);
 const productsLoaded = ref(false);
 let productsPromise = null;
 
-const lastLoadedCat = ref(null);
+const lastLoadedRequestKey = ref("");
 const serverOffset = ref(0);
 const serverLimit = 120;
 const serverHasMore = ref(true);
@@ -1268,16 +1268,18 @@ function normalizeProduct(p) {
 }
 
 async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
-  const code = currentCategory.value; // тут CODE (или slug, если захочешь)
+  const code = String(currentCategory.value || "").trim();
   if (!code) return;
 
-  // если сменили категорию - сбрасываем накопленное
-  if (reset || lastLoadedCat.value !== code) {
+  const requestKey = String(serverRequestKey.value || code);
+
+  // если сменили категорию или type - сбрасываем накопленное
+  if (reset || lastLoadedRequestKey.value !== requestKey) {
     products.value = [];
     productsLoaded.value = false;
     serverOffset.value = 0;
     serverHasMore.value = true;
-    lastLoadedCat.value = code;
+    lastLoadedRequestKey.value = requestKey;
   }
 
   // если уже грузим или больше нечего - выходим
@@ -1286,13 +1288,15 @@ async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
 
   productsLoading.value = true;
 
-  const url =
-    `/api/admin/product/get_products.php` +
-    `?cat=${encodeURIComponent(code)}` +
-    `&limit=${encodeURIComponent(String(serverLimit))}` +
-    `&offset=${encodeURIComponent(String(serverOffset.value))}` +
-    `&img=first` +
-    `&attrs=1`; // важно для фильтров по характеристикам
+  const params = new URLSearchParams();
+  params.set("cat", code);
+  params.set("limit", String(serverLimit));
+  params.set("offset", String(serverOffset.value));
+  params.set("img", "first");
+  params.set("attrs", "1");
+  serverTypeCodes.value.forEach((typeCode) => params.append("type[]", typeCode));
+
+  const url = `/api/admin/product/get_products.php?${params.toString()}`;
 
   productsPromise = fetch(url, { cache: "no-store" })
     .then((r) => r.json())
@@ -1338,15 +1342,6 @@ async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
 
   return productsPromise;
 }
-
-watch(
-  currentCategory,
-  (code, prev) => {
-    if (!code) return;
-    ensureProductsOnlyWhenCategory({ reset: code !== prev });
-  },
-  { immediate: true }
-);
 
 const loading = computed(
   () => catsLoading.value || (hasActiveCategory.value && productsLoading.value)
@@ -1504,6 +1499,33 @@ const typeHeadText = computed(() => {
   if (names.length <= 2) return names.join(" · ");
   return `Выбрано: ${names.length}`;
 });
+
+const serverTypeCodes = computed(() => {
+  if (isRootCategorySelected.value !== true || !typeModel.value.length) return [];
+
+  return Array.from(
+    new Set(
+      typeModel.value
+        .map((v) => String(v || "").trim())
+        .filter(Boolean)
+    )
+  ).sort();
+});
+
+const serverRequestKey = computed(() => {
+  const cat = String(currentCategory.value || "").trim();
+  const types = serverTypeCodes.value;
+  return `${cat}::${types.join("|")}`;
+});
+
+watch(
+  serverRequestKey,
+  (nextKey, prevKey) => {
+    if (!String(currentCategory.value || "").trim()) return;
+    ensureProductsOnlyWhenCategory({ reset: nextKey !== prevKey });
+  },
+  { immediate: true }
+);
 
 /* ================= MOBILE detect ================= */
 const isMobile = ref(false);

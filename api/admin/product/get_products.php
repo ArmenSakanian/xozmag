@@ -55,6 +55,9 @@ function format_qty_for_ui($qty, $measureName): string {
 
 /* ================= input ================= */
 $catRaw = isset($_GET["cat"]) ? trim((string)$_GET["cat"]) : "";
+$typeRaw = $_GET["type"] ?? [];
+if (!is_array($typeRaw)) $typeRaw = [$typeRaw];
+$typeRaw = array_values(array_filter(array_map(fn($v) => trim((string)$v), $typeRaw), fn($v) => $v !== ""));
 $limit  = isset($_GET["limit"]) ? (int)$_GET["limit"] : 60;
 $offset = isset($_GET["offset"]) ? (int)$_GET["offset"] : 0;
 
@@ -103,10 +106,38 @@ try {
 
   $catIds = [];
   if ($catCode !== "") {
-    // категорий мало - можно так
     $st = $pdo->prepare("SELECT id FROM categories WHERE code = ? OR code LIKE CONCAT(?, '.%')");
     $st->execute([$catCode, $catCode]);
     $catIds = array_map(fn($x)=> (int)$x["id"], $st->fetchAll(PDO::FETCH_ASSOC));
+  }
+
+  $typeCodes = [];
+  foreach ($typeRaw as $rawType) {
+    if ($rawType === "") continue;
+    if (is_code($rawType)) $typeCodes[] = $rawType;
+    else {
+      $resolved = $slugToCode[$rawType] ?? "";
+      if ($resolved !== "") $typeCodes[] = $resolved;
+    }
+  }
+  $typeCodes = array_values(array_unique($typeCodes));
+
+  $typeIds = [];
+  if (!empty($typeCodes)) {
+    $typeIdMap = [];
+    foreach ($typeCodes as $typeCode) {
+      $st = $pdo->prepare("SELECT id FROM categories WHERE code = ? OR code LIKE CONCAT(?, '.%')");
+      $st->execute([$typeCode, $typeCode]);
+      foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $typeIdMap[(int)$row["id"]] = true;
+      }
+    }
+    $typeIds = array_map('intval', array_keys($typeIdMap));
+
+    if (!empty($catIds)) {
+      $catIdMap = array_fill_keys(array_map('intval', $catIds), true);
+      $typeIds = array_values(array_filter($typeIds, fn($id) => isset($catIdMap[(int)$id])));
+    }
   }
 
   /* ================= single product by id/slug ================= */
@@ -212,13 +243,26 @@ try {
   ";
   if ($includeDesc) $fields .= ", p.description";
 
-  $where = "";
+  $whereParts = [];
   $params = [];
+
   if (!empty($catIds)) {
     $in = implode(",", array_fill(0, count($catIds), "?"));
-    $where = "WHERE p.category_id IN ($in)";
-    $params = $catIds;
+    $whereParts[] = "p.category_id IN ($in)";
+    $params = array_merge($params, $catIds);
   }
+
+  if (!empty($typeRaw)) {
+    if (!empty($typeIds)) {
+      $in = implode(",", array_fill(0, count($typeIds), "?"));
+      $whereParts[] = "p.category_id IN ($in)";
+      $params = array_merge($params, $typeIds);
+    } else {
+      $whereParts[] = "1=0";
+    }
+  }
+
+  $where = !empty($whereParts) ? "WHERE " . implode(" AND ", $whereParts) : "";
 
   // total (для пагинации)
   $total = null;
