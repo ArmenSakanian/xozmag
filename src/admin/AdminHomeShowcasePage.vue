@@ -3,456 +3,366 @@
     <div class="head card">
       <div>
         <h1 class="title">Карточки витрины</h1>
-        <div class="sub">
-          Один блок на главной странице под текстом поверх слайдера. Заголовок редактируется отдельно, карточки хранятся в своей таблице и не зависят от синхронизации товаров.
-        </div>
+        <div class="sub">Отдельный блок карточек поверх главного слайдера. Фото, название обязательны. Цена, кнопка и ссылка - необязательны.</div>
       </div>
 
-      <button class="btn ghost" :disabled="loading" @click="fetchData">
-        <Fa :icon="['fas','rotate-right']" />
-        Обновить
-      </button>
+      <div class="head-actions">
+        <button class="btn ghost" :disabled="loading" @click="loadAll">
+          <Fa :icon="['fas','rotate-right']" />
+          Обновить
+        </button>
+      </div>
     </div>
 
     <div v-if="error" class="notice error">{{ error }}</div>
-    <div v-if="loading" class="notice">Загрузка...</div>
 
-    <section class="card section">
-      <div class="section-head">
-        <h2>Заголовок блока</h2>
+    <div class="layout">
+      <section class="card settings-card">
+        <div class="section-title">Заголовок блока</div>
+        <div class="settings-row">
+          <input v-model.trim="settingsTitle" class="input" type="text" maxlength="255" placeholder="Например: Новинки недели" />
+          <button class="btn" :disabled="settingsSaving" @click="saveSettings">
+            {{ settingsSaving ? 'Сохранение...' : 'Сохранить' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="card form-card">
+        <div class="section-head">
+          <div class="section-title">{{ editingId ? 'Редактирование карточки' : 'Новая карточка' }}</div>
+          <button v-if="editingId" class="btn ghost" @click="resetForm">Отменить редактирование</button>
+        </div>
+
+        <div class="form-grid">
+          <label class="field wide">
+            <span>Название</span>
+            <input v-model.trim="form.title" class="input" type="text" maxlength="255" placeholder="Название карточки" />
+          </label>
+
+          <label class="field">
+            <span>Цена</span>
+            <input
+              v-model="form.price"
+              class="input"
+              type="text"
+              inputmode="numeric"
+              maxlength="12"
+              placeholder="Только число"
+              @input="sanitizePrice"
+            />
+          </label>
+
+          <label class="field wide">
+            <span>Описание</span>
+            <textarea v-model.trim="form.description" class="textarea" rows="3" placeholder="Необязательно"></textarea>
+          </label>
+
+          <label class="field">
+            <span>Текст кнопки</span>
+            <input v-model.trim="form.button_text" class="input" type="text" maxlength="255" placeholder="Необязательно" />
+          </label>
+
+          <label class="field">
+            <span>Ссылка кнопки</span>
+            <input v-model.trim="form.button_url" class="input" type="text" maxlength="500" placeholder="Необязательно" />
+          </label>
+
+<label class="field wide">
+  <span>{{ editingId ? 'Новая фотография' : 'Фотография' }}</span>
+
+  <input
+    ref="fileInput"
+    class="file-native"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    @change="onFileChange"
+  />
+
+  <div class="upload-box" :class="{ active: pickedFile || previewUrl }">
+    <div class="upload-icon">
+      <Fa :icon="['fas','image']" />
+    </div>
+
+    <div class="upload-content">
+      <div class="upload-title">
+        {{ pickedFile ? 'Файл выбран' : (editingId ? 'Выбери новую фотографию' : 'Выбери фотографию') }}
       </div>
 
-      <div class="form-grid single">
-        <label class="field">
-          <span>Текст заголовка</span>
-          <input v-model.trim="blockTitle" type="text" maxlength="255" placeholder="Например: Новинки и предложения" />
-        </label>
+      <div class="upload-sub">
+        {{
+          pickedFile?.name
+            ? pickedFile.name
+            : (previewUrl
+              ? 'Текущее изображение уже загружено'
+              : 'JPG, PNG, WEBP до 8 МБ')
+        }}
       </div>
+    </div>
 
-      <div class="actions-row">
-        <button class="btn primary" :disabled="savingTitle || !blockTitle" @click="saveTitle">
-          <Fa :icon="['fas','floppy-disk']" />
-          {{ savingTitle ? 'Сохранение...' : 'Сохранить заголовок' }}
-        </button>
-      </div>
-    </section>
+    <div class="upload-action">
+      {{ pickedFile ? 'Заменить' : 'Выбрать' }}
+    </div>
+  </div>
+</label>
+        </div>
 
-    <section class="card section">
-      <div class="section-head">
-        <h2>Добавить карточку</h2>
-      </div>
+        <div v-if="previewUrl" class="preview-box">
+          <div class="preview-media">
+            <div class="preview-bg" :style="{ backgroundImage: `url(${previewUrl})` }"></div>
+            <img :src="previewUrl" alt="preview" />
+          </div>
+        </div>
 
-      <div class="form-grid">
-        <label class="field field-span-2">
-          <span>Название</span>
-          <input v-model.trim="newItem.title" type="text" maxlength="255" placeholder="Название карточки" />
-        </label>
+        <div class="form-actions">
+          <button class="btn" :disabled="saving" @click="submitForm">
+            {{ saving ? (editingId ? 'Сохранение...' : 'Создание...') : (editingId ? 'Сохранить изменения' : 'Создать карточку') }}
+          </button>
+        </div>
+      </section>
 
-        <label class="field">
-          <span>Цена - необязательно</span>
-          <input v-model.trim="newItem.price" type="text" maxlength="120" placeholder="Например: 990 ₽" />
-        </label>
+      <section class="card list-card">
+        <div class="section-head">
+          <div class="section-title">Существующие карточки</div>
+          <div class="section-meta">{{ items.length }} шт.</div>
+        </div>
 
-        <label class="field">
-          <span>Фото</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" @change="onNewImageChange" />
-        </label>
+        <div v-if="loading" class="empty">Загрузка...</div>
+        <div v-else-if="!items.length" class="empty">Карточек пока нет.</div>
 
-        <label class="field field-span-2">
-          <span>Описание - необязательно</span>
-          <textarea v-model.trim="newItem.description" rows="4" placeholder="Короткое описание"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Текст кнопки</span>
-          <input v-model.trim="newItem.button_text" type="text" maxlength="120" placeholder="Например: Уточнить наличие" />
-        </label>
-
-        <label class="field">
-          <span>Ссылка кнопки</span>
-          <input v-model.trim="newItem.button_url" type="text" maxlength="500" placeholder="/catalog или https://..." />
-        </label>
-      </div>
-
-      <div class="actions-row">
-        <button class="btn primary" :disabled="creating" @click="createItem">
-          <Fa :icon="['fas','plus']" />
-          {{ creating ? 'Добавление...' : 'Добавить карточку' }}
-        </button>
-      </div>
-    </section>
-
-    <section class="card section">
-      <div class="section-head section-head-between">
-        <h2>Текущие карточки</h2>
-        <div class="count">{{ items.length }}</div>
-      </div>
-
-      <div v-if="!items.length" class="empty">
-        Карточек пока нет.
-      </div>
-
-      <div v-else class="items-grid">
-        <article v-for="item in items" :key="item.id" class="item-card" :class="{ hiddenCard: !item.is_active }">
-          <div class="card-top">
-            <div class="status-pill" :class="item.is_active ? 'isVisible' : 'isHidden'">
-              {{ item.is_active ? 'Показывается' : 'Скрыта' }}
+        <div v-else class="rows">
+          <article v-for="item in items" :key="item.id" class="row-item" :class="{ off: !item.is_active }">
+            <div class="row-thumb">
+              <div class="row-thumb-bg" :style="{ backgroundImage: `url(${item.image_url})` }"></div>
+              <img :src="item.image_url" :alt="item.title" loading="lazy" decoding="async" />
             </div>
-          </div>
 
-          <div class="preview-box">
-            <img v-if="item.image_url" :src="item.image_url" :alt="item.title" class="preview-image" />
-          </div>
+            <div class="row-main">
+              <div class="row-title">{{ item.title }}</div>
+              <div class="row-sub">
+                <span>{{ item.price ? `${formatPrice(item.price)} ₽` : 'Без цены' }}</span>
+                <span>{{ item.is_active ? 'Показывается' : 'Скрыта' }}</span>
+              </div>
+              <div v-if="item.description" class="row-desc">{{ item.description }}</div>
+              <div v-if="item.button_text && item.button_url" class="row-link">{{ item.button_text }} - {{ item.button_url }}</div>
+            </div>
 
-          <div class="form-grid">
-            <label class="field field-span-2">
-              <span>Название</span>
-              <input v-model.trim="item.title" type="text" maxlength="255" />
-            </label>
-
-            <label class="field">
-              <span>Цена - необязательно</span>
-              <input v-model.trim="item.price" type="text" maxlength="120" />
-            </label>
-
-            <label class="field">
-              <span>Заменить фото</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" @change="onExistingImageChange(item, $event)" />
-            </label>
-
-            <label class="field field-span-2">
-              <span>Описание - необязательно</span>
-              <textarea v-model.trim="item.description" rows="4"></textarea>
-            </label>
-
-            <label class="field">
-              <span>Текст кнопки</span>
-              <input v-model.trim="item.button_text" type="text" maxlength="120" />
-            </label>
-
-            <label class="field">
-              <span>Ссылка кнопки</span>
-              <input v-model.trim="item.button_url" type="text" maxlength="500" />
-            </label>
-          </div>
-
-          <div class="actions-row actions-row-end">
-            <button class="btn secondary" :disabled="!!busyById[item.id]" @click="toggleVisibility(item)">
-              <Fa :icon="['fas', item.is_active ? 'eye-slash' : 'eye']" />
-              {{ busyById[item.id] === 'toggle' ? 'Сохранение...' : (item.is_active ? 'Скрыть' : 'Открыть') }}
-            </button>
-
-            <button class="btn primary" :disabled="!!busyById[item.id]" @click="updateItem(item)">
-              <Fa :icon="['fas','floppy-disk']" />
-              {{ busyById[item.id] === 'save' ? 'Сохранение...' : 'Сохранить' }}
-            </button>
-
-            <button class="btn danger" :disabled="!!busyById[item.id]" @click="deleteItem(item)">
-              <Fa :icon="['fas','trash']" />
-              {{ busyById[item.id] === 'delete' ? 'Удаление...' : 'Удалить' }}
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
+            <div class="row-actions">
+              <button class="btn mini" @click="startEdit(item)">Редактировать</button>
+              <button class="btn mini ghost" @click="toggleVisibility(item)">{{ item.is_active ? 'Скрыть' : 'Открыть' }}</button>
+              <button class="btn mini danger" @click="removeItem(item)">Удалить</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
-import Swal from "sweetalert2";
+import { onMounted, ref } from 'vue';
+import Swal from 'sweetalert2';
 
-const API_GET = "/api/admin/home_showcase/get_showcase.php";
-const API_SAVE_SETTINGS = "/api/admin/home_showcase/save_settings.php";
-const API_CREATE = "/api/admin/home_showcase/create_item.php";
-const API_UPDATE = "/api/admin/home_showcase/update_item.php";
-const API_DELETE = "/api/admin/home_showcase/delete_item.php";
-const API_TOGGLE = "/api/admin/home_showcase/toggle_visibility.php";
+const API_GET = '/api/admin/home_showcase/get_showcase.php';
+const API_SAVE_SETTINGS = '/api/admin/home_showcase/save_settings.php';
+const API_CREATE = '/api/admin/home_showcase/create_item.php';
+const API_UPDATE = '/api/admin/home_showcase/update_item.php';
+const API_DELETE = '/api/admin/home_showcase/delete_item.php';
+const API_TOGGLE = '/api/admin/home_showcase/toggle_visibility.php';
 
 const loading = ref(false);
-const error = ref("");
-const savingTitle = ref(false);
-const creating = ref(false);
-const blockTitle = ref("");
+const saving = ref(false);
+const settingsSaving = ref(false);
+const error = ref('');
 const items = ref([]);
-const busyById = ref({});
-const newImageFile = ref(null);
+const settingsTitle = ref('');
+const editingId = ref(0);
+const fileInput = ref(null);
+const pickedFile = ref(null);
+const previewUrl = ref('');
 
-const newItem = ref(getEmptyItem());
+const form = ref({
+  title: '',
+  price: '',
+  description: '',
+  button_text: '',
+  button_url: '',
+});
 
-function getEmptyItem() {
-  return {
-    title: "",
-    description: "",
-    price: "",
-    button_text: "",
-    button_url: "",
-  };
+function formatPrice(value) {
+  const digits = String(value ?? '').replace(/\D+/g, '');
+  return digits ? new Intl.NumberFormat('ru-RU').format(Number(digits)) : '';
 }
 
-function normalizeItem(item) {
-  return {
-    id: Number(item?.id || 0),
-    title: String(item?.title || ""),
-    description: String(item?.description || ""),
-    price: String(item?.price || ""),
-    image_url: String(item?.image_url || ""),
-    button_text: String(item?.button_text || ""),
-    button_url: String(item?.button_url || ""),
-    is_active: Number(item?.is_active ?? 1) === 1,
-    sort_order: Number(item?.sort_order || 0),
-    _newImageFile: null,
-  };
+function sanitizePrice() {
+  form.value.price = String(form.value.price ?? '').replace(/\D+/g, '');
 }
 
-function validateFile(file) {
-  if (!file) return "Выберите фото";
-  const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
-  if (!allowed.has(file.type)) return "Формат только JPG / PNG / WEBP";
-  if (file.size > 8 * 1024 * 1024) return "Файл больше 8 МБ";
-  return "";
+function resetFileInput() {
+  pickedFile.value = null;
+  if (previewUrl.value && previewUrl.value.startsWith('blob:')) URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = '';
+  if (fileInput.value) fileInput.value.value = '';
 }
 
-function validateItemPayload(item, requireImage = false, imageFile = null) {
-  if (!String(item?.title || "").trim()) return "Заполните название";
-  if (!String(item?.button_text || "").trim()) return "Заполните текст кнопки";
-  if (!String(item?.button_url || "").trim()) return "Заполните ссылку кнопки";
-  if (requireImage) {
-    const fileError = validateFile(imageFile);
-    if (fileError) return fileError;
-  }
-  if (imageFile) {
-    const fileError = validateFile(imageFile);
-    if (fileError) return fileError;
-  }
-  return "";
+function resetForm() {
+  editingId.value = 0;
+  form.value = { title: '', price: '', description: '', button_text: '', button_url: '' };
+  resetFileInput();
 }
 
-async function fetchData() {
+function onFileChange(event) {
+  const file = event.target.files?.[0] || null;
+  pickedFile.value = file;
+  if (previewUrl.value && previewUrl.value.startsWith('blob:')) URL.revokeObjectURL(previewUrl.value);
+  previewUrl.value = file ? URL.createObjectURL(file) : (editingId.value ? (items.value.find((x) => x.id === editingId.value)?.image_url || '') : '');
+}
+
+async function loadAll() {
   loading.value = true;
-  error.value = "";
-
+  error.value = '';
   try {
-    const res = await fetch(API_GET, {
-      method: "GET",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
+    const res = await fetch(API_GET, { credentials: 'include', headers: { Accept: 'application/json' } });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось загрузить данные");
-
-    blockTitle.value = String(data?.settings?.block_title || "");
-    items.value = Array.isArray(data?.items) ? data.items.map(normalizeItem) : [];
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось загрузить блок');
+    items.value = Array.isArray(data?.items) ? data.items : [];
+    settingsTitle.value = String(data?.settings?.title || '').trim();
+    if (editingId.value) {
+      const current = items.value.find((x) => x.id === editingId.value);
+      if (current && !pickedFile.value) previewUrl.value = current.image_url || '';
+    }
   } catch (e) {
-    error.value = e?.message || "Не удалось загрузить данные";
+    error.value = e?.message || 'Не удалось загрузить блок';
   } finally {
     loading.value = false;
   }
 }
 
-function onNewImageChange(event) {
-  newImageFile.value = event.target.files?.[0] || null;
+async function saveSettings() {
+  settingsSaving.value = true;
+  error.value = '';
+  try {
+    const fd = new FormData();
+    fd.append('title', settingsTitle.value || 'Подборка товаров');
+    const res = await fetch(API_SAVE_SETTINGS, { method: 'POST', body: fd, credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось сохранить заголовок');
+    settingsTitle.value = String(data?.settings?.title || '').trim();
+  } catch (e) {
+    error.value = e?.message || 'Не удалось сохранить заголовок';
+  } finally {
+    settingsSaving.value = false;
+  }
 }
 
-function onExistingImageChange(item, event) {
-  item._newImageFile = event.target.files?.[0] || null;
+function startEdit(item) {
+  editingId.value = Number(item.id);
+  form.value = {
+    title: item.title || '',
+    price: String(item.price || '').replace(/\D+/g, ''),
+    description: item.description || '',
+    button_text: item.button_text || '',
+    button_url: item.button_url || '',
+  };
+  resetFileInput();
+  previewUrl.value = item.image_url || '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function saveTitle() {
-  if (!blockTitle.value.trim()) {
-    error.value = "Заполните заголовок блока";
+function buildFormData() {
+  const fd = new FormData();
+  fd.append('title', form.value.title || '');
+  fd.append('price', String(form.value.price || '').replace(/\D+/g, ''));
+  fd.append('description', form.value.description || '');
+  fd.append('button_text', form.value.button_text || '');
+  fd.append('button_url', form.value.button_url || '');
+  if (pickedFile.value) fd.append('image', pickedFile.value);
+  return fd;
+}
+
+async function submitForm() {
+  sanitizePrice();
+  if (!form.value.title.trim()) {
+    error.value = 'Заполни название';
+    return;
+  }
+  if (!editingId.value && !pickedFile.value) {
+    error.value = 'Добавь фотографию';
     return;
   }
 
-  savingTitle.value = true;
-  error.value = "";
-
+  saving.value = true;
+  error.value = '';
   try {
-    const fd = new FormData();
-    fd.append("block_title", blockTitle.value.trim());
+    const fd = buildFormData();
+    let url = API_CREATE;
+    if (editingId.value) {
+      url = API_UPDATE;
+      fd.append('id', String(editingId.value));
+    }
 
-    const res = await fetch(API_SAVE_SETTINGS, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
+    const res = await fetch(url, { method: 'POST', body: fd, credentials: 'include' });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось сохранить заголовок");
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось сохранить карточку');
 
-    blockTitle.value = String(data?.settings?.block_title || blockTitle.value);
-
-    await Swal.fire({
-      icon: "success",
-      title: "Готово",
-      text: "Заголовок сохранен",
-      timer: 1200,
-      showConfirmButton: false,
-    });
+    await loadAll();
+    const updatedId = Number(data?.item?.id || editingId.value || 0);
+    if (updatedId) {
+      const fresh = items.value.find((x) => x.id === updatedId);
+      if (fresh) {
+        if (editingId.value) startEdit(fresh);
+      }
+    }
+    if (!editingId.value) resetForm();
   } catch (e) {
-    error.value = e?.message || "Не удалось сохранить заголовок";
+    error.value = e?.message || 'Не удалось сохранить карточку';
   } finally {
-    savingTitle.value = false;
-  }
-}
-
-async function createItem() {
-  const validationError = validateItemPayload(newItem.value, true, newImageFile.value);
-  if (validationError) {
-    error.value = validationError;
-    return;
-  }
-
-  creating.value = true;
-  error.value = "";
-
-  try {
-    const fd = new FormData();
-    fd.append("title", newItem.value.title.trim());
-    fd.append("description", newItem.value.description.trim());
-    fd.append("price", newItem.value.price.trim());
-    fd.append("button_text", newItem.value.button_text.trim());
-    fd.append("button_url", newItem.value.button_url.trim());
-    fd.append("image", newImageFile.value);
-
-    const res = await fetch(API_CREATE, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось добавить карточку");
-
-    if (data?.item) items.value.push(normalizeItem(data.item));
-    newItem.value = getEmptyItem();
-    newImageFile.value = null;
-
-    await Swal.fire({
-      icon: "success",
-      title: "Готово",
-      text: "Карточка добавлена",
-      timer: 1200,
-      showConfirmButton: false,
-    });
-  } catch (e) {
-    error.value = e?.message || "Не удалось добавить карточку";
-  } finally {
-    creating.value = false;
-  }
-}
-
-async function updateItem(item) {
-  const validationError = validateItemPayload(item, false, item._newImageFile || null);
-  if (validationError) {
-    error.value = validationError;
-    return;
-  }
-
-  busyById.value = { ...busyById.value, [item.id]: "save" };
-  error.value = "";
-
-  try {
-    const fd = new FormData();
-    fd.append("id", String(item.id));
-    fd.append("title", item.title.trim());
-    fd.append("description", item.description.trim());
-    fd.append("price", item.price.trim());
-    fd.append("button_text", item.button_text.trim());
-    fd.append("button_url", item.button_url.trim());
-    if (item._newImageFile) fd.append("image", item._newImageFile);
-
-    const res = await fetch(API_UPDATE, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось сохранить карточку");
-
-    items.value = items.value.map((row) => row.id === item.id ? normalizeItem(data.item) : row);
-
-    await Swal.fire({
-      icon: "success",
-      title: "Готово",
-      text: "Карточка сохранена",
-      timer: 1200,
-      showConfirmButton: false,
-    });
-  } catch (e) {
-    error.value = e?.message || "Не удалось сохранить карточку";
-  } finally {
-    busyById.value = { ...busyById.value, [item.id]: "" };
+    saving.value = false;
   }
 }
 
 async function toggleVisibility(item) {
-  busyById.value = { ...busyById.value, [item.id]: "toggle" };
-  error.value = "";
-
+  const fd = new FormData();
+  fd.append('id', String(item.id));
   try {
-    const fd = new FormData();
-    fd.append("id", String(item.id));
-    fd.append("is_active", item.is_active ? "0" : "1");
-
-    const res = await fetch(API_TOGGLE, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
+    const res = await fetch(API_TOGGLE, { method: 'POST', body: fd, credentials: 'include' });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось изменить видимость карточки");
-
-    items.value = items.value.map((row) => row.id === item.id ? normalizeItem(data.item) : row);
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось поменять видимость');
+    items.value = items.value.map((row) => (row.id === item.id ? data.item : row));
+    if (editingId.value === item.id) {
+      const fresh = items.value.find((x) => x.id === item.id);
+      if (fresh) previewUrl.value = fresh.image_url || previewUrl.value;
+    }
   } catch (e) {
-    error.value = e?.message || "Не удалось изменить видимость карточки";
-  } finally {
-    busyById.value = { ...busyById.value, [item.id]: "" };
+    error.value = e?.message || 'Не удалось поменять видимость';
   }
 }
 
-async function deleteItem(item) {
+async function removeItem(item) {
   const result = await Swal.fire({
-    icon: "warning",
-    title: "Удалить карточку?",
+    icon: 'warning',
+    title: 'Удалить карточку?',
     text: item.title,
     showCancelButton: true,
-    confirmButtonText: "Удалить",
-    cancelButtonText: "Отмена",
-    confirmButtonColor: "#dc2626",
+    confirmButtonText: 'Удалить',
+    cancelButtonText: 'Отмена',
+    confirmButtonColor: '#dc2626',
   });
   if (!result.isConfirmed) return;
 
-  busyById.value = { ...busyById.value, [item.id]: "delete" };
-  error.value = "";
-
+  const fd = new FormData();
+  fd.append('id', String(item.id));
   try {
-    const fd = new FormData();
-    fd.append("id", String(item.id));
-
-    const res = await fetch(API_DELETE, {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-    });
+    const res = await fetch(API_DELETE, { method: 'POST', body: fd, credentials: 'include' });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Не удалось удалить карточку");
-
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось удалить карточку');
     items.value = items.value.filter((row) => row.id !== item.id);
-
-    await Swal.fire({
-      icon: "success",
-      title: "Удалено",
-      text: "Карточка удалена",
-      timer: 1200,
-      showConfirmButton: false,
-    });
+    if (editingId.value === item.id) resetForm();
   } catch (e) {
-    error.value = e?.message || "Не удалось удалить карточку";
-  } finally {
-    busyById.value = { ...busyById.value, [item.id]: "" };
+    error.value = e?.message || 'Не удалось удалить карточку';
   }
 }
 
-onMounted(fetchData);
+onMounted(loadAll);
 </script>
 
 <style scoped>
@@ -463,273 +373,244 @@ onMounted(fetchData);
   color: var(--text-main);
 }
 
+.layout, .head, .notice {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.layout {
+  display: grid;
+  gap: 12px;
+}
+
 .card {
-  max-width: 1200px;
-  margin: 0 auto 14px;
-  padding: 16px;
-  border-radius: 18px;
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
-  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 14px;
 }
 
 .head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
-.title {
-  margin: 0;
-  font-size: clamp(22px, 2.2vw, 30px);
+.title { margin: 0; font-size: clamp(22px, 2.2vw, 30px); }
+.sub { margin-top: 6px; color: var(--text-muted); line-height: 1.4; }
+.head-actions, .settings-row, .form-actions, .section-head, .row-actions { display: flex; gap: 8px; align-items: center; }
+.section-head { justify-content: space-between; }
+.section-title { font-size: 18px; font-weight: 900; }
+.section-meta { color: var(--text-muted); font-size: 13px; }
+.settings-row { flex-wrap: wrap; }
+
+.input, .textarea {
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  color: var(--text-main);
+  padding: 12px 14px;
+  outline: none;
+}
+.textarea { resize: vertical; min-height: 100px; }
+.file-native {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
-.sub {
-  margin-top: 6px;
-  color: var(--text-muted);
-  line-height: 1.45;
-  max-width: 880px;
+.upload-box {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-soft);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  cursor: pointer;
+  transition: .18s ease;
 }
 
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.upload-box:hover {
+  border-color: var(--accent);
+  background: #f8fbff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-.section-head {
+.upload-box.active {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.upload-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent);
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
-.section-head h2 {
-  margin: 0;
-  font-size: 18px;
+.upload-content {
+  min-width: 0;
 }
 
-.section-head-between {
-  justify-content: space-between;
+.upload-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.3;
 }
 
-.count {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 10px;
+.upload-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.upload-action {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: var(--bg-main);
-  border: 1px solid var(--border-soft);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
   font-weight: 900;
+  white-space: nowrap;
 }
-
-.notice {
-  max-width: 1200px;
-  margin: 0 auto 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-soft);
-}
-
-.notice.error {
-  color: #991b1b;
-  background: #fef2f2;
-  border-color: #fecaca;
-}
+.hint { color: var(--text-muted); }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-top: 12px;
 }
+.field { display: grid; gap: 6px; }
+.field.wide { grid-column: 1 / -1; }
+.field > span { font-weight: 800; }
 
-.form-grid.single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field span {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text-muted);
-}
-
-.field input,
-.field textarea {
-  width: 100%;
-  border: 1px solid var(--border-soft);
-  background: var(--bg-main);
-  color: var(--text-main);
-  border-radius: 14px;
-  padding: 11px 12px;
-  outline: none;
-}
-
-.field input:focus,
-.field textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.field textarea {
-  resize: vertical;
-  min-height: 96px;
-}
-
-.field-span-2 {
-  grid-column: span 2;
-}
-
-.actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.actions-row-end {
-  justify-content: flex-end;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #fff;
-  color: #111827;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.btn:disabled {
-  opacity: 0.65;
-  cursor: default;
-}
-
-.btn.primary {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
-}
-
-.btn.secondary {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-}
-
-.btn.ghost {
-  background: var(--bg-main);
-}
-
-.btn.danger {
-  background: #fff1f2;
-  color: #b91c1c;
-  border-color: #fecdd3;
-}
-
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 14px;
-}
-
-.item-card {
-  border: 1px solid var(--border-soft);
+.preview-box { margin-top: 12px; }
+.preview-media {
+  position: relative;
+  height: 260px;
   border-radius: 18px;
-  background: var(--bg-main);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.item-card.hiddenCard {
-  opacity: 0.82;
-  border-color: #cbd5e1;
-}
-
-.card-top {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.status-pill {
-  min-height: 30px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.status-pill.isVisible {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-pill.isHidden {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.preview-box {
-  width: 100%;
-  aspect-ratio: 1.4 / 1;
-  border-radius: 16px;
   overflow: hidden;
-  background: #e5e7eb;
+  background: #eef2f7;
 }
-
-.preview-image {
+.preview-bg {
+  position: absolute;
+  inset: -12px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px);
+  transform: scale(1.08);
+  opacity: .45;
+}
+.preview-media img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  object-fit: contain;
+  padding: 8px;
 }
 
-.empty {
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--bg-main);
-  border: 1px dashed var(--border-soft);
-  color: var(--text-muted);
-  font-weight: 800;
+.rows { display: grid; gap: 10px; margin-top: 12px; }
+.row-item {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 10px;
+  background: var(--bg-soft);
 }
+.row-item.off { opacity: .72; }
+.row-thumb {
+  position: relative;
+  height: 92px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #eef2f7;
+}
+.row-thumb-bg {
+  position: absolute;
+  inset: -10px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px);
+  transform: scale(1.08);
+  opacity: .42;
+}
+.row-thumb img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+.row-main { min-width: 0; }
+.row-title { font-size: 15px; font-weight: 900; line-height: 1.35; }
+.row-sub, .row-link, .row-desc { margin-top: 4px; color: var(--text-muted); font-size: 13px; }
+.row-sub { display: flex; gap: 8px; flex-wrap: wrap; }
+.row-desc, .row-link {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.row-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+.btn {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+.btn.ghost { background: var(--bg-soft); color: var(--text-main); border-color: var(--border-soft); }
+.btn.danger { background: #dc2626; }
+.btn.mini { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.btn:disabled { opacity: .65; cursor: default; }
+.notice { margin-bottom: 12px; padding: 12px 14px; border-radius: 14px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.empty { color: var(--text-muted); padding-top: 4px; }
 
 @media (max-width: 860px) {
-  .head {
-    flex-direction: column;
-  }
+  .form-grid { grid-template-columns: 1fr; }
+  .row-item { grid-template-columns: 74px minmax(0, 1fr); }
+  .row-actions { grid-column: 1 / -1; justify-content: stretch; }
+}
 
-  .form-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .field-span-2 {
-    grid-column: span 1;
-  }
-
-  .actions-row-end {
-    justify-content: stretch;
-  }
-
-  .actions-row-end .btn {
-    flex: 1 1 180px;
-    justify-content: center;
-  }
+@media (max-width: 640px) {
+  .head, .section-head, .settings-row { align-items: flex-start; flex-direction: column; }
+  .row-item { grid-template-columns: 64px minmax(0, 1fr); padding: 8px; gap: 8px; }
+  .row-thumb { height: 64px; border-radius: 12px; }
+  .row-title { font-size: 14px; }
+  .row-sub, .row-link, .row-desc { font-size: 12px; }
+  .btn { width: 100%; justify-content: center; }
 }
 </style>
