@@ -1,28 +1,52 @@
 services:
   db:
-    image: mariadb:latest # или mysql:8.0
-    restart: always
+    image: mariadb:10.11
+    container_name: xozmag_db
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_allowed_packet=256M
     volumes:
       - db_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
     ports:
       - "3306:3306"
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    restart: always
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: db
-      PMA_USER: ${DB_USER}
-      PMA_PASSWORD: ${DB_PASS}
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: xozmag_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
     depends_on:
       - db
+    ports:
+      - "8000:8000"
+    command: php -S 0.0.0.0:8000 -t /var/www/html
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    container_name: xozmag_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD}
+      UPLOAD_LIMIT: 512M
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
 
 volumes:
   db_data:

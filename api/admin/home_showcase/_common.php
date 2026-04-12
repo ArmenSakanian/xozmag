@@ -46,9 +46,33 @@ function hs_column_exists(PDO $pdo, string $table, string $column): bool {
 function hs_ensure_schema(PDO $pdo): void {
     $pdo->exec("CREATE TABLE IF NOT EXISTS home_showcase_settings (
         id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        title VARCHAR(255) NOT NULL DEFAULT 'Подборка товаров',
+        block_title VARCHAR(255) NOT NULL DEFAULT 'Подборка товаров',
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    if (!hs_column_exists($pdo, 'home_showcase_settings', 'block_title')) {
+        $pdo->exec("ALTER TABLE home_showcase_settings ADD COLUMN block_title VARCHAR(255) NOT NULL DEFAULT 'Подборка товаров' AFTER title");
+    }
+
+    if (!hs_column_exists($pdo, 'home_showcase_settings', 'created_at')) {
+        $pdo->exec("ALTER TABLE home_showcase_settings ADD COLUMN created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP AFTER updated_at");
+    }
+
+    if (hs_column_exists($pdo, 'home_showcase_settings', 'title')) {
+        try {
+            $pdo->exec("ALTER TABLE home_showcase_settings MODIFY COLUMN title VARCHAR(255) NOT NULL DEFAULT 'Подборка товаров'");
+        } catch (Throwable $e) {
+        }
+    }
+
+    if (hs_column_exists($pdo, 'home_showcase_settings', 'block_title')) {
+        try {
+            $pdo->exec("ALTER TABLE home_showcase_settings MODIFY COLUMN block_title VARCHAR(255) NOT NULL DEFAULT 'Подборка товаров'");
+        } catch (Throwable $e) {
+        }
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS home_showcase_items (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -89,8 +113,21 @@ function hs_ensure_schema(PDO $pdo): void {
         }
     }
 
-    $stmt = $pdo->prepare('INSERT INTO home_showcase_settings (id, title) VALUES (1, ?) ON DUPLICATE KEY UPDATE id = id');
-    $stmt->execute(['Подборка товаров']);
+    $stmt = $pdo->prepare(
+        'INSERT INTO home_showcase_settings (id, title, block_title)
+         VALUES (1, ?, ?)
+         ON DUPLICATE KEY UPDATE id = id'
+    );
+    $stmt->execute(['Подборка товаров', 'Подборка товаров']);
+
+    try {
+        $pdo->exec("
+            UPDATE home_showcase_settings
+            SET block_title = COALESCE(NULLIF(TRIM(block_title), ''), title, 'Подборка товаров')
+            WHERE id = 1
+        ");
+    } catch (Throwable $e) {
+    }
 }
 
 function hs_clean_text(?string $value, int $maxLen = 0): ?string {
@@ -118,11 +155,23 @@ function hs_normalize_url(?string $value): ?string {
 
 function hs_fetch_settings(PDO $pdo): array {
     hs_ensure_schema($pdo);
-    $stmt = $pdo->query('SELECT id, title, updated_at FROM home_showcase_settings WHERE id = 1 LIMIT 1');
-    $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['id' => 1, 'title' => 'Подборка товаров'];
+    $stmt = $pdo->query('SELECT id, title, block_title, updated_at FROM home_showcase_settings WHERE id = 1 LIMIT 1');
+    $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+        'id' => 1,
+        'title' => 'Подборка товаров',
+        'block_title' => 'Подборка товаров',
+    ];
+
+    $title = (string)($row['title'] ?? 'Подборка товаров');
+    $blockTitle = trim((string)($row['block_title'] ?? ''));
+    if ($blockTitle === '') {
+        $blockTitle = $title !== '' ? $title : 'Подборка товаров';
+    }
+
     return [
         'id' => 1,
-        'title' => (string)($row['title'] ?? 'Подборка товаров'),
+        'title' => $title,
+        'block_title' => $blockTitle,
         'updated_at' => $row['updated_at'] ?? null,
     ];
 }

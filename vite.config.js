@@ -20,16 +20,38 @@ export default defineConfig({
     port: 5173,
 
     proxy: {
-      // ===== PHP API =====
       "/api": {
-        target: "https://xozmag.ru",
+        target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },
 
-      // ===== IMAGES =====
       "/photo_product_vitrina": {
-        target: "https://xozmag.ru",
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+
+      "/photo_categories_vitrina": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+
+      "/slider_photo": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+
+      "/photo_product_barcode": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+
+      "/home_showcase_cards": {
+        target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },

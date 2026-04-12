@@ -1103,91 +1103,7 @@ const seoBreadcrumbsLd = computed(() => {
   };
 });
 
-const seoCollectionLd = computed(() => {
-  if (robotsCatalog.value !== "index,follow") return null;
 
-  const seoItems = visibleProducts.value
-    .filter((p) => p?.id != null && p?.name)
-    .slice(0, 12)
-    .map((p, idx) => {
-      const url = `https://xozmag.ru/product/${encodeURIComponent(p.slug || String(p.id))}`;
-      const image = Array.isArray(p.images) && p.images.length
-        ? String(p.images[0]).startsWith("http")
-          ? p.images[0]
-          : `https://xozmag.ru${String(p.images[0]).startsWith("/") ? p.images[0] : "/" + p.images[0]}`
-        : "https://xozmag.ru/img/no-photo.png";
-
-      const product = {
-        "@type": "Product",
-        name: String(p.name),
-        url,
-        image: [image],
-      };
-
-      const price = Number(p.price);
-      if (Number.isFinite(price) && price > 0) {
-        product.offers = {
-          "@type": "Offer",
-          priceCurrency: "RUB",
-          price: String(Math.round(price)),
-          url,
-          availability: Number(p.quantity_value ?? p.quantity) > 0
-            ? "https://schema.org/InStock"
-            : "https://schema.org/OutOfStock",
-        };
-      }
-
-      if (p.brand) {
-        product.brand = { "@type": "Brand", name: String(p.brand) };
-      }
-
-      return {
-        "@type": "ListItem",
-        position: idx + 1,
-        url,
-        item: product,
-      };
-    });
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: headTitle.value,
-    url: canonicalCatalogUrl.value,
-    description: headDesc.value,
-    mainEntity: {
-      "@type": "ItemList",
-      itemListElement: seoItems,
-    },
-  };
-});
-
-const seoHeadScripts = computed(() => {
-  const scripts = [
-    { type: "application/ld+json", children: JSON.stringify(seoBreadcrumbsLd.value) },
-  ];
-
-  if (seoCollectionLd.value) {
-    scripts.push({ type: "application/ld+json", children: JSON.stringify(seoCollectionLd.value) });
-  }
-
-  return scripts;
-});
-
-useHead(() => ({
-  title: headTitle.value,
-  link: [{ rel: "canonical", href: canonicalCatalogUrl.value }],
-  meta: [
-    { name: "description", content: headDesc.value },
-    { name: "robots", content: robotsCatalog.value },
-
-    { property: "og:title", content: headTitle.value },
-    { property: "og:description", content: headDesc.value },
-    { property: "og:type", content: "website" },
-    { property: "og:url", content: canonicalCatalogUrl.value },
-  ],
-  script: seoHeadScripts.value,
-}));
 
 const seoIntroText = computed(() => {
   const q = String(searchQ.value || "").trim();
@@ -1961,7 +1877,91 @@ const visibleProducts = computed(() =>
 const canLoadMore = computed(
   () => filteredProducts.value.length > displayLimit.value
 );
+const seoCollectionLd = computed(() => {
+  if (robotsCatalog.value !== "index,follow") return null;
 
+  const seoItems = visibleProducts.value
+    .filter((p) => p?.id != null && p?.name)
+    .slice(0, 12)
+    .map((p, idx) => {
+      const url = `https://xozmag.ru/product/${encodeURIComponent(p.slug || String(p.id))}`;
+      const image = Array.isArray(p.images) && p.images.length
+        ? String(p.images[0]).startsWith("http")
+          ? p.images[0]
+          : `https://xozmag.ru${String(p.images[0]).startsWith("/") ? p.images[0] : "/" + p.images[0]}`
+        : "https://xozmag.ru/img/no-photo.png";
+
+      const product = {
+        "@type": "Product",
+        name: String(p.name),
+        url,
+        image: [image],
+      };
+
+      const price = Number(p.price);
+      if (Number.isFinite(price) && price > 0) {
+        product.offers = {
+          "@type": "Offer",
+          priceCurrency: "RUB",
+          price: String(Math.round(price)),
+          url,
+          availability: Number(p.quantity_value ?? p.quantity) > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        };
+      }
+
+      if (p.brand) {
+        product.brand = { "@type": "Brand", name: String(p.brand) };
+      }
+
+      return {
+        "@type": "ListItem",
+        position: idx + 1,
+        url,
+        item: product,
+      };
+    });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: headTitle.value,
+    url: canonicalCatalogUrl.value,
+    description: headDesc.value,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: seoItems,
+    },
+  };
+});
+
+const seoHeadScripts = computed(() => {
+  const scripts = [
+    { type: "application/ld+json", children: JSON.stringify(seoBreadcrumbsLd.value) },
+  ];
+
+  if (seoCollectionLd.value) {
+    scripts.push({ type: "application/ld+json", children: JSON.stringify(seoCollectionLd.value) });
+  }
+
+  return scripts;
+});
+
+useHead(() => ({
+  title: headTitle.value,
+  link: [{ rel: "canonical", href: canonicalCatalogUrl.value }],
+  meta: [
+    { name: "description", content: headDesc.value },
+    { name: "robots", content: robotsCatalog.value },
+
+    { property: "og:title", content: headTitle.value },
+    { property: "og:description", content: headDesc.value },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: canonicalCatalogUrl.value },
+  ],
+  script: seoHeadScripts.value,
+}));
 async function loadMore() {
   displayLimit.value += step.value;
 
