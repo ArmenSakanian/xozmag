@@ -1,7 +1,13 @@
 <template>
   <section v-if="items.length" class="showcase-shell" aria-label="Подборка товаров">
     <div class="showcase-head">
-      <div class="showcase-title">{{ titleText }}</div>
+      <div class="showcase-copy">
+        <div class="showcase-kicker">XOZMAG</div>
+        <h2 class="showcase-title">{{ titleText }}</h2>
+        <p class="showcase-text">
+          Популярные товары и полезные позиции для дома - аккуратная витрина с быстрым переходом.
+        </p>
+      </div>
 
       <div class="showcase-nav" v-if="canNavigate">
         <button type="button" class="nav-btn" aria-label="Назад" @click="slidePrev">
@@ -15,12 +21,12 @@
 
     <Swiper
       :modules="swiperModules"
-      :space-between="14"
+      :space-between="16"
       :slides-per-view="1"
       :slides-per-group="1"
-      :loop="items.length > 2"
+      :loop="items.length > 4"
       :watch-overflow="true"
-      :center-insufficient-slides="true"
+      :center-insufficient-slides="false"
       :breakpoints="breakpoints"
       class="showcase-swiper"
       @swiper="onSwiper"
@@ -35,13 +41,14 @@
               loading="lazy"
               decoding="async"
             />
+
+            <div v-if="item.price" class="showcase-price-badge">
+              {{ formatPrice(item.price) }}
+            </div>
           </div>
 
           <div class="showcase-body">
-            <div class="showcase-topline">
-              <div class="showcase-name">{{ item.title }}</div>
-              <div v-if="item.price" class="showcase-price">{{ formatPrice(item.price) }}</div>
-            </div>
+            <div class="showcase-name">{{ item.title }}</div>
 
             <div v-if="item.description" class="showcase-desc">
               {{ item.description }}
@@ -62,23 +69,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation } from 'swiper/modules';
+import { computed, onMounted, ref } from "vue";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Navigation } from "swiper/modules";
 
-const API_GET = '/api/vitrina/get_home_showcase.php';
+const API_GET = "/api/vitrina/get_home_showcase.php";
 const swiperModules = [Navigation];
 const swiperRef = ref(null);
-const title = ref('');
+const title = ref("");
 const items = ref([]);
 
 const breakpoints = {
-  0: { slidesPerView: 1, spaceBetween: 10 },
-  900: { slidesPerView: 2, spaceBetween: 14 },
+  0: { slidesPerView: 1.1, slidesPerGroup: 1, spaceBetween: 12 },
+  640: { slidesPerView: 2, slidesPerGroup: 2, spaceBetween: 14 },
+  1024: { slidesPerView: 3, slidesPerGroup: 4, spaceBetween: 16 },
 };
 
-const titleText = computed(() => title.value || 'Подборка товаров');
-const canNavigate = computed(() => items.value.length > 1);
+const titleText = computed(() => title.value || "Подборка товаров");
+const canNavigate = computed(() => items.value.length > 3);
 
 function onSwiper(swiper) {
   swiperRef.value = swiper;
@@ -93,14 +101,14 @@ function slideNext() {
 }
 
 function formatPrice(value) {
-  const digits = String(value ?? '').replace(/\D+/g, '');
-  if (!digits) return '';
-  return `${new Intl.NumberFormat('ru-RU').format(Number(digits))} ₽`;
+  const digits = String(value ?? "").replace(/\D+/g, "");
+  if (!digits) return "";
+  return `${new Intl.NumberFormat("ru-RU").format(Number(digits))} ₽`;
 }
 
 async function loadData() {
   try {
-    const res = await fetch(API_GET, { headers: { Accept: 'application/json' } });
+    const res = await fetch(API_GET, { headers: { Accept: "application/json" } });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data?.ok) {
@@ -108,7 +116,7 @@ async function loadData() {
       return;
     }
 
-    title.value = String(data?.settings?.title || '').trim();
+    title.value = String(data?.settings?.title || "").trim();
     items.value = Array.isArray(data?.items) ? data.items : [];
   } catch (e) {
     items.value = [];
@@ -120,60 +128,84 @@ onMounted(loadData);
 
 <style scoped>
 .showcase-shell {
-  width: min(1180px, 94vw);
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 14px;
-  box-sizing: border-box;
-  overflow: hidden;
-  border-radius: 26px;
-  background: rgba(15, 23, 42, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  pointer-events: auto;
+  width: 100%;
+  padding: 22px;
+  border-radius: 28px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 54px rgba(15, 23, 42, 0.08);
 }
 
 .showcase-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.showcase-copy {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.showcase-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(252, 200, 34, 0.14);
+  color: #c98900;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .showcase-title {
-  color: #fff;
-  font-size: clamp(16px, 1.8vw, 22px);
-  font-weight: 900;
-  line-height: 1.2;
-  min-width: 0;
+  margin: 12px 0 0;
+  color: #111827;
+  font-size: clamp(26px, 2.4vw, 36px);
+  font-weight: 1000;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.showcase-text {
+  margin: 10px 0 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .showcase-nav {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  color: #111827;
   cursor: pointer;
-  transition: 0.18s ease;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+  border-color: rgba(252, 200, 34, 0.55);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
 }
 
 .showcase-swiper {
@@ -196,22 +228,19 @@ onMounted(loadData);
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  border-radius: 24px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.98);
-  color: #111827;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
 }
 
 .showcase-media {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 220px;
-  max-height: 320px;
   overflow: hidden;
-  background: #e5e7eb;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  flex: 0 0 auto;
+  background: #f8fafc;
 }
 
 .showcase-image {
@@ -222,41 +251,46 @@ onMounted(loadData);
   object-position: center;
 }
 
+.showcase-price-badge {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
 .showcase-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 18px;
   min-width: 0;
   flex: 1 1 auto;
 }
 
-.showcase-topline {
-  display: grid;
-  gap: 8px;
-}
-
 .showcase-name {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 900;
-  line-height: 1.35;
+  line-height: 1.3;
   color: #0f172a;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  touch-action: manipulation;
-}
-
-.showcase-price {
-  font-size: 22px;
-  font-weight: 900;
-  color: #0f172a;
 }
 
 .showcase-desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   color: #475569;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -270,106 +304,92 @@ onMounted(loadData);
   align-items: center;
   justify-content: center;
   align-self: flex-start;
-  min-height: 42px;
-  padding: 10px 16px;
+  min-height: 46px;
+  padding: 0 18px;
   border-radius: 14px;
   text-decoration: none;
-  background: #0f172a;
-  color: #fff;
-  font-weight: 800;
+  background: var(--secondary-accent);
+  color: #111827;
+  font-weight: 900;
   white-space: nowrap;
+  box-shadow: 0 12px 22px rgba(252, 200, 34, 0.24);
 }
 
-@media (max-width: 899px) {
+.showcase-btn:hover {
+  filter: brightness(0.98);
+}
+
+@media (max-width: 1023px) {
   .showcase-shell {
-    width: min(100%, 94vw);
-    padding: 12px;
-    border-radius: 22px;
+    padding: 18px;
+    border-radius: 24px;
   }
 
   .showcase-head {
-    margin-bottom: 12px;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .showcase-title {
-    font-size: 16px;
+  .showcase-nav {
+    align-self: flex-end;
   }
+}
 
-  .nav-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-  }
-
-  .showcase-media {
-    min-height: 200px;
-    max-height: 280px;
-  }
-
-  .showcase-body {
+@media (max-width: 639px) {
+  .showcase-shell {
     padding: 14px;
-  }
-
-  .showcase-name {
-    font-size: 16px;
-  }
-
-  .showcase-price {
-    font-size: 20px;
-  }
-}
-
-@media (max-width: 640px) {
-  .showcase-shell {
-    padding: 10px;
-    border-radius: 18px;
-  }
-
-  .showcase-head {
-    gap: 10px;
-    margin-bottom: 10px;
+    border-radius: 20px;
   }
 
   .showcase-title {
-    font-size: 15px;
+    font-size: 24px;
+  }
+
+  .showcase-text {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .showcase-nav {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .nav-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
   }
 
   .showcase-card {
     border-radius: 18px;
   }
 
-  .showcase-media {
-    min-height: 180px;
-    max-height: 240px;
+  .showcase-price-badge {
+    left: 12px;
+    bottom: 12px;
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
   }
 
   .showcase-body {
     gap: 10px;
-    padding: 12px;
+    padding: 14px;
   }
 
   .showcase-name {
-    font-size: 15px;
-  }
-
-  .showcase-price {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .showcase-desc {
-    font-size: 12px;
-    line-height: 1.45;
-    -webkit-line-clamp: 3;
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .showcase-btn {
     width: 100%;
+    min-height: 44px;
   }
 }
 </style>

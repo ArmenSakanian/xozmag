@@ -82,10 +82,6 @@
   height: 74px;
   object-fit: contain;
 
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-soft);
-  background: var(--bg-panel);
-  box-shadow: var(--shadow-sm);
   flex: 0 0 auto;
 }
 

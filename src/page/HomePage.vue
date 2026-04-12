@@ -1,9 +1,9 @@
 <template>
   <section class="home-entry">
-    <!-- SEO H1 (не виден, но помогает поиску) -->
     <h1 class="sr-only">Все для дома рядом с метро Сходненская и Планерная</h1>
 
     <PhotoGallery />
+    <HomeShowcaseSlider />
 
     <div v-if="homeCatsLoading" class="home-cats-loading">
       Загрузка категорий…
@@ -22,6 +22,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useHead } from "@vueuse/head";
 
+import HomeShowcaseSlider from "@/components/HomeShowcaseSlider.vue";
 import PhotoGallery from "@/components/PhotoGallery.vue";
 import HomeCatalogEntry from "@/components/HomeCatalogEntry.vue";
 import { getCategoriesOnce } from "@/composables/useCategories";
@@ -35,7 +36,6 @@ onMounted(async () => {
   homeCatsLoading.value = false;
 });
 
-/* ================= SEO CONFIG ================= */
 const SITE_NAME = "XOZMAG.RU";
 const STORE_NAME = "Всё для дома";
 const HOME_URL = "https://xozmag.ru/";
@@ -54,7 +54,6 @@ const description = computed(
     "Магазин «Всё для дома» в Москве рядом с метро Сходненская и Планерная: хозтовары, сантехника, электрика, стройматериалы, крепеж, замки. Смотрите товары, уточняйте цену и наличие."
 );
 
-/* JSON-LD: WebSite (поиск по сайту) */
 const ldWebSite = computed(() => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -67,7 +66,6 @@ const ldWebSite = computed(() => ({
   },
 }));
 
-/* JSON-LD: LocalBusiness / Store */
 const ldStore = computed(() => ({
   "@context": "https://schema.org",
   "@type": "Store",
@@ -117,8 +115,6 @@ useHead(() => ({
   meta: [
     { name: "description", content: description.value },
     { name: "robots", content: "index,follow" },
-
-    // Open Graph
     { property: "og:title", content: title.value },
     { property: "og:description", content: description.value },
     { property: "og:type", content: "website" },
@@ -126,8 +122,6 @@ useHead(() => ({
     { property: "og:site_name", content: SITE_NAME },
     { property: "og:locale", content: "ru_RU" },
     { property: "og:image", content: OG_IMAGE },
-
-    // Twitter
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title.value },
     { name: "twitter:description", content: description.value },
@@ -151,14 +145,13 @@ useHead(() => ({
 }
 
 .home-entry {
-  width: min(1120px, 100%);
+  width: min(1180px, calc(100% - 24px));
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 22px;
 }
 
-/* SEO-only заголовок: невидимый, но доступный */
 .sr-only {
   position: absolute !important;
   width: 1px !important;
@@ -169,5 +162,13 @@ useHead(() => ({
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+}
+
+@media (max-width: 767px) {
+  .home-entry {
+    width: min(100%, calc(100% - 16px));
+    margin-top: 0;
+    gap: 18px;
+  }
 }
 </style>

@@ -2,7 +2,6 @@
   <div class="cats-root">
     <div v-if="showHead" class="cats-head">
       <div class="cats-title">Категории</div>
-      <div class="cats-sub">Только первый уровень</div>
     </div>
 <div class="cats-note">
   <span class="cats-note-ic" aria-hidden="true">
@@ -135,12 +134,7 @@ watch(
   letter-spacing: -0.02em;
 }
 
-.cats-sub {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
+
 
 .cats-note {
   display: flex;
@@ -364,9 +358,8 @@ watch(
     font-size: 20px;
   }
 
-  .cats-sub {
-    white-space: normal;
-  }
+
+  
 
   .cats-note {
     padding: 12px 13px;

@@ -2,24 +2,6 @@
   <div class="catalog-page">
     <section class="catalog-content">
       <div class="catalog-top">
-        <div class="catalog-search">
-          <HomeSearch
-            :show-category="true"
-            :current-category="currentCategory"
-            :sync-route="true"
-            route-key="q"
-            catalog-path="/catalog"
-            :server-limit="30"
-            :dropdown-limit="12"
-            @categories-loaded="onCategoriesLoaded"
-            @categories-loading="catsLoading = $event"
-          />
-
-          <div v-if="searchQ && !loading" class="search-meta">
-            Найдено: <b>{{ filteredProducts.length }}</b>
-          </div>
-        </div>
-
         <div class="catalog-heading">
           <div class="breadcrumbs">
             <span class="breadcrumb-home">Каталог</span>
@@ -159,10 +141,11 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                     <button
                       v-if="brandModel.length"
                       type="button"
-                      class="filter-clear-btn"
+                      class="filter-clear-btn filter-clear-btn-brand"
                       @click.stop="clearBrandSelection"
                     >
-                      Сбросить выбор
+                      <Fa :icon="['fas', 'rotate-left']" />
+                      <span>Сбросить выбор</span>
                     </button>
                   </div>
 
@@ -175,25 +158,15 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                     <span>Все</span>
                   </label>
 
-                  <div class="filter-search-wrap" :class="{ filled: brandSearchModel }">
-                    <span class="filter-search-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
+                  <div class="filter-search-wrap">
                     <input
                       v-model.trim="brandSearchModel"
                       type="text"
                       class="filter-search-input"
-                      placeholder="Найти бренд"
+                      placeholder="Поиск бренда"
                       autocomplete="off"
                       @click.stop
                     />
-                    <button
-                      v-if="brandSearchModel"
-                      type="button"
-                      class="filter-search-reset"
-                      @click.stop="brandSearchModel = ''"
-                      aria-label="Очистить поиск бренда"
-                    >
-                      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                    </button>
                   </div>
 
                   <label v-for="b in filteredBrands" :key="b" class="filter-checkbox">
@@ -586,10 +559,11 @@ v-if="isRootCategorySelected === true && typeOptions.length"
               <button
                 v-if="brandModel.length"
                 type="button"
-                class="filter-clear-btn"
+                class="filter-clear-btn filter-clear-btn-brand"
                 @click.stop="clearBrandSelection"
               >
-                Сбросить выбор
+                <Fa :icon="['fas', 'rotate-left']" />
+                <span>Сбросить выбор</span>
               </button>
             </div>
 
@@ -602,24 +576,14 @@ v-if="isRootCategorySelected === true && typeOptions.length"
               <span>Все</span>
             </label>
 
-            <div class="filter-search-wrap" :class="{ filled: brandSearchModel }">
-              <span class="filter-search-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <div class="filter-search-wrap">
               <input
                 v-model.trim="brandSearchModel"
                 type="text"
                 class="filter-search-input"
-                placeholder="Найти бренд"
+                placeholder="Поиск бренда"
                 autocomplete="off"
               />
-              <button
-                v-if="brandSearchModel"
-                type="button"
-                class="filter-search-reset"
-                @click="brandSearchModel = ''"
-                aria-label="Очистить поиск бренда"
-              >
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-              </button>
             </div>
 
             <label v-for="b in filteredBrands" :key="b" class="filter-checkbox">
@@ -738,7 +702,7 @@ import { useHead } from "@vueuse/head";
 import { useRoute, useRouter } from "vue-router";
 import ProductCardGallery from "@/components/ProductCardGallery.vue";
 import HomeCatalogEntry from "@/components/HomeCatalogEntry.vue";
-import HomeSearch from "@/components/HomeSearch.vue";
+import { getCategoriesOnce } from "@/composables/useCategories";
 
 const route = useRoute();
 const router = useRouter();
@@ -819,7 +783,7 @@ let copiedBarcodeTimer = null;
 const products = ref([]);
 const categories = ref([]);
 const catsLoadedOnce = ref(false);
-const catsLoading = ref(false);
+const categoriesLoading = ref(false);
 
 const searchHits = ref([]);
 
@@ -1362,10 +1326,21 @@ async function ensureProductsOnlyWhenCategory({ reset = false } = {}) {
 }
 
 const loading = computed(
-  () => catsLoading.value || (hasActiveCategory.value && productsLoading.value)
+  () => categoriesLoading.value || (hasActiveCategory.value && productsLoading.value)
 );
 
-/* ================= GET CATEGORIES FROM HomeSearch ================= */
+/* ================= CATEGORIES ================= */
+async function loadCategories() {
+  categoriesLoading.value = true;
+
+  try {
+    const list = await getCategoriesOnce();
+    onCategoriesLoaded(list);
+  } finally {
+    categoriesLoading.value = false;
+  }
+}
+
 function onCategoriesLoaded(list) {
   const arr = Array.isArray(list) ? list : [];
   categories.value = arr.map((c) => ({
@@ -1550,6 +1525,7 @@ const isMobile = ref(false);
 const handleResize = () => (isMobile.value = window.innerWidth < 1024);
 
 onMounted(() => {
+  loadCategories();
   handleResize();
   window.addEventListener("resize", handleResize, { passive: true });
 });
@@ -2248,23 +2224,6 @@ watch(showMobileFilters, (open) => {
   gap: 14px;
 }
 
-/* ========================= SEARCH WRAPPER (без input стилей!) ========================= */
-.catalog-search {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-.search-meta {
-  font-size: 12px;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* ========================= HEADING ========================= */
 .catalog-heading {
   display: flex;
@@ -2529,124 +2488,53 @@ watch(showMobileFilters, (open) => {
 }
 
 .filter-clear-btn {
-  border: 1px solid rgba(4, 0, 255, 0.12);
-  background: rgba(4, 0, 255, 0.06);
-  color: var(--accent);
-  border-radius: 10px;
-  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--text-muted);
   font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
-.filter-clear-btn:hover {
-  background: rgba(4, 0, 255, 0.1);
-  border-color: rgba(4, 0, 255, 0.2);
-}
-
-.filter-clear-btn:active {
-  transform: scale(0.98);
-}
-
-.filter-search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: 46px;
-  border: 1px solid #dbe2f0;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  overflow: hidden;
-}
-
-.filter-search-wrap:hover {
-  border-color: #c9d4e9;
-}
-
-.filter-search-wrap:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(4, 0, 255, 0.1);
-}
-
-.filter-search-wrap.filled {
-  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
-}
-
-.filter-search-mark {
-  flex: 0 0 auto;
-  width: 40px;
+.filter-clear-btn-brand {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: #7b8497;
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: none;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(4, 0, 255, 0.16);
+  background: linear-gradient(180deg, rgba(4, 0, 255, 0.07), rgba(4, 0, 255, 0.12));
+  color: var(--accent);
+  box-shadow: 0 8px 20px rgba(4, 0, 255, 0.08);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
-.filter-search-mark i {
-  display: block;
+.filter-clear-btn-brand:hover {
+  border-color: rgba(4, 0, 255, 0.26);
+  background: linear-gradient(180deg, rgba(4, 0, 255, 0.11), rgba(4, 0, 255, 0.16));
+  box-shadow: 0 12px 24px rgba(4, 0, 255, 0.12);
+  transform: translateY(-1px);
 }
 
-.filter-search-input {
-  flex: 1;
-  min-width: 0;
-  height: 44px;
-  border: none;
-  outline: none;
-  background: transparent;
-  padding: 0 12px 0 10px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #111827;
+.filter-clear-btn-brand:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px rgba(4, 0, 255, 0.10);
 }
 
-.filter-search-input::placeholder {
-  color: #98a2b3;
-  font-weight: 600;
-}
-
-.filter-search-reset {
+.filter-clear-btn-brand svg {
+  font-size: 12px;
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  margin-right: 6px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: #6b7280;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
-.filter-search-reset i {
-  display: block;
+.filter-clear-btn-brand span {
+  white-space: nowrap;
 }
-
-.filter-search-reset:hover {
-  background: rgba(15, 23, 42, 0.06);
-  color: #111827;
-}
-
-.filter-search-reset:active {
-  transform: scale(0.96);
-}
-
-.filter-dropdown-body.scrollable .filter-search-wrap {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
 
 .arrow {
   font-size: 12px;

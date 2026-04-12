@@ -5,24 +5,20 @@
     class="full-slider"
     aria-label="Фото галерея"
   >
-    <!-- ✅ Если есть фото — показываем Swiper -->
-<Swiper
-  v-if="slides.length"
-  :key="swiperKey"
-  class="full-swiper"
-  :modules="swiperModules"
-  :slides-per-view="1"
-  :loop="slides.length > 1"
-  :speed="1100"
-  effect="fade"
-  :fade-effect="{ crossFade: true }"
-  navigation
-  :pagination="{ clickable: true }"
-  :autoplay="autoplayEnabled ? autoplayOptions : false"
-  :allow-touch-move="!uiLock"
-  @swiper="onSwiper"
->
-
+    <Swiper
+      v-if="slides.length"
+      :key="swiperKey"
+      class="full-swiper"
+      :modules="swiperModules"
+      :slides-per-view="1"
+      :loop="slides.length > 1"
+      :speed="1100"
+      effect="fade"
+      :fade-effect="{ crossFade: true }"
+      navigation
+      :pagination="{ clickable: true }"
+      :autoplay="autoplayEnabled ? autoplayOptions : false"
+    >
       <SwiperSlide v-for="(src, i) in slides" :key="src + ':' + i">
         <div class="slide">
           <div class="clip">
@@ -33,48 +29,22 @@
         </div>
       </SwiperSlide>
     </Swiper>
+
     <div v-else class="full-swiper empty-hero" aria-hidden="true">
       <div class="empty-bg"></div>
       <div class="shade"></div>
-    </div>
-
-    <div class="search-layer" aria-label="Поиск по каталогу">
-      <div class="hero-overlay">
-        <div
-          class="search-shell"
-          @pointerdown.stop
-          @pointermove.stop
-          @touchstart.stop
-          @touchmove.stop
-          @wheel.stop
-        >
-          <HomeSearch
-            class="gallery-search"
-            :show-category="false"
-            :sync-route="false"
-            catalog-path="/catalog"
-            @ui-lock="onUiLock"
-          />
-        </div>
-
-        <HomeShowcaseSlider />
-      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Autoplay, EffectFade } from "swiper/modules";
-import HomeSearch from "@/components/HomeSearch.vue";
-import HomeShowcaseSlider from "@/components/HomeShowcaseSlider.vue";
 
 const sliderEl = ref(null);
 
 const API_GET = "/api/admin/photogallery/get_photo_gallery.php";
-
-/** ✅ включать/выключать автолистание тут */
 const autoplayEnabled = true;
 
 const autoplayOptions = {
@@ -87,127 +57,91 @@ const swiperModules = autoplayEnabled
   ? [Navigation, Pagination, Autoplay, EffectFade]
   : [Navigation, Pagination, EffectFade];
 
-
 const slides = ref([]);
 const swiperKey = ref(0);
 
-/* ===== Load slides from API ===== */
 async function loadSlides() {
   try {
     const r = await fetch(API_GET);
     const j = await r.json();
 
     const urls = (j?.ok && Array.isArray(j.items))
-      ? j.items.map(x => x.url).filter(Boolean)
+      ? j.items.map((x) => x.url).filter(Boolean)
       : [];
 
-    slides.value = urls; // ✅ НИКАКИХ fallback
-    swiperKey.value++;   // пересборка Swiper при изменении набора
+    slides.value = urls;
+    swiperKey.value++;
   } catch (e) {
-    slides.value = [];   // ✅ при ошибке тоже пусто
+    slides.value = [];
     swiperKey.value++;
   }
 }
 
-/* ✅ vars только на .full-slider (без html/body) */
-const setLocalVars = () => {
+function updateLocalVars() {
   const el = sliderEl.value;
   if (!el) return;
 
-  const header = document.querySelector("header");
-  const headerH = header ? header.offsetHeight : 0;
-
   const sbw = window.innerWidth - document.documentElement.clientWidth;
-
-  el.style.setProperty("--header-h", `${headerH}px`);
   el.style.setProperty("--sbw", `${sbw}px`);
-};
+}
 
-onMounted(() => {
-  setLocalVars();
-  loadSlides();
-  window.addEventListener("resize", setLocalVars, { passive: true });
+onMounted(async () => {
+  updateLocalVars();
+  await loadSlides();
+  window.addEventListener("resize", updateLocalVars, { passive: true });
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", setLocalVars);
+  window.removeEventListener("resize", updateLocalVars);
 });
-
-/* ===== Swiper control (freeze while dropdown/scanner open) ===== */
-const uiLock = ref(false);
-const swiperInstance = ref(null);
-
-function onSwiper(sw) {
-  swiperInstance.value = sw;
-}
-
-function onUiLock(v) {
-  uiLock.value = !!v;
-
-  const sw = swiperInstance.value;
-  if (!sw) return;
-
-  sw.allowTouchMove = !uiLock.value;
-
-  if (autoplayEnabled && sw.autoplay) {
-    if (uiLock.value) sw.autoplay.stop();
-    else sw.autoplay.start();
-  }
-}
 </script>
 
 <style scoped>
-/* ========= ROOT SLIDER ========= */
 .full-slider {
   width: calc(100vw - var(--sbw, 0px));
   margin-left: calc(50% - 50vw + (var(--sbw, 0px) / 2));
   position: relative;
   overflow-x: clip;
+  border-radius: 32px;
+  box-shadow: 0 26px 72px rgba(15, 23, 42, 0.16);
 }
 
-/* swiper wrapper */
 .full-swiper {
-  height: calc(100dvh - var(--header-h, 0px));
+  height: clamp(320px, 54vw, 760px);
   min-height: 320px;
   background: #0f1115;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-  overflow: visible;
+  overflow: hidden;
 }
 
-/* Swiper часто ставит overflow:hidden - переопределяем */
 :global(.full-swiper .swiper),
 :global(.full-swiper .swiper-wrapper),
 :global(.full-swiper .swiper-slide) {
   height: 100%;
-  overflow: visible !important;
 }
 
 .slide {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: visible;
 }
 
-/* clip - только картинка/blur ограничиваем */
 .clip {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  background: #0f1115;
 }
 
-/* Размытый фон */
 .bg {
   position: absolute;
-  inset: -20px;
+  inset: -24px;
   background-size: cover;
   background-position: center;
-  filter: blur(18px);
+  filter: blur(28px);
   transform: scale(1.08);
-  opacity: 0.55;
+  opacity: 0.72;
 }
 
-/* Фото на весь экран */
 .slide-img {
   position: relative;
   z-index: 2;
@@ -218,21 +152,20 @@ function onUiLock(v) {
   object-position: center;
 }
 
-/* затемнение */
 .shade {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
   background:
-    radial-gradient(1200px 420px at 50% 70%, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0) 55%),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.46) 0%, rgba(0, 0, 0, 0.22) 42%, rgba(0, 0, 0, 0.88) 100%);
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.02) 36%, rgba(0, 0, 0, 0.30) 100%),
+    radial-gradient(1000px 420px at 50% 70%, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0) 58%);
 }
 
-/* ========= EMPTY HERO ========= */
 .empty-hero {
   position: relative;
 }
+
 .empty-bg {
   position: absolute;
   inset: 0;
@@ -241,185 +174,62 @@ function onUiLock(v) {
     linear-gradient(to bottom, #0f1115, #0b0d10);
 }
 
-/* ========= SEARCH LAYER ========= */
-.search-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 50;
-
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-
-  pointer-events: none;
-
-  padding: 10px;
-  padding-top: clamp(10px, 4.2vh, 46px);
-}
-
-.hero-overlay {
-  width: min(1120px, 96vw);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.search-shell {
-  width: min(520px, 92vw);
-  pointer-events: auto;
-}
-
-
-/* ========= GLASS OVERRIDES (HomeSearch) ========= */
-.gallery-search:deep(.search-wrap) {
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* стеклянный инпут */
-.gallery-search:deep(.search-box) {
-  padding: 8px 10px;
-  border-radius: 18px;
-  min-height: 48px;
-
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  box-shadow:
-    0 18px 60px rgba(0, 0, 0, 0.28),
-    0 1px 0 rgba(255, 255, 255, 0.18) inset;
-
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.gallery-search:deep(.search-icon) {
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 14px;
-}
-
-.gallery-search:deep(.search-input) {
-  color: rgba(255, 255, 255, 0.96);
-  font-size: 15px;
-}
-.gallery-search:deep(.search-input::placeholder) {
-  color: rgba(255, 255, 255, 0.40);
-}
-
-.gallery-search:deep(.search-scan),
-.gallery-search:deep(.search-clear) {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.26);
-
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
-  color: rgba(255, 255, 255, 0.92);
-}
-
-/* ========= DROPDOWN ========= */
-.gallery-search:deep(.dd) {
-  z-index: 9999;
-
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.44);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
-
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-
-  max-height: min(56vh, 560px);
-}
-
-.gallery-search:deep(.dd-list) {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 8px 8px 12px;
-}
-
-.gallery-search:deep(.dd-title),
-.gallery-search:deep(.dd-pill),
-.gallery-search:deep(.dd-code) {
-  color: #111827;
-}
-.gallery-search:deep(.dd-pill),
-.gallery-search:deep(.dd-code) {
-  background: rgba(17, 24, 39, 0.06);
-  border: 1px solid rgba(17, 24, 39, 0.10);
-}
-.gallery-search:deep(.dd-price) {
-  color: #0f172a;
-}
-
-/* ========= SWIPER ARROWS / BULLETS ========= */
 :global(.full-swiper .swiper-button-next),
 :global(.full-swiper .swiper-button-prev) {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
-
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(0, 0, 0, 0.10);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-
-  transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+  transition: transform 0.18s ease, opacity 0.18s ease;
   z-index: 20;
+}
+
+:global(.full-swiper .swiper-button-next:hover),
+:global(.full-swiper .swiper-button-prev:hover) {
+  transform: translateY(-1px);
 }
 
 :global(.full-swiper .swiper-pagination) {
-  bottom: 14px;
+  bottom: 16px;
   z-index: 20;
 }
 
-/* ========= RESPONSIVE ========= */
-@media (max-width: 600px) {
-  .search-layer {
-    padding: 8px;
-    padding-top: clamp(8px, 3.2vh, 28px);
+@media (max-width: 767px) {
+  .full-slider {
+    border-radius: 22px;
   }
 
-  .hero-overlay {
-    width: 100%;
-    gap: 12px;
+  .full-swiper {
+    height: clamp(240px, 58vw, 420px);
+    min-height: 240px;
   }
 
-  .search-shell {
-    width: min(420px, 94vw);
-  }
-
-
-
-  .gallery-search:deep(.search-box) {
-    min-height: 42px;
-    border-radius: 16px;
-    padding: 6px 9px;
-  }
-
-  .gallery-search:deep(.search-input) {
-    font-size: 14px;
-  }
-
-  .gallery-search:deep(.search-scan),
-  .gallery-search:deep(.search-clear) {
-    width: 32px;
-    height: 32px;
+  :global(.full-swiper .swiper-button-next),
+  :global(.full-swiper .swiper-button-prev) {
+    width: 40px;
+    height: 40px;
     border-radius: 12px;
-  }
-
-  :global(.full-swiper .swiper-pagination) {
-    bottom: 10px;
   }
 }
 
 @media (max-width: 420px) {
+  .full-slider {
+    border-radius: 18px;
+  }
+
+  .full-swiper {
+    min-height: 220px;
+  }
+
   :global(.full-swiper .swiper-button-next),
   :global(.full-swiper .swiper-button-prev) {
     display: none;
+  }
+
+  :global(.full-swiper .swiper-pagination) {
+    bottom: 10px;
   }
 }
 </style>
