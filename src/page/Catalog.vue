@@ -82,14 +82,21 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                   class="filter-dropdown-body"
                   :class="{ scrollable: (typeOptions.length || 0) > 6 }"
                 >
+                  <div v-if="typeModel.length" class="filter-actions">
+                    <button
+                      type="button"
+                      class="filter-clear-btn"
+                      @click.stop="clearTypeSelection"
+                    >
+                      Сбросить выбор
+                    </button>
+                  </div>
+
                   <label class="filter-checkbox filter-all">
                     <input
                       type="checkbox"
                       :checked="!typeModel.length"
-                      @change="
-                        typeModel = [];
-                        applyFilters();
-                      "
+                      @change="clearTypeSelection"
                     />
                     <span>Все</span>
                   </label>
@@ -148,19 +155,48 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                   class="filter-dropdown-body"
                   :class="{ scrollable: brands.length > 6 }"
                 >
+                  <div class="filter-actions">
+                    <button
+                      v-if="brandModel.length"
+                      type="button"
+                      class="filter-clear-btn"
+                      @click.stop="clearBrandSelection"
+                    >
+                      Сбросить выбор
+                    </button>
+                  </div>
+
                   <label class="filter-checkbox filter-all">
                     <input
                       type="checkbox"
                       :checked="!brandModel.length"
-                      @change="
-                        brandModel = [];
-                        applyFilters();
-                      "
+                      @change="clearBrandSelection"
                     />
                     <span>Все</span>
                   </label>
 
-                  <label v-for="b in brands" :key="b" class="filter-checkbox">
+                  <div class="filter-search-wrap" :class="{ filled: brandSearchModel }">
+                    <span class="filter-search-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input
+                      v-model.trim="brandSearchModel"
+                      type="text"
+                      class="filter-search-input"
+                      placeholder="Найти бренд"
+                      autocomplete="off"
+                      @click.stop
+                    />
+                    <button
+                      v-if="brandSearchModel"
+                      type="button"
+                      class="filter-search-reset"
+                      @click.stop="brandSearchModel = ''"
+                      aria-label="Очистить поиск бренда"
+                    >
+                      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                  </div>
+
+                  <label v-for="b in filteredBrands" :key="b" class="filter-checkbox">
                     <input
                       type="checkbox"
                       :value="b"
@@ -169,6 +205,10 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                     />
                     <span>{{ b }}</span>
                   </label>
+
+                  <div v-if="!filteredBrands.length" class="dd-empty">
+                    Ничего не найдено
+                  </div>
                 </div>
               </transition>
             </div>
@@ -501,14 +541,21 @@ v-if="isRootCategorySelected === true && typeOptions.length"
 
           <!-- MOBILE TYPE -->
           <div v-if="mobileView === 'type'" class="mfil-values">
+            <div v-if="typeModel.length" class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-btn"
+                @click.stop="clearTypeSelection"
+              >
+                Сбросить выбор
+              </button>
+            </div>
+
             <label class="filter-checkbox filter-all">
               <input
                 type="checkbox"
                 :checked="!typeModel.length"
-                @change="
-                  typeModel = [];
-                  applyFilters();
-                "
+                @change="clearTypeSelection"
               />
               <span>Все</span>
             </label>
@@ -535,19 +582,47 @@ v-if="isRootCategorySelected === true && typeOptions.length"
 
           <!-- MOBILE BRAND -->
           <div v-if="mobileView === 'brand'" class="mfil-values">
+            <div class="filter-actions">
+              <button
+                v-if="brandModel.length"
+                type="button"
+                class="filter-clear-btn"
+                @click.stop="clearBrandSelection"
+              >
+                Сбросить выбор
+              </button>
+            </div>
+
             <label class="filter-checkbox filter-all">
               <input
                 type="checkbox"
                 :checked="!brandModel.length"
-                @change="
-                  brandModel = [];
-                  applyFilters();
-                "
+                @change="clearBrandSelection"
               />
               <span>Все</span>
             </label>
 
-            <label v-for="b in brands" :key="b" class="filter-checkbox">
+            <div class="filter-search-wrap" :class="{ filled: brandSearchModel }">
+              <span class="filter-search-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
+              <input
+                v-model.trim="brandSearchModel"
+                type="text"
+                class="filter-search-input"
+                placeholder="Найти бренд"
+                autocomplete="off"
+              />
+              <button
+                v-if="brandSearchModel"
+                type="button"
+                class="filter-search-reset"
+                @click="brandSearchModel = ''"
+                aria-label="Очистить поиск бренда"
+              >
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <label v-for="b in filteredBrands" :key="b" class="filter-checkbox">
               <input
                 type="checkbox"
                 :value="b"
@@ -556,6 +631,10 @@ v-if="isRootCategorySelected === true && typeOptions.length"
               />
               <span>{{ b }}</span>
             </label>
+
+            <div v-if="!filteredBrands.length" class="dd-empty">
+              Ничего не найдено
+            </div>
           </div>
 
           <!-- MOBILE PHOTO -->
@@ -853,6 +932,28 @@ function makeSearchVariants(input) {
   });
 }
 
+function makeSearchNeedles(input) {
+  return Array.from(
+    new Set(
+      makeSearchVariants(input)
+        .map((value) => normalize(value))
+        .filter(Boolean)
+    )
+  );
+}
+
+function matchesSmartFilterValue(value, search) {
+  const searchNeedles = makeSearchNeedles(search);
+  if (!searchNeedles.length) return true;
+
+  const valueNeedles = makeSearchNeedles(value);
+  if (!valueNeedles.length) return false;
+
+  return searchNeedles.some((needle) =>
+    valueNeedles.some((item) => item.includes(needle))
+  );
+}
+
 function canSearchProducts(text) {
   const norm = normalize(text);
   if (/^\d{5,}$/.test(norm)) return true;
@@ -1143,6 +1244,7 @@ const photoHeadText = computed(() => {
 
 /* ================= FILTER MODELS ================= */
 const brandModel = ref([]);
+const brandSearchModel = ref("");
 const priceFromModel = ref(
   route.query.price_from ? Number(route.query.price_from) : null
 );
@@ -1498,6 +1600,13 @@ const brands = computed(() => {
   );
 });
 
+const filteredBrands = computed(() => {
+  const search = String(brandSearchModel.value || "").trim();
+  if (!search) return brands.value;
+
+  return brands.value.filter((brand) => matchesSmartFilterValue(brand, search));
+});
+
 const attributeFilters = computed(() => {
   if (!allowAttrFilters.value) return {};
 
@@ -1570,6 +1679,18 @@ function toggleFilter(key) {
   Object.keys(openFilters.value).forEach((k) => (next[k] = false));
   if (!openFilters.value[key]) next[key] = true;
   openFilters.value = next;
+}
+
+function clearTypeSelection() {
+  if (!typeModel.value.length) return;
+  typeModel.value = [];
+  applyFilters();
+}
+
+function clearBrandSelection() {
+  if (!brandModel.value.length) return;
+  brandModel.value = [];
+  applyFilters();
 }
 
 /* ================= attrs helpers ================= */
@@ -1656,18 +1777,21 @@ function applyFilters() {
 
 /* ================= URL → MODELS ================= */
 watch(
-  () => route.query,
-  (q) => {
+  [() => route.query, () => catsLoadedOnce.value],
+  ([q]) => {
     syncingFromRoute.value = true;
 
     typeModel.value = toArr(q.type)
       .map((v) => {
-        const s = String(v || "");
+        const s = String(v || "").trim();
+        if (!s) return null;
 
         // старые ссылки: type=1.2
         if (/^[0-9.]+$/.test(s)) return s;
 
         // новые ссылки: type=slug
+        if (!catsLoadedOnce.value) return null;
+
         const found = categories.value.find((c) => String(c.slug) === s);
         return found ? String(found.code) : null;
       })
@@ -1684,7 +1808,12 @@ watch(
         ? Number(Array.isArray(q.price_to) ? q.price_to[0] : q.price_to)
         : null;
 
-    const nextAttrs = { ...attributeModels.value };
+    const nextAttrs = {};
+    Object.keys(attributeFilters.value).forEach((key) => {
+      nextAttrs[key] = Array.isArray(attributeModels.value[key])
+        ? attributeModels.value[key]
+        : [];
+    });
     Object.keys(q).forEach((key) => {
       if (!key.startsWith("attr_")) return;
       const name = key.slice(5);
@@ -1728,9 +1857,15 @@ watch(allowAttrFilters, (ok, prev) => {
 });
 
 /* при смене категории - сбрасываем фильтры (поиск остаётся в URL) */
-watch(currentCategoryParam, () => {
+watch(currentCategory, (nextCategory, prevCategory) => {
+  const nextCode = String(nextCategory || "").trim();
+  const prevCode = String(prevCategory || "").trim();
+
+  if (!nextCode || !prevCode || nextCode === prevCode) return;
+
   typeModel.value = [];
   brandModel.value = [];
+  brandSearchModel.value = "";
   priceFromModel.value = null;
   priceToModel.value = null;
   photoModel.value = "all";
@@ -1981,6 +2116,7 @@ const activeMobileAttr = ref(null);
 function resetAllFilters() {
   typeModel.value = [];
   brandModel.value = [];
+  brandSearchModel.value = "";
   priceFromModel.value = null;
   priceToModel.value = null;
   photoModel.value = "all";
@@ -2384,6 +2520,133 @@ watch(showMobileFilters, (open) => {
   margin-bottom: 8px;
   border-bottom: 1px dashed #e4e7ef;
 }
+
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+
+.filter-clear-btn {
+  border: 1px solid rgba(4, 0, 255, 0.12);
+  background: rgba(4, 0, 255, 0.06);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.filter-clear-btn:hover {
+  background: rgba(4, 0, 255, 0.1);
+  border-color: rgba(4, 0, 255, 0.2);
+}
+
+.filter-clear-btn:active {
+  transform: scale(0.98);
+}
+
+.filter-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid #dbe2f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.filter-search-wrap:hover {
+  border-color: #c9d4e9;
+}
+
+.filter-search-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(4, 0, 255, 0.1);
+}
+
+.filter-search-wrap.filled {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+}
+
+.filter-search-mark {
+  flex: 0 0 auto;
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7b8497;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.filter-search-mark i {
+  display: block;
+}
+
+.filter-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 12px 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.filter-search-input::placeholder {
+  color: #98a2b3;
+  font-weight: 600;
+}
+
+.filter-search-reset {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-right: 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.filter-search-reset i {
+  display: block;
+}
+
+.filter-search-reset:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #111827;
+}
+
+.filter-search-reset:active {
+  transform: scale(0.96);
+}
+
+.filter-dropdown-body.scrollable .filter-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 
 .arrow {
   font-size: 12px;
