@@ -2410,11 +2410,30 @@ watch(showMobileFilters, (open) => {
   padding-right: 6px;
 }
 
-.filter-search-wrap input {
-    font-size: 16px;
-    border-radius: g8px;
-    border-color: var(--accent);
-    padding: 8px 10px;
+.filter-search-wrap{
+  position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    border: 1px solid #dbe2f0;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    overflow: hidden;
+}
+
+.filter-search-input {
+  flex: 1;
+    min-width: 0;
+    height: 44px;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0 12px 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
 }
 
 .filter-checkbox {

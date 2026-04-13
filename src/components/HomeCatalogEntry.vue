@@ -2,7 +2,7 @@
   <section class="cats-root">
     <div v-if="showHead" class="cats-head">
       <div class="cats-head-main">
-        <span class="cats-kicker">Каталог XOZMAG</span>
+        <span class="cats-kicker">Категории </span>
         <div class="cats-title-wrap">
           <h2 class="cats-title">Популярные категории</h2>
           <div class="cats-sub">Только первый уровень - быстрое открытие нужного раздела</div>
