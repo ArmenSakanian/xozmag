@@ -1,37 +1,37 @@
 <template>
   <header
+    ref="headerRef"
     class="header"
     :class="{ compact: isCompact, 'menu-open': mobileOpen }"
-    ref="headerRef"
     :style="{ '--hdr-h': headerH + 'px' }"
   >
     <div class="header-top">
       <div class="header-top-curtain">
         <div class="header-top-container">
-        <div class="logo">
-          <RouterLink to="/" class="logo-link" @click="closeMenu">
-            <img src="@/assets/logo.webp" alt="Логотип" />
-            <h1>Все Для Дома</h1>
-          </RouterLink>
-        </div>
+          <div class="logo">
+            <RouterLink to="/" class="logo-link" @click="closeMenu">
+              <img src="@/assets/logo.webp" alt="Логотип" />
+              <h1>Все Для Дома</h1>
+            </RouterLink>
+          </div>
 
-        <nav class="nav" aria-label="Навигация по сайту">
-          <RouterLink class="nav-item" to="/catalog">Каталог</RouterLink>
-          <RouterLink class="nav-item" to="/aboutus">О нас</RouterLink>
-          <RouterLink class="nav-item" to="/contact">Контакты</RouterLink>
-        </nav>
+          <nav class="nav" aria-label="Навигация по сайту">
+            <RouterLink class="nav-item" to="/catalog">Каталог</RouterLink>
+            <RouterLink class="nav-item" to="/aboutus">О нас</RouterLink>
+            <RouterLink class="nav-item" to="/contact">Контакты</RouterLink>
+          </nav>
 
-        <button
-          class="burger"
-          type="button"
-          @click="mobileOpen = !mobileOpen"
-          :aria-label="mobileOpen ? 'Закрыть меню' : 'Открыть меню'"
-          :aria-expanded="mobileOpen"
-        >
-          <span :class="{ open: mobileOpen }"></span>
-          <span :class="{ open: mobileOpen }"></span>
-          <span :class="{ open: mobileOpen }"></span>
-        </button>
+          <button
+            class="burger"
+            type="button"
+            @click="mobileOpen = !mobileOpen"
+            :aria-label="mobileOpen ? 'Закрыть меню' : 'Открыть меню'"
+            :aria-expanded="mobileOpen"
+          >
+            <span :class="{ open: mobileOpen }"></span>
+            <span :class="{ open: mobileOpen }"></span>
+            <span :class="{ open: mobileOpen }"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -56,8 +56,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
-import { useRoute, RouterLink } from "vue-router";
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 import HomeSearch from "@/components/HomeSearch.vue";
 
 const route = useRoute();
@@ -66,29 +66,60 @@ const isCompact = ref(false);
 
 const headerRef = ref(null);
 const headerH = ref(0);
+
 let scrollRaf = 0;
-const COMPACT_ENTER_SCROLL = 20;
-const COMPACT_RESET_SCROLL = 2;
+let prevScrollY = 0;
+let ignoreScrollUntil = 0;
+
+const COMPACT_ENTER_SCROLL = 72;
+const COMPACT_EXIT_SCROLL = 2;
+const COMPACT_IGNORE_MS = 280;
 
 async function updateHeaderH() {
   await nextTick();
   headerH.value = headerRef.value?.offsetHeight || 0;
 }
 
-function syncCompactState() {
-  const y = window.scrollY || 0;
+function setCompact(nextValue, options = {}) {
+  const { lock = true } = options;
+  if (isCompact.value === nextValue) return;
 
-  if (!isCompact.value) {
-    if (y <= COMPACT_ENTER_SCROLL) return;
-    isCompact.value = true;
-    mobileOpen.value = false;
-    updateHeaderH();
+  isCompact.value = nextValue;
+  if (nextValue) mobileOpen.value = false;
+  if (lock) ignoreScrollUntil = performance.now() + COMPACT_IGNORE_MS;
+  updateHeaderH();
+}
+
+function syncCompactState(force = false) {
+  const y = Math.max(window.scrollY || 0, 0);
+  const delta = y - prevScrollY;
+  const scrollingDown = delta > 1;
+  const scrollingUp = delta < -1;
+
+  if (force) {
+    prevScrollY = y;
+    setCompact(y >= COMPACT_ENTER_SCROLL, { lock: false });
     return;
   }
 
-  if (y > COMPACT_RESET_SCROLL) return;
-  isCompact.value = false;
-  updateHeaderH();
+  if (performance.now() < ignoreScrollUntil) {
+    prevScrollY = y;
+    return;
+  }
+
+  if (!isCompact.value) {
+    if (y >= COMPACT_ENTER_SCROLL && scrollingDown) {
+      setCompact(true);
+    }
+    prevScrollY = y;
+    return;
+  }
+
+  if (y <= COMPACT_EXIT_SCROLL && scrollingUp) {
+    setCompact(false);
+  }
+
+  prevScrollY = y;
 }
 
 function handleScroll() {
@@ -100,8 +131,9 @@ function handleScroll() {
 }
 
 function handleResize() {
+  prevScrollY = Math.max(window.scrollY || 0, 0);
   updateHeaderH();
-  syncCompactState();
+  syncCompactState(true);
 }
 
 function closeMenu() {
@@ -112,15 +144,17 @@ watch(
   () => route.fullPath,
   () => {
     mobileOpen.value = false;
+    prevScrollY = Math.max(window.scrollY || 0, 0);
     updateHeaderH();
-    syncCompactState();
+    syncCompactState(true);
   }
 );
 
 watch(mobileOpen, () => updateHeaderH());
 
 onMounted(() => {
-  syncCompactState();
+  prevScrollY = Math.max(window.scrollY || 0, 0);
+  syncCompactState(true);
   updateHeaderH();
   window.addEventListener("resize", handleResize, { passive: true });
   window.addEventListener("scroll", handleScroll, { passive: true });
@@ -142,8 +176,9 @@ onBeforeUnmount(() => {
   position: sticky;
   top: 0;
   z-index: 9999;
-  box-shadow: var(--shadow-sm);
   isolation: isolate;
+  overflow-anchor: none;
+  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.22s ease;
 }
 
@@ -151,10 +186,10 @@ onBeforeUnmount(() => {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: -1;
   background: rgba(17, 24, 39, 0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  z-index: -1;
   transition: background 0.22s ease, backdrop-filter 0.22s ease;
 }
 
@@ -169,9 +204,9 @@ onBeforeUnmount(() => {
 }
 
 .header-top {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
   grid-template-rows: 1fr;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition:
     grid-template-rows 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
     border-color 0.22s ease;
@@ -190,6 +225,13 @@ onBeforeUnmount(() => {
 }
 
 .header-top-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   transform: translateY(0);
   opacity: 1;
   transition:
@@ -201,16 +243,6 @@ onBeforeUnmount(() => {
 .header.compact .header-top-container {
   transform: translateY(-14px);
   opacity: 0;
-}
-
-.header-top-container {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
 }
 
 .logo {
@@ -349,7 +381,7 @@ onBeforeUnmount(() => {
 .header-search:deep(.search-clear),
 .header-search:deep(.search-scan),
 .header-search:deep(.catpick-btn) {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.94);
 }
@@ -368,16 +400,16 @@ onBeforeUnmount(() => {
 .burger {
   display: none;
   margin-left: auto;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 12px;
-  cursor: pointer;
   width: 44px;
   height: 44px;
   padding: 0;
   align-items: center;
   justify-content: center;
   position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -391,29 +423,45 @@ onBeforeUnmount(() => {
   position: absolute;
   width: 22px;
   height: 2px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 3px;
   transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
-.burger span:nth-child(1) { transform: translateY(-7px); }
-.burger span:nth-child(2) { transform: translateY(0); }
-.burger span:nth-child(3) { transform: translateY(7px); }
+.burger span:nth-child(1) {
+  transform: translateY(-7px);
+}
 
-.burger span.open:nth-child(1) { transform: translateY(0) rotate(45deg); }
-.burger span.open:nth-child(2) { opacity: 0; }
-.burger span.open:nth-child(3) { transform: translateY(0) rotate(-45deg); }
+.burger span:nth-child(2) {
+  transform: translateY(0);
+}
+
+.burger span:nth-child(3) {
+  transform: translateY(7px);
+}
+
+.burger span.open:nth-child(1) {
+  transform: translateY(0) rotate(45deg);
+}
+
+.burger span.open:nth-child(2) {
+  opacity: 0;
+}
+
+.burger span.open:nth-child(3) {
+  transform: translateY(0) rotate(-45deg);
+}
 
 .mobile-menu {
   position: fixed;
   top: var(--hdr-h);
   left: 0;
   right: 0;
-  background: var(--bg-panel);
-  box-shadow: var(--shadow-lg);
   padding: 14px;
   display: grid;
   gap: 10px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-10px);
   opacity: 0;
   pointer-events: none;
@@ -428,18 +476,18 @@ onBeforeUnmount(() => {
 
 .mobile-item {
   display: block;
+  padding: 14px;
   text-decoration: none;
+  font-weight: 800;
   color: var(--text-main);
   background: rgba(17, 24, 39, 0.04);
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 14px;
-  padding: 14px 14px;
-  font-weight: 800;
 }
 
 .mobile-item.router-link-active {
   border-color: rgba(252, 200, 34, 0.32);
-  background: rgba(252, 200, 34, 0.10);
+  background: rgba(252, 200, 34, 0.1);
   color: #111827;
 }
 
@@ -464,10 +512,7 @@ onBeforeUnmount(() => {
     padding: 10px 12px;
   }
 
-  .header-search:deep(.search-wrap) {
-    width: 100%;
-  }
-
+  .header-search:deep(.search-wrap),
   .header.compact .header-search:deep(.search-wrap) {
     width: 100%;
   }
@@ -483,29 +528,12 @@ onBeforeUnmount(() => {
   }
 
   .header-search:deep(.search-box) {
-    min-height: 48px;
+    min-height: 50px;
     border-radius: 16px;
-    padding: 6px 8px;
   }
 
   .header.compact .header-search:deep(.search-box) {
-    min-height: 46px;
-  }
-
-  .header-search:deep(.search-input) {
-    font-size: 14px;
-  }
-
-  .header-search:deep(.search-clear),
-  .header-search:deep(.search-scan) {
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
-  }
-
-  .header-search:deep(.catpick-btn) {
-    min-height: 34px;
-    padding: 0 10px;
+    min-height: 48px;
   }
 }
 </style>
