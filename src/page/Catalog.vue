@@ -2410,6 +2410,13 @@ watch(showMobileFilters, (open) => {
   padding-right: 6px;
 }
 
+.filter-search-wrap input {
+    font-size: 16px;
+    border-radius: g8px;
+    border-color: var(--accent);
+    padding: 8px 10px;
+}
+
 .filter-checkbox {
   display: flex;
   align-items: flex-start;
