@@ -29,7 +29,7 @@
     </div>
 
     <div v-if="topCats.length" class="cats-grid">
-      <template v-for="(c, index) in topCats" :key="c.id">
+      <template v-for="c in topCats" :key="c.id">
         <RouterLink
           v-if="props.navigateOnPick"
           class="cat-card cat-card-link"
@@ -52,7 +52,6 @@
           </div>
 
           <div class="cat-card-body">
-            <div class="cat-topline">Раздел {{ String(index + 1).padStart(2, '0') }}</div>
             <div class="cat-text">{{ c.name }}</div>
             <div class="cat-meta">
               <span>Открыть категорию</span>
@@ -86,7 +85,6 @@
           </div>
 
           <div class="cat-card-body">
-            <div class="cat-topline">Раздел {{ String(index + 1).padStart(2, '0') }}</div>
             <div class="cat-text">{{ c.name }}</div>
             <div class="cat-meta">
               <span>Открыть категорию</span>
@@ -200,7 +198,7 @@ watch(
 .cats-note {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
   min-height: 100%;
   padding: 16px 18px;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -322,17 +320,9 @@ watch(
   gap: 12px;
 }
 
-.cat-topline {
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
-}
 
 .cat-text {
-  min-height: 2.56em;
+  min-height: 2.48em;
   font-size: 22px;
   line-height: 1.16;
   font-weight: 900;

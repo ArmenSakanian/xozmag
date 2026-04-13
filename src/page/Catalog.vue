@@ -24,7 +24,11 @@
         </div>
 
         <!-- ===== FILTERS BAR (DESKTOP) ===== -->
-        <div v-if="hasActiveCategory && !isMobile" class="filters-bar">
+        <div
+          v-if="hasActiveCategory && !isMobile"
+          ref="desktopFiltersRef"
+          class="filters-bar"
+        >
           <!-- PRICE (всегда) -->
           <div class="filter-block filter-price">
             <div class="filter-label">Цена</div>
@@ -159,6 +163,9 @@ v-if="isRootCategorySelected === true && typeOptions.length"
                   </label>
 
                   <div class="filter-search-wrap">
+                    <span class="filter-search-icon" aria-hidden="true">
+                      <Fa :icon="['fas', 'magnifying-glass']" />
+                    </span>
                     <input
                       v-model.trim="brandSearchModel"
                       type="text"
@@ -337,7 +344,7 @@ v-if="isRootCategorySelected === true && typeOptions.length"
         </div>
 
         <template v-else>
-          <div v-if="!hasActiveCategory && !searchQ" class="categories-landing">
+          <div v-if="!hasActiveCategory && !searchQ" class="categories-landing categories-landing-compact">
             <HomeCatalogEntry
               :show-head="false"
               :items="topCats"
@@ -577,6 +584,9 @@ v-if="isRootCategorySelected === true && typeOptions.length"
             </label>
 
             <div class="filter-search-wrap">
+              <span class="filter-search-icon" aria-hidden="true">
+                <Fa :icon="['fas', 'magnifying-glass']" />
+              </span>
               <input
                 v-model.trim="brandSearchModel"
                 type="text"
@@ -1528,9 +1538,13 @@ onMounted(() => {
   loadCategories();
   handleResize();
   window.addEventListener("resize", handleResize, { passive: true });
+  document.addEventListener("pointerdown", handleFiltersOutsidePointer);
+  document.addEventListener("keydown", handleFiltersEscape);
 });
 onBeforeUnmount(() => {
   window.removeEventListener("resize", handleResize);
+  document.removeEventListener("pointerdown", handleFiltersOutsidePointer);
+  document.removeEventListener("keydown", handleFiltersEscape);
   if (searchHitsAbort) searchHitsAbort.abort();
   if (copiedBarcodeTimer) clearTimeout(copiedBarcodeTimer);
   unlockBody();
@@ -1626,6 +1640,7 @@ const attributeFilters = computed(() => {
 });
 
 /* ================= UI open/close ================= */
+const desktopFiltersRef = ref(null);
 const openFilters = ref({ type: false, brand: false, photo: false });
 
 watch(
@@ -1650,11 +1665,34 @@ watch(
   { immediate: true }
 );
 
+function closeAllFilters() {
+  const next = {};
+  Object.keys(openFilters.value).forEach((k) => (next[k] = false));
+  openFilters.value = next;
+}
+
 function toggleFilter(key) {
   const next = {};
   Object.keys(openFilters.value).forEach((k) => (next[k] = false));
   if (!openFilters.value[key]) next[key] = true;
   openFilters.value = next;
+}
+
+function handleFiltersOutsidePointer(event) {
+  if (isMobile.value || showMobileFilters.value) return;
+
+  const root = desktopFiltersRef.value;
+  if (!root) return;
+
+  const target = event.target;
+  if (target instanceof Node && root.contains(target)) return;
+
+  closeAllFilters();
+}
+
+function handleFiltersEscape(event) {
+  if (event.key !== "Escape") return;
+  closeAllFilters();
 }
 
 function clearTypeSelection() {
@@ -2410,30 +2448,54 @@ watch(showMobileFilters, (open) => {
   padding-right: 6px;
 }
 
-.filter-search-wrap{
+.filter-search-wrap {
   position: relative;
-    display: flex;
-    align-items: center;
-    min-height: 46px;
-    border: 1px solid #dbe2f0;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border: 1px solid #dbe2f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.filter-search-wrap:focus-within {
+  border-color: rgba(4, 0, 255, 0.22);
+  box-shadow:
+    0 0 0 4px rgba(4, 0, 255, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.filter-search-icon {
+  width: 38px;
+  height: 38px;
+  margin-left: 6px;
+  flex: 0 0 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.1);
 }
 
 .filter-search-input {
   flex: 1;
-    min-width: 0;
-    height: 44px;
-    border: none;
-    outline: none;
-    background: transparent;
-    padding: 0 12px 0 10px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #111827;
+  min-width: 0;
+  height: 44px;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 12px 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.filter-search-input::placeholder {
+  color: #94a3b8;
 }
 
 .filter-checkbox {
@@ -3046,13 +3108,46 @@ watch(showMobileFilters, (open) => {
 
 .categories-landing {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  display: block;
 }
 
-.categories-landing :deep(.home-entry) {
-  width: min(1120px, 100%);
-  margin: 0;
+.categories-landing :deep(.cats-root) {
+  width: 100%;
+  gap: 22px;
+}
+
+.categories-landing :deep(.cats-note-inline) {
+  margin-bottom: 2px;
+}
+
+.categories-landing :deep(.cats-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.categories-landing-compact :deep(.cats-root) {
+  gap: 14px;
+}
+
+.categories-landing-compact :deep(.cats-note-inline) {
+  display: none;
+}
+
+.categories-landing-compact :deep(.cats-grid) {
+  gap: 16px;
+}
+
+.categories-landing-compact :deep(.cat-card),
+.categories-landing-compact :deep(.cat-card-link) {
+  min-height: 240px;
+}
+
+.categories-landing-compact :deep(.cat-card-body) {
+  padding: 18px;
+}
+
+.categories-landing-compact :deep(.cat-text) {
+  min-height: 0;
+  font-size: 20px;
 }
 
 /* ================= MOBILE ================= */

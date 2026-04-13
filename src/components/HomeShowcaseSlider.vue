@@ -1,26 +1,28 @@
 <template>
-  <section v-if="items.length" class="showcase-shell" aria-label="Подборка товаров">
+  <section v-if="items.length" class="showcase-root" aria-label="Подборка товаров">
     <div class="showcase-head">
-      <div class="showcase-copy">
-        <div class="showcase-kicker">Все Для Дома</div>
+      <div class="showcase-head-main">
+        <span class="showcase-kicker">Подборка</span>
         <h2 class="showcase-title">{{ titleText }}</h2>
-        <p class="showcase-text">
-          Популярные товары и полезные позиции для дома - аккуратная витрина с быстрым переходом.
-        </p>
+        <div class="showcase-sub">
+          Популярные товары и полезные позиции с быстрым переходом без лишних промежуточных экранов.
+        </div>
       </div>
 
-      <div class="showcase-nav" v-if="canNavigate">
-        <button type="button" class="nav-btn" aria-label="Назад" @click="slidePrev">
-          <Fa :icon="['fas', 'chevron-left']" />
-        </button>
-        <button type="button" class="nav-btn" aria-label="Вперед" @click="slideNext">
-          <Fa :icon="['fas', 'chevron-right']" />
-        </button>
+      <div class="showcase-side">
+
+        <div v-if="canNavigate" class="showcase-nav">
+          <button type="button" class="showcase-nav-btn" aria-label="Назад" @click="slidePrev">
+            <Fa :icon="['fas', 'chevron-left']" />
+          </button>
+          <button type="button" class="showcase-nav-btn" aria-label="Вперед" @click="slideNext">
+            <Fa :icon="['fas', 'chevron-right']" />
+          </button>
+        </div>
       </div>
     </div>
 
     <Swiper
-      :modules="swiperModules"
       :space-between="16"
       :slides-per-view="1"
       :slides-per-group="1"
@@ -31,26 +33,35 @@
       class="showcase-swiper"
       @swiper="onSwiper"
     >
-      <SwiperSlide v-for="item in items" :key="item.id">
+      <SwiperSlide v-for="(item, index) in items" :key="item.id">
         <article class="showcase-card">
           <div class="showcase-media">
             <img
+              v-if="item.image_url && !imgErr[item.id]"
               class="showcase-image"
               :src="item.image_url"
               :alt="item.title"
               loading="lazy"
               decoding="async"
+              @error="imgErr[item.id] = true"
             />
 
-            <div v-if="item.price" class="showcase-price-badge">
-              {{ formatPrice(item.price) }}
+            <div v-else class="showcase-visual-ph" aria-hidden="true">
+              <Fa :icon="['far', 'image']" />
             </div>
+
+            <div class="showcase-media-shade"></div>
           </div>
 
           <div class="showcase-body">
-            <div class="showcase-name">{{ item.title }}</div>
+            <div class="showcase-topline">
+              <span>Товар {{ String(index + 1).padStart(2, '0') }}</span>
+              <span v-if="item.price" class="showcase-price">{{ formatPrice(item.price) }}</span>
+            </div>
 
-            <div v-if="item.description" class="showcase-desc">
+            <div class="showcase-name" :title="item.title">{{ item.title }}</div>
+
+            <div v-if="item.description" class="showcase-desc" :title="item.description">
               {{ item.description }}
             </div>
 
@@ -59,7 +70,10 @@
               class="showcase-btn"
               :href="item.button_url"
             >
-              {{ item.button_text }}
+              <span class="showcase-btn-text" :title="item.button_text">{{ item.button_text }}</span>
+              <span class="showcase-btn-ic" aria-hidden="true">
+                <Fa :icon="['fas', 'chevron-right']" />
+              </span>
             </a>
           </div>
         </article>
@@ -69,24 +83,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
-import { Navigation } from "swiper/modules";
 
 const API_GET = "/api/vitrina/get_home_showcase.php";
-const swiperModules = [Navigation];
 const swiperRef = ref(null);
 const title = ref("");
 const items = ref([]);
+const imgErr = ref({});
 
 const breakpoints = {
-  0: { slidesPerView: 1.1, slidesPerGroup: 1, spaceBetween: 12 },
+  0: { slidesPerView: 1.08, slidesPerGroup: 1, spaceBetween: 12 },
   640: { slidesPerView: 2, slidesPerGroup: 2, spaceBetween: 14 },
-  1024: { slidesPerView: 3, slidesPerGroup: 4, spaceBetween: 16 },
+  1024: { slidesPerView: 3, slidesPerGroup: 3, spaceBetween: 16 },
+  1280: { slidesPerView: 4, slidesPerGroup: 4, spaceBetween: 18 },
 };
 
 const titleText = computed(() => title.value || "Подборка товаров");
-const canNavigate = computed(() => items.value.length > 3);
+const canNavigate = computed(() => items.value.length > 4);
 
 function onSwiper(swiper) {
   swiperRef.value = swiper;
@@ -123,89 +137,104 @@ async function loadData() {
   }
 }
 
+watch(
+  items,
+  (val) => {
+    const next = {};
+    (Array.isArray(val) ? val : []).forEach((item) => {
+      if (item?.id != null) next[item.id] = false;
+    });
+    imgErr.value = next;
+  },
+  { immediate: true }
+);
+
 onMounted(loadData);
 </script>
 
 <style scoped>
-.showcase-shell {
-  width: 100%;
-  padding: 22px;
-  border-radius: 28px;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 18px 54px rgba(15, 23, 42, 0.08);
+.showcase-root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .showcase-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: end;
 }
 
-.showcase-copy {
-  min-width: 0;
-  max-width: 760px;
+.showcase-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .showcase-kicker {
+  width: fit-content;
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
+  min-height: 28px;
   padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(252, 200, 34, 0.14);
-  color: #c98900;
-  font-size: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  color: #334155;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .showcase-title {
-  margin: 12px 0 0;
-  color: #111827;
-  font-size: clamp(26px, 2.4vw, 36px);
+  margin: 0;
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.04em;
   font-weight: 1000;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  color: #0f172a;
 }
 
-.showcase-text {
-  margin: 10px 0 0;
+.showcase-sub {
+  max-width: 760px;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 700;
   color: #475569;
-  font-size: 15px;
-  line-height: 1.6;
 }
+
+.showcase-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 
 .showcase-nav {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
-  flex-shrink: 0;
 }
 
-.nav-btn {
-  width: 46px;
-  height: 46px;
+.showcase-nav-btn {
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.12);
-  background: #ffffff;
-  color: #111827;
+  background: #0f172a;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
 }
 
-.nav-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(252, 200, 34, 0.55);
-  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+.showcase-nav-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.22);
 }
 
 .showcase-swiper {
@@ -224,15 +253,21 @@ onMounted(loadData);
 }
 
 .showcase-card {
+  position: relative;
   width: 100%;
   min-height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 22px;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+  background: #0f172a;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+
+.showcase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 44px rgba(15, 23, 42, 0.2);
+  filter: saturate(1.02);
 }
 
 .showcase-media {
@@ -240,156 +275,205 @@ onMounted(loadData);
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: #f8fafc;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(135deg, #111827 0%, #0f172a 100%);
+}
+
+.showcase-visual-ph {
+  position: absolute;
+  inset: 0;
+}
+
+.showcase-media img,
+.showcase-visual-ph {
+  width: 100%;
+  height: 100%;
 }
 
 .showcase-image {
-  width: 100%;
-  height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
+  background: transparent;
+  transform: scale(1.001);
+  transition: transform 0.28s ease;
 }
 
-.showcase-price-badge {
+.showcase-card:hover .showcase-image {
+  transform: scale(1.02);
+}
+
+.showcase-media-shade {
   position: absolute;
-  left: 14px;
-  bottom: 14px;
-  z-index: 2;
-  display: inline-flex;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.04) 0%, rgba(2, 6, 23, 0.14) 100%),
+    linear-gradient(90deg, rgba(2, 6, 23, 0.16) 0%, rgba(2, 6, 23, 0) 50%, rgba(2, 6, 23, 0.16) 100%);
+  pointer-events: none;
+}
+
+.showcase-visual-ph {
+  display: flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.92);
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 900;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+  justify-content: center;
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 30%),
+    linear-gradient(135deg, #111827 0%, #0f172a 100%);
 }
 
 .showcase-body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin-top: 0;
+  padding: 20px;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 12px;
-  padding: 18px;
-  min-width: 0;
-  flex: 1 1 auto;
+  background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+}
+
+.showcase-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.showcase-price {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .showcase-name {
-  font-size: 19px;
+  min-height: 3.48em;
+  font-size: 22px;
+  line-height: 1.16;
   font-weight: 900;
-  line-height: 1.3;
-  color: #0f172a;
+  letter-spacing: -0.03em;
+  color: #ffffff;
   display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .showcase-desc {
   font-size: 14px;
-  line-height: 1.6;
-  color: #475569;
+  line-height: 1.58;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.84);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .showcase-btn {
   margin-top: auto;
   display: inline-flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.showcase-btn-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.showcase-btn-ic {
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-start;
-  min-height: 46px;
-  padding: 0 18px;
-  border-radius: 14px;
-  text-decoration: none;
-  background: var(--secondary-accent);
-  color: #111827;
-  font-weight: 900;
-  white-space: nowrap;
-  box-shadow: 0 12px 22px rgba(252, 200, 34, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
-.showcase-btn:hover {
-  filter: brightness(0.98);
-}
-
-@media (max-width: 1023px) {
-  .showcase-shell {
-    padding: 18px;
-    border-radius: 24px;
+@media (max-width: 920px) {
+  .showcase-head {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
-  .showcase-head {
-    align-items: flex-start;
-    flex-direction: column;
+  .showcase-side {
+    gap: 12px;
   }
 
   .showcase-nav {
-    align-self: flex-end;
+    justify-content: space-between;
   }
 }
 
-@media (max-width: 639px) {
-  .showcase-shell {
-    padding: 14px;
-    border-radius: 20px;
+@media (max-width: 640px) {
+  .showcase-root {
+    gap: 16px;
   }
 
   .showcase-title {
-    font-size: 24px;
+    font-size: 28px;
   }
 
-  .showcase-text {
+  .showcase-sub {
     font-size: 13px;
-    line-height: 1.5;
   }
 
-  .showcase-nav {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .nav-btn {
+  .showcase-nav-btn {
     width: 40px;
     height: 40px;
-    border-radius: 12px;
   }
 
   .showcase-card {
-    border-radius: 18px;
-  }
-
-  .showcase-price-badge {
-    left: 12px;
-    bottom: 12px;
-    min-height: 32px;
-    padding: 0 12px;
-    font-size: 13px;
+    min-height: 100%;
   }
 
   .showcase-body {
-    gap: 10px;
-    padding: 14px;
+    padding: 16px;
   }
 
   .showcase-name {
-    font-size: 17px;
+    font-size: 20px;
   }
 
   .showcase-desc {
     font-size: 13px;
     line-height: 1.5;
-  }
-
-  .showcase-btn {
-    width: 100%;
-    min-height: 44px;
   }
 }
 </style>

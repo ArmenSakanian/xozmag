@@ -9,12 +9,13 @@
       Загрузка категорий…
     </div>
 
-    <HomeCatalogEntry
-      v-else
-      :show-head="true"
-      :items="homeCats"
-      :navigate-on-pick="true"
-    />
+    <div v-else class="home-cats-section">
+      <HomeCatalogEntry
+        :show-head="true"
+        :items="homeCats"
+        :navigate-on-pick="true"
+      />
+    </div>
   </section>
 </template>
 
@@ -150,6 +151,10 @@ useHead(() => ({
   display: flex;
   flex-direction: column;
   gap: 22px;
+}
+
+.home-cats-section {
+  width: 100%;
 }
 
 .sr-only {
