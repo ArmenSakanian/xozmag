@@ -2,7 +2,7 @@
   <section v-if="items.length" class="showcase-shell" aria-label="Подборка товаров">
     <div class="showcase-head">
       <div class="showcase-copy">
-        <div class="showcase-kicker">XOZMAG</div>
+        <div class="showcase-kicker">Все Для Дома</div>
         <h2 class="showcase-title">{{ titleText }}</h2>
         <p class="showcase-text">
           Популярные товары и полезные позиции для дома - аккуратная витрина с быстрым переходом.
